@@ -1,38 +1,27 @@
 import os
 import sys
+from mosaic.config.mosaic_config import MosaicConfig
 import yaml
 import json
 import logging
 from mosaic.message_bus import MessageConsumer, MessageProducer
 from mosaic.db_bakend import InfluxIndicatorWriter
-from mosaic.indicator import IndicatorMessage
 
 logging.basicConfig(stream=sys.stdout,
                     level=logging.INFO)
 
 
-app_config = {}
-app_config["server_config_filename"] = os.path.join(os.path.dirname(__file__),
-                                                    "server-config.yaml")
-
 # -------------------------------------
 # Loading configuration
 # -------------------------------------
-with open(app_config["server_config_filename"], 'r', encoding="utf-8") as yaml_file:
-    try:
-        server_config = yaml.load(yaml_file,
-                                  Loader=yaml.FullLoader)
-        app_config.update(server_config)
-    except yaml.YAMLError as exc:
-        logging.error(exc)
 
-logging.info(app_config)
+config_filename = os.path.join(os.path.dirname(
+    __file__),  "./config.yaml")
 
-message_server_config = app_config["message_server_config"]
-db_server_config = app_config["db_server_config"]
+MosaicConfig().from_yaml_filename(config_filename)
 
-producer = MessageProducer(message_server_config, None)
-datawritter = InfluxIndicatorWriter(db_server_config)
+producer = MessageProducer()
+datawritter = InfluxIndicatorWriter()
 
 
 def data_write_new_message(indic_message):
@@ -46,9 +35,8 @@ def data_write_new_message(indic_message):
 
 if __name__ == '__main__':
 
-    consumer = MessageConsumer(
-        message_server_config, "data-write-service",
-        [message_server_config["write-topic"]],
+    consumer = MessageConsumer("data-write-service", 
+    [MosaicConfig().settings.server.message.write_topic],
         data_write_new_message)
 
     consumer.start_listening()

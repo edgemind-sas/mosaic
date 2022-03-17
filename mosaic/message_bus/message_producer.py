@@ -1,22 +1,24 @@
 from typing import Any, Dict
 from xmlrpc.client import boolean
+from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 from kafka import KafkaProducer
 
 
 class MessageProducer(BaseModel):
 
-    message_server_config: Dict = Field(None)
     producer: Any = Field(None)
     topic: str = Field(None)
     bynary_encoded: boolean = False
 
-    def __init__(self, message_server_config: Dict, topic: str):
+    def __init__(self, topic: str = None):
         super().__init__()
         self.topic = topic
-        self.message_server_config = message_server_config
+
+        host = MosaicConfig().settings.server.message.host
+        
         self.producer = KafkaProducer(
-            bootstrap_servers=self.message_server_config["host"])
+            bootstrap_servers=host)
 
     def send_message(self, message, topic=None, key=None):
         if topic is None:

@@ -15,16 +15,7 @@ class IndicatorMessage(BaseModel):
         super().__init__()
 
         if message is not None:
-            self.measurement = message.partition(",")[0]
-
-            timestamp = int(message.rpartition(" ")[2])
-            self.time = pd.to_datetime(timestamp, utc=True, unit='ns')
-
-            for tag in message.split(" ")[0].partition(",")[2].split(","):
-                self.tags.update({tag.split("=")[0]: tag.split("=")[1]})
-
-            for field in message.split(" ")[1].split(","):
-                self.fields.update({field.split("=")[0]: field.split("=")[1]})
+            self.from_line_protocol(message)
 
     def to_line_protocol(self):
 
@@ -34,3 +25,15 @@ class IndicatorMessage(BaseModel):
             f'{field}={self.fields.get(field)}' for field in self.fields.keys())
 
         return f'{self.measurement},{tags} {fields} {self.time.value}'
+
+    def from_line_protocol(self, line_protocol_str: str):
+        self.measurement = line_protocol_str.partition(",")[0]
+
+        timestamp = int(line_protocol_str.rpartition(" ")[2])
+        self.time = pd.to_datetime(timestamp, utc=True, unit='ns')
+
+        for tag in line_protocol_str.split(" ")[0].partition(",")[2].split(","):
+            self.tags.update({tag.split("=")[0]: tag.split("=")[1]})
+
+        for field in line_protocol_str.split(" ")[1].split(","):
+            self.fields.update({field.split("=")[0]: field.split("=")[1]})

@@ -1,12 +1,13 @@
 import logging
 from typing import Any, Dict
+from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 
 from ..db_bakend.query_indicator import InfluxIndicatorQueryClient
 from .query.query_builder import QueryBuilder
 
 from .indicator_source import IndicatorSource
-from .indicator_config import IndicatorConfig
+from ..config.indicator_config import IndicatorConfig
 
 
 class Indicator(BaseModel):
@@ -15,13 +16,11 @@ class Indicator(BaseModel):
 
     sources: Dict[str, IndicatorSource] = Field({})
 
-    servers_config: Dict = Field(None)
-
     query_client: InfluxIndicatorQueryClient = Field(None)
 
     query_builder: QueryBuilder = Field(None)
 
-    def __init__(self, indicator_config: IndicatorConfig, servers_config: Dict):
+    def __init__(self, indicator_config: IndicatorConfig):
 
         super().__init__()
 
@@ -33,21 +32,18 @@ class Indicator(BaseModel):
             self.sources.update(
                 {name: IndicatorSource(name=name, config=sourceConfig)})
 
-        self.servers_config = servers_config
-
-        self.query_client = InfluxIndicatorQueryClient(
-            self.servers_config["db_server_config"])
+        self.query_client = InfluxIndicatorQueryClient()
         self.query_builder = QueryBuilder()
 
     def get_sources_data(self,  time):
 
         sourceData: Dict[str, Any] = {}
 
-        db_config = self.servers_config["db_server_config"]
+        bucket_name = MosaicConfig().settings.server.db.bucket
 
         for source in self.sources.values():
             query = self.query_builder.buildQuery(
-                source=source, bucket=db_config["bucket"], time=time)
+                source=source, bucket=bucket_name, time=time)
             result = self.query_client.queryAsDataFrame(query=query)
             sourceData.update({source.name: result})
 

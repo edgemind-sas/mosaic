@@ -1,7 +1,7 @@
 
 from pydantic import BaseModel, Field
 
-from .indicator_config import IndicatorSourceConfig
+from ..config.indicator_config import IndicatorSourceConfig
 from .indicator_message import IndicatorMessage
 
 
