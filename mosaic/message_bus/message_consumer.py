@@ -1,9 +1,7 @@
-import json
 from typing import Callable, Dict, List
 from xmlrpc.client import boolean
 from pydantic import BaseModel, Field
 from kafka import KafkaConsumer
-import msgpack
 
 
 class MessageConsumer(BaseModel):

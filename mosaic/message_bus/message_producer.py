@@ -2,8 +2,6 @@ from typing import Any, Dict
 from xmlrpc.client import boolean
 from pydantic import BaseModel, Field
 from kafka import KafkaProducer
-import msgpack
-import json
 
 
 class MessageProducer(BaseModel):
