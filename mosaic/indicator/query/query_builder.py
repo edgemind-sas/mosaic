@@ -1,20 +1,13 @@
 
 import logging
-from pydantic import BaseModel, Field
 from datetime import datetime
-import time
-import tempora
-from datetime import timedelta
 import pandas as pd
-
+from pydantic import BaseModel, Field
 
 from ..indicator_source import IndicatorSource
 
 
 class QueryBuilder(BaseModel):
-
-    def seconds_to_nanoseconds(self, date):
-        return pd.to_datetime(date, utc=True, unit='s').value
 
     def buildQuery(self, source: IndicatorSource, bucket: str, time: datetime):
 
