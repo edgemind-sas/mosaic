@@ -29,3 +29,6 @@ class IndicatorSource(BaseModel):
                 return False
 
         return True
+
+    def dataframe_size(self):
+        return 1 + self.config.history_bw + self.config.history_fw

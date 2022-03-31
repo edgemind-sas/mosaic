@@ -27,3 +27,6 @@ class MessageProducer(BaseModel):
             key = message.partition(",")[0]  # give measurement as key
         self.producer.send(topic, value=message.encode(
             'utf-8'), key=key.encode('utf-8'))
+
+    def flush(self):
+        self.producer.flush()

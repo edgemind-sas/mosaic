@@ -4,8 +4,9 @@ from typing import Any, Dict
 from influxdb_client import InfluxDBClient
 from mosaic.config.mosaic_config import MosaicConfig
 from mosaic.config.server_config import DbServerConfig
-from pandas import DataFrame
+from pandas import DataFrame, DatetimeIndex
 from pydantic import BaseModel, Field
+import logging
 
 
 class InfluxIndicatorQueryClient(BaseModel):
@@ -23,9 +24,13 @@ class InfluxIndicatorQueryClient(BaseModel):
             org=db_config.org, debug=False)
         self.query_api = self.influx_client.query_api()
 
-    def queryAsDataFrame(self, query):
+    def query_as_dataframe(self, query):
         df: DataFrame = self.query_api.query_data_frame(query=query)
-        df = df.rename(
-            columns={"_time": "time"})
-        df = df.drop(columns=["result", "table", "_measurement"])
+
+        if not df.empty:
+            df = df.rename(columns={"_time": "time"})
+            df = df.drop(columns=["result", "table", "_measurement"])
+            df.set_index("time", inplace=True)
+
+        logging.debug(f'{df}')
         return df

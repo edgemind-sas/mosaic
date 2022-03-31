@@ -1,6 +1,5 @@
 
 import logging
-from datetime import datetime
 import pandas as pd
 from pydantic import BaseModel, Field
 
@@ -9,7 +8,9 @@ from ..indicator_source import IndicatorSource
 
 class QueryBuilder(BaseModel):
 
-    def buildQuery(self, source: IndicatorSource, bucket: str, time: datetime):
+    def build_query(self, source: IndicatorSource, bucket: str, time: pd.Timestamp):
+
+        period_string = source.config.tags.get("period")
 
         query = f'''
 from(bucket: "{bucket}")
@@ -17,6 +18,25 @@ from(bucket: "{bucket}")
     |> filter(fn: (r) => r["_measurement"] == "{source.config.id}")
     |> filter(fn: (r) => {self.build_tags_filter_string(source)})
     |> filter(fn: (r) => {self.build_fields_filter_string(source)})
+    |> aggregateWindow(every: {period_string}, fn: last, createEmpty: true)
+    |> keep(columns: ["_measurement","_time","_field","_value"])
+    |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'''
+
+        logging.debug(f'query :{query}')
+
+        return query
+
+    def build_query_for_period(self, source: IndicatorSource, bucket: str, start: pd.Timestamp, stop: pd.Timestamp):
+
+        period_string = source.config.tags.get("period")
+
+        query = f'''
+from(bucket: "{bucket}")
+    |> range({self.build_range_from_period(source, start, stop)})
+    |> filter(fn: (r) => r["_measurement"] == "{source.config.id}")
+    |> filter(fn: (r) => {self.build_tags_filter_string(source)})
+    |> filter(fn: (r) => {self.build_fields_filter_string(source)})
+    |> aggregateWindow(every: {period_string}, fn: last, createEmpty: true)
     |> keep(columns: ["_measurement","_time","_field","_value"])
     |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'''
 
@@ -55,11 +75,25 @@ from(bucket: "{bucket}")
         period_string = source.config.tags.get("period")
         period = pd.to_timedelta(period_string)
 
-        start_time: pd.Timestamp = time - (period * source.config.history_bw)
+        start_time: pd.Timestamp = time - \
+            (period * source.config.history_bw) - pd.to_timedelta("1ns")
 
         # we had 1ns because range resquest exclude the pooint @ stop
         stop_time: pd.Timestamp = time + \
-            (period * source.config.history_fw) + pd.to_timedelta("1ns")
+            (period * source.config.history_fw)
+
+        return self.build_range_string(start_time, stop_time)
+
+    def build_range_from_period(self, source: IndicatorSource, start: pd.Timestamp, stop: pd.Timestamp):
+
+        period_string = source.config.tags.get("period")
+        period = pd.to_timedelta(period_string)
+
+        start_time: pd.Timestamp = start - \
+            (period * source.config.history_bw) - pd.to_timedelta("1ns")
+
+        stop_time: pd.Timestamp = stop + \
+            (period * source.config.history_fw)
 
         return self.build_range_string(start_time, stop_time)
 

@@ -21,16 +21,16 @@ class IndicatorResultValidator:
             step_times.append(start_time + period*i)
 
         # check that dataframe has this count and ordered valu
-        if(len(res) != len(step_times)):
+        if res.empty or len(res) != len(step_times):
             logging.info(
                 f'Expected {len(step_times)} values but dataframe has {len(res)}')
             return False
 
         for index, expectedtime in enumerate(step_times):
-            if res.loc[index, "time"] != expectedtime:
+            if res.index[index] != expectedtime:
                 logging.info(
                     f'Expected row n°{index} time to be {expectedtime} \
-                        but was {res.loc[index, "time"]}')
+                        but was {res.loc[index].index}')
                 return False
 
         # optionally check fields colums and value not null

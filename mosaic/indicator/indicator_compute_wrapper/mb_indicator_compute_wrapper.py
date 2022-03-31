@@ -54,11 +54,9 @@ class MbIndicatorComputeWrapper(BaseModel):
 
     def save_indicator(self, value: Dict, indic_message: IndicatorMessage):
 
-        logging.info(f'save indicator with value {value}')
         if len(value) == 0:
             return
 
-        logging.info("save indicator")
         newIndicator = IndicatorMessage()
 
         newIndicator.tags = self.indicator.config.tags
