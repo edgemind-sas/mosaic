@@ -11,6 +11,7 @@ from .query.query_builder import QueryBuilder
 
 from .indicator_source import IndicatorSource
 from ..config.indicator_config import IndicatorConfig
+from pandas.tseries.frequencies import to_offset
 
 
 class Indicator(BaseModel):
@@ -72,44 +73,34 @@ class Indicator(BaseModel):
 
         return sourceData
 
-    def compute_indicator(self, sourceData: Dict[str, Any]):
+    def compute_indicator(self, sourceData: Dict[str, DataFrame], date_time: Timestamp):
         logging.error(
             "Generic indicator type doesn't have a compute indicator implementation")
         return {}
 
-    def compute_indicator_batch(self, sourceData: Dict[str, DataFrame], start: Timestamp, stop: Timestamp):
-
-        sub_source_data: Dict[str, DataFrame] = {}
-
-        steps = int((stop - start)/self.period)
+    def compute_indicator_batch(self, sourceData: Dict[str, DataFrame], start: Timestamp,
+                                stop: Timestamp):
 
         result: List = []
-
         columns = None
 
-        periods = {}
+        for t in pd.date_range(start=start, end=stop, freq=to_offset(self.period)):
 
-        for source in self.sources.values():
-            period_string = source.config.tags.get("period")
-            period = pd.to_timedelta(period_string)
-            periods.update({source.name: period})
-
-        for i in range(0, steps+1):
-            t = start + self.period * i
+            sub_source_data: Dict[str, DataFrame] = {}
             for source in self.sources.values():
-                period = periods.get(source.name)
                 start_time: pd.Timestamp = t - \
-                    (period * source.config.history_bw)
+                    (source.period * source.config.history_bw)
                 stop_time: pd.Timestamp = t + \
-                    (period * source.config.history_fw)
+                    (source.period * source.config.history_fw)
 
                 subdata = sourceData.get(source.name).loc[start_time:stop_time]
 
                 sub_source_data.update({source.name: subdata})
-            value: Dict = self.compute_indicator(sub_source_data)
+            value: Dict = self.compute_indicator(sub_source_data, t)
+
+            # dataframe columns name based on result dict
             if columns is None and len(value) > 0:
                 columns = [*value.keys()]
-            t = start + self.period * i
 
             result.append([t] + [*value.values()])
 

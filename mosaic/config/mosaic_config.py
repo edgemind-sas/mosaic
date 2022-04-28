@@ -3,6 +3,7 @@ from typing import Dict, List
 
 from .server_config import ServerConfig
 from .indicator_config import IndicatorConfig
+from .history_config import HistoryConfig
 from pydantic import BaseSettings, Field
 from pprint import pformat
 import yaml
@@ -14,6 +15,8 @@ class MosaicSettings(BaseSettings):
 
     server: ServerConfig = Field({})
 
+    history: HistoryConfig = Field({})
+
 
 class MosaicConfig():
 
@@ -21,9 +24,10 @@ class MosaicConfig():
 
     settings: MosaicSettings = None
 
-    def __new__(cls,*args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         if MosaicConfig.__instance is None:
-            MosaicConfig.__instance = super(MosaicConfig, cls).__new__(cls, *args, **kwargs)
+            MosaicConfig.__instance = super(
+                MosaicConfig, cls).__new__(cls, *args, **kwargs)
         return MosaicConfig.__instance
 
     def from_dict(self, config: Dict) -> MosaicSettings:
@@ -34,7 +38,7 @@ class MosaicConfig():
         with open(yaml_filename, 'r', encoding="utf-8") as yaml_file:
             try:
                 config = yaml.load(yaml_file, Loader=yaml.FullLoader)
-                
+
                 self.from_dict(config=config)
 
             except yaml.YAMLError as exc:

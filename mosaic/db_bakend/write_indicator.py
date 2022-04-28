@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from async_timeout import timeout
 from mosaic.config.mosaic_config import MosaicConfig
 from mosaic.config.server_config import DbServerConfig
 from pydantic import BaseModel, Field
@@ -26,7 +27,7 @@ class InfluxIndicatorWriter(BaseModel):
                                      write_type=SYNCHRONOUS)
 
         self.influx_client = InfluxDBClient(
-            url=db_config.url, token=db_config.token, org=db_config.org, debug=False)
+            url=db_config.url, token=db_config.token, org=db_config.org, debug=False, timeout=100000)
         self.write_api = self.influx_client.write_api(
             write_options=write_options, point_settings=PointSettings(**fixtags))
         self.bucket = db_config.bucket

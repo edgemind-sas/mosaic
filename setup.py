@@ -41,6 +41,7 @@ setup(name='mosaic',
           "kafka-python",
           "influxdb-client",
           "pandas"
+          "ccxt"
       ],
       zip_safe=False,
       )

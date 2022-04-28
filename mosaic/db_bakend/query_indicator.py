@@ -1,4 +1,5 @@
 
+import gzip
 from typing import Any, Dict
 
 from influxdb_client import InfluxDBClient
@@ -21,7 +22,7 @@ class InfluxIndicatorQueryClient(BaseModel):
 
         self.influx_client = InfluxDBClient(
             url=db_config.url, token=db_config.token,
-            org=db_config.org, debug=False)
+            org=db_config.org, debug=False, enable_gzip=True)
         self.query_api = self.influx_client.query_api()
 
     def query_as_dataframe(self, query):

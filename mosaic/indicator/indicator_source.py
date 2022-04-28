@@ -1,4 +1,6 @@
 
+from pandas import Timestamp
+import pandas as pd
 from pydantic import BaseModel, Field
 
 from ..config.indicator_config import IndicatorSourceConfig
@@ -9,6 +11,7 @@ class IndicatorSource(BaseModel):
 
     name: str = Field(None)
     config: IndicatorSourceConfig = Field(None)
+    period: Timestamp = Field(None)
 
     def __init__(self, name: str, config: IndicatorSourceConfig):
 
@@ -16,6 +19,9 @@ class IndicatorSource(BaseModel):
 
         self.name = name
         self.config = config
+
+        period_string = config.tags.get("period")
+        self.period = pd.to_timedelta(period_string)
 
     def accept(self, message: IndicatorMessage):
 
