@@ -4,4 +4,4 @@ from .indicator_compute_wrapper.batch_indicator_compute_wrapper import BatchIndi
 from .indicator_message import IndicatorMessage
 from .indicator_result_validator import IndicatorResultValidator
 from .indicator_source import IndicatorSource
-from .query.query_builder import QueryBuilder
+from .query_builder import QueryBuilder

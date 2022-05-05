@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 import pandas as pd
 
 from ..db_bakend.query_indicator import InfluxIndicatorQueryClient
-from mosaic.indicator import QueryBuilder
+from .query_builder import QueryBuilder
 
 from .indicator_source import IndicatorSource
 from ..config.indicator_config import IndicatorConfig

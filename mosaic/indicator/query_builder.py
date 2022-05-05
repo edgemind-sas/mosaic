@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ..indicator_source import IndicatorSource
+from .indicator_source import IndicatorSource
 
 
 class QueryBuilder(BaseModel):
