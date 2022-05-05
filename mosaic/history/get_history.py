@@ -1,6 +1,6 @@
 from ..config.indicator_config import IndicatorSourceConfig
 from ..indicator.indicator_source import IndicatorSource
-from ..indicator.query.query_builder import QueryBuilder
+from mosaic.indicator import QueryBuilder
 from ..db_bakend.query_indicator import InfluxIndicatorQueryClient
 import pandas as pd
 
