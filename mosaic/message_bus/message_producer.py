@@ -16,7 +16,7 @@ class MessageProducer(BaseModel):
         self.topic = topic
 
         host = MosaicConfig().settings.server.message.host
-        
+
         self.producer = KafkaProducer(
             bootstrap_servers=host)
 

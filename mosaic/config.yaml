@@ -1,9 +1,0 @@
-server:
-  db:
-    org: "edgemind"
-    bucket: "crypto"
-    url: "http://localhost:8086"
-    token: "-a-GpREDXChw72h7y96-2--"
-  message:
-    host: "localhost:29092"
-    write_topic: "data-write"

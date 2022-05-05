@@ -40,7 +40,7 @@ setup(name='mosaic',
           "pyyaml",
           "kafka-python",
           "influxdb-client",
-          "pandas"
+          "pandas",
           "ccxt"
       ],
       zip_safe=False,

@@ -30,6 +30,8 @@ def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, e
     df['time'] = df['time'].astype('datetime64[ms]')
     df.set_index("time", inplace=True)
 
+    # TODO : limit Dataframe to max <= end !!!
+
     return df
 
 

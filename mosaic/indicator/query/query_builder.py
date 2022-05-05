@@ -26,7 +26,8 @@ from(bucket: "{bucket}")
 
         return query
 
-    def build_query_for_period(self, source: IndicatorSource, bucket: str, start: pd.Timestamp, stop: pd.Timestamp):
+    def build_query_for_period(self, source: IndicatorSource, bucket: str,
+                               start: pd.Timestamp, stop: pd.Timestamp):
 
         period_string = source.config.tags.get("period")
 
@@ -81,7 +82,8 @@ from(bucket: "{bucket}")
 
         return self.build_range_string(start_time, stop_time)
 
-    def build_range_from_period(self, source: IndicatorSource, start: pd.Timestamp, stop: pd.Timestamp):
+    def build_range_from_period(self, source: IndicatorSource,
+                                start: pd.Timestamp, stop: pd.Timestamp):
 
         # TODO: we remove 1ns because aggregateWindow aggregate the extrem values
         start_time: pd.Timestamp = start - \
