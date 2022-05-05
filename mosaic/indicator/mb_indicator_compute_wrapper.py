@@ -2,9 +2,9 @@ from typing import Dict
 from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 from ..indicator import Indicator
-from ..indicator_message import IndicatorMessage
-from ...message_bus import MessageConsumer
-from ...message_bus import MessageProducer
+from .indicator_message import IndicatorMessage
+from ..message_bus import MessageConsumer
+from ..message_bus import MessageProducer
 import logging
 
 
@@ -18,7 +18,8 @@ class MbIndicatorComputeWrapper(BaseModel):
         super().__init__()
         self.indicator = indicator
 
-        self.message_producer = MessageProducer(MosaicConfig().settings.server.message.write_topic)
+        self.message_producer = MessageProducer(
+            MosaicConfig().settings.server.message.write_topic)
 
     def start_listenning(self):
         # get all topics to listen to
