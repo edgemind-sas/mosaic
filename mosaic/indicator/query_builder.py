@@ -37,7 +37,6 @@ from(bucket: "{bucket}")
     |> filter(fn: (r) => r["_measurement"] == "{source.config.id}")
     |> filter(fn: (r) => {self.build_tags_filter_string(source)})
     |> filter(fn: (r) => {self.build_fields_filter_string(source)})
-    |> aggregateWindow(every: {period_string}, fn: last, createEmpty: true)
     |> keep(columns: ["_measurement","_time","_field","_value"])
     |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'''
 
@@ -85,7 +84,7 @@ from(bucket: "{bucket}")
     def build_range_from_period(self, source: IndicatorSource,
                                 start: pd.Timestamp, stop: pd.Timestamp):
 
-        start_time: pd.Timestamp = start - source.period - \
+        start_time: pd.Timestamp = start - \
             (source.period * source.config.history_bw)
 
         stop_time: pd.Timestamp = stop + \
