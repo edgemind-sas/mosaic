@@ -52,6 +52,9 @@ def start_download(downloader_config: HistoryConfig):
                         ccxt_exchange, timeframe, symbol, base_pair, start, end)
 
                     fixtags = {"symbol": f'{symbol}/{base_pair}',
-                               "period": timeframe, "exchange": exchange_name}
+                               "base": symbol,
+                               "quote": base_pair,
+                               "period": timeframe,
+                               "exchange": exchange_name}
                     writer = InfluxIndicatorWriter(fixtags=fixtags)
-                    writer.write_df(df, data_frame_measurement_name="ohlcvt")
+                    writer.write_df(df, data_frame_measurement_name="ohlcv")

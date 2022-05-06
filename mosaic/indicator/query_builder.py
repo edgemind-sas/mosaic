@@ -85,9 +85,8 @@ from(bucket: "{bucket}")
     def build_range_from_period(self, source: IndicatorSource,
                                 start: pd.Timestamp, stop: pd.Timestamp):
 
-        # TODO: we remove 1ns because aggregateWindow aggregate the extrem values
         start_time: pd.Timestamp = start - \
-            (source.period * source.config.history_bw) - pd.to_timedelta("1ns")
+            (source.period * source.config.history_bw)
 
         stop_time: pd.Timestamp = stop + \
             (source.period * source.config.history_fw)

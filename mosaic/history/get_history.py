@@ -1,3 +1,5 @@
+from copy import copy
+from multiprocessing.dummy import Value
 from ..config.indicator_config import IndicatorSourceConfig
 from ..indicator.indicator_source import IndicatorSource
 from mosaic.indicator import QueryBuilder
@@ -20,4 +22,6 @@ def get_history(id, tags, value, bucket, start_date, stop_date, history_bw=0, hi
         source, bucket, start_date_ts, stop_date_ts)
 
     client = InfluxIndicatorQueryClient()
-    return client.query_as_dataframe(query)
+    df = client.query_as_dataframe(query)
+    df = df.reindex(value, axis="columns")
+    return df

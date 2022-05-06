@@ -1,7 +1,6 @@
-from datetime import date, datetime
-from typing import Dict, List
+from datetime import date
+from typing import List
 from pydantic import BaseModel, Field
-from pandas import Timestamp
 
 
 class HistoryConfig(BaseModel):

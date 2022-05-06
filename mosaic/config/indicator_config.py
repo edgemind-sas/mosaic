@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 
 
@@ -16,3 +16,4 @@ class IndicatorConfig(BaseModel):
     description: str = Field(None)
     tags: Dict[str, str] = Field(None)
     source: Dict[str, IndicatorSourceConfig] = Field(None)
+    parameters: Dict[str, Any] = Field(None)
