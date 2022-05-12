@@ -10,6 +10,7 @@ from .indicator_message import IndicatorMessage
 class IndicatorSource(BaseModel):
 
     name: str = Field(None)
+    collection: str = Field(None)
     config: IndicatorSourceConfig = Field(None)
     period: Timestamp = Field(None)
 
@@ -19,13 +20,13 @@ class IndicatorSource(BaseModel):
 
         self.name = name
         self.config = config
-
+        self.collection = config.collection
         period_string = config.tags.get("period")
         self.period = pd.to_timedelta(period_string)
 
     def accept(self, message: IndicatorMessage):
 
-        if self.config.id != message.measurement:
+        if self.config.name != message.measurement:
             return False
 
         for key in self.config.tags.keys():

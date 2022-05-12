@@ -9,7 +9,7 @@ class MessageServerConfig(BaseModel):
 
 class DbServerConfig(BaseModel):
     org: str = Field(None)
-    bucket: str = Field(None)
+    collection: str = Field(None)
     url: str = Field(None)
     token: str = Field(None)
 

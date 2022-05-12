@@ -49,11 +49,9 @@ class Indicator(BaseModel):
 
         sourceData: Dict[str, Any] = {}
 
-        bucket_name = MosaicConfig().settings.server.db.bucket
-
         for source in self.sources.values():
             query = self.query_builder.build_query(
-                source=source, bucket=bucket_name, time=time)
+                source=source, collection=source.collection, time=time)
             result = self.query_client.query_as_dataframe(query=query)
             sourceData.update({source.name: result})
 
@@ -63,23 +61,21 @@ class Indicator(BaseModel):
 
         sourceData: Dict[str, Any] = {}
 
-        bucket_name = MosaicConfig().settings.server.db.bucket
-
         for source in self.sources.values():
             query = self.query_builder.build_query_for_period(
-                source=source, bucket=bucket_name, start=start, stop=stop)
+                source=source, collection=source.collection, start=start, stop=stop)
             result = self.query_client.query_as_dataframe(query=query)
             sourceData.update({source.name: result})
 
         return sourceData
 
-    def compute_indicator(self, sourceData: Dict[str, DataFrame], date_time: Timestamp):
+    def compute_indicator_point(self, sourceData: Dict[str, DataFrame], date_time: Timestamp):
         logging.error(
             "Generic indicator type doesn't have a compute indicator implementation")
         return {}
 
-    def compute_indicator_batch(self, sourceData: Dict[str, DataFrame], start: Timestamp,
-                                stop: Timestamp):
+    def compute_indicator(self, sourceData: Dict[str, DataFrame], start: Timestamp,
+                          stop: Timestamp):
 
         result: List = []
         columns = None
@@ -96,7 +92,7 @@ class Indicator(BaseModel):
                 subdata = sourceData.get(source.name).loc[start_time:stop_time]
 
                 sub_source_data.update({source.name: subdata})
-            value: Dict = self.compute_indicator(sub_source_data, t)
+            value: Dict = self.compute_indicator_point(sub_source_data, t)
 
             # dataframe columns name based on result dict
             if columns is None and len(value) > 0:

@@ -26,10 +26,10 @@ class MbIndicatorComputeWrapper(BaseModel):
         topics = []
         for source in self.indicator.sources.values():
             logging.info(
-                f'Start listenning on topic {source.config.id} with tags {source.config.tags}')
+                f'Start listenning on topic {source.config.name} with tags {source.config.tags}')
 
-            if source.config.id not in topics:
-                topics.append(source.config.id)
+            if source.config.name not in topics:
+                topics.append(source.config.name)
 
         message_consumer = MessageConsumer(
             consumer_name=self.indicator.config.name, topics=topics,
@@ -49,19 +49,19 @@ class MbIndicatorComputeWrapper(BaseModel):
 
                 sources_data = self.indicator.get_sources_data(
                     indic_message.time)
-                value = self.indicator.compute_indicator(sources_data)
+                value = self.indicator.compute_indicator_point(sources_data)
                 self.save_indicator(value, indic_message)
                 break
 
-    def save_indicator(self, value: Dict, indic_message: IndicatorMessage):
+    def save_indicator(self, values: Dict, indic_message: IndicatorMessage):
 
-        if len(value) == 0:
+        if len(values) == 0:
             return
 
         newIndicator = IndicatorMessage()
 
         newIndicator.tags = self.indicator.config.tags
-        newIndicator.fields = value
+        newIndicator.fields = values
         newIndicator.measurement = self.indicator.config.name
         newIndicator.time = indic_message.time
 

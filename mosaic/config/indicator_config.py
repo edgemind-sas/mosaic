@@ -3,11 +3,12 @@ from pydantic import BaseModel, Field
 
 
 class IndicatorSourceConfig(BaseModel):
-    id: str = Field(...)
+    name: str = Field(...)
     tags: Dict[str, str] = Field(None)
     history_bw: int = Field(0)
     history_fw: int = Field(0)
-    value: List[str] = Field([])
+    values: List[str] = Field([])
+    collection: str = Field(None)
 
 
 class IndicatorConfig(BaseModel):
@@ -17,3 +18,4 @@ class IndicatorConfig(BaseModel):
     tags: Dict[str, str] = Field(None)
     source: Dict[str, IndicatorSourceConfig] = Field(None)
     parameters: Dict[str, Any] = Field(None)
+    collection: str = Field(None)

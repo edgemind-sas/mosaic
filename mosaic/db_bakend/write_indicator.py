@@ -9,7 +9,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS, PointSettings
 
 class InfluxIndicatorWriter(BaseModel):
 
-    bucket: str = Field(None)
+    collection: str = Field(None)
     influx_client: Any = Field(None)
     write_api: Any = Field(None)
 
@@ -30,12 +30,12 @@ class InfluxIndicatorWriter(BaseModel):
             url=db_config.url, token=db_config.token, org=db_config.org, debug=False, timeout=100000)
         self.write_api = self.influx_client.write_api(
             write_options=write_options, point_settings=PointSettings(**fixtags))
-        self.bucket = db_config.bucket
+        self.collection = db_config.collection
 
-    def write(self, message):
-        self.write_api.write(record=message, bucket=self.bucket)
+    def write(self, message, collection):
+        self.write_api.write(record=message, bucket=collection)
 
-    def write_df(self, dataframe, data_frame_measurement_name):
+    def write_df(self, dataframe, data_frame_measurement_name, collection):
 
-        self.write_api.write(record=dataframe, bucket=self.bucket,
+        self.write_api.write(record=dataframe, bucket=collection,
                              data_frame_measurement_name=data_frame_measurement_name)

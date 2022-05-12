@@ -8,16 +8,16 @@ from .indicator_source import IndicatorSource
 
 class QueryBuilder(BaseModel):
 
-    def build_query(self, source: IndicatorSource, bucket: str, time: pd.Timestamp):
-        return self.build_query_for_period(source, bucket, time, time)
+    def build_query(self, source: IndicatorSource, collection: str, time: pd.Timestamp):
+        return self.build_query_for_period(source, collection, time, time)
 
-    def build_query_for_period(self, source: IndicatorSource, bucket: str,
+    def build_query_for_period(self, source: IndicatorSource, collection: str,
                                start: pd.Timestamp, stop: pd.Timestamp):
 
         query = f'''
-from(bucket: "{bucket}")
+from(bucket: "{collection}")
     |> range({self.build_range_from_period(source, start, stop)})
-    |> filter(fn: (r) => r["_measurement"] == "{source.config.id}")
+    |> filter(fn: (r) => r["_measurement"] == "{source.config.name}")
     |> filter(fn: (r) => {self.build_tags_filter_string(source)})
     |> filter(fn: (r) => {self.build_fields_filter_string(source)})
     |> keep(columns: ["_measurement","_time","_field","_value"])
@@ -29,8 +29,12 @@ from(bucket: "{bucket}")
 
     def build_fields_filter_string(self, source: IndicatorSource):
         # r["_field"] == "open" or r["_field"] == "close"
+
+        if len(source.config.values) == 0:
+            return "true"
+
         field_concat_str = ""
-        for idx, field in enumerate(source.config.value):
+        for idx, field in enumerate(source.config.values):
             if idx > 0:
                 field_concat_str += " or "
             field_concat_str += f'r["_field"] == "{field}"'
@@ -63,4 +67,4 @@ from(bucket: "{bucket}")
         stop_time: pd.Timestamp = stop + \
             (source.period * source.config.history_fw) + pd.to_timedelta("1ns")
 
-        return f'start: time(v:{start.value}), stop: time(v:{stop.value})'
+        return f'start: time(v:{start_time.value}), stop: time(v:{stop_time.value})'

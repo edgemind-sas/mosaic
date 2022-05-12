@@ -13,13 +13,11 @@ class BatchIndicatorComputeWrapper(BaseModel):
     indicator: Indicator = Field(None)
     sources_data: Dict = None
 
-    def __init__(self,  indicator: Indicator, start: Timestamp, stop: Timestamp):
+    def __init__(self,  indicator: Indicator):
         super().__init__()
         self.indicator = indicator
 
-        self.batch_compute(start, stop)
-
-    def batch_compute(self, start: Timestamp, stop: Timestamp):
+    def compute(self, start: Timestamp, stop: Timestamp):
 
         start_time = time.time()
 
@@ -32,11 +30,11 @@ class BatchIndicatorComputeWrapper(BaseModel):
         start_time = time.time()
 
         # compute all point
-        result: DataFrame = self.indicator.compute_indicator_batch(
+        result: DataFrame = self.indicator.compute_indicator(
             self.sources_data, start, stop)
 
         logging.info(
-            f'--- compute_indicator_batch ---  {time.time() - start_time}')
+            f'--- compute_indicator ---  {time.time() - start_time}')
 
         logging.info(f'Compute {len(result)} data')
         logging.info(f'{result} data')
@@ -48,6 +46,7 @@ class BatchIndicatorComputeWrapper(BaseModel):
 
         writer = InfluxIndicatorWriter(fixtags)
 
-        writer.write_df(result, self.indicator.config.name)
+        writer.write_df(result, self.indicator.config.name,
+                        self.indicator.config.collection)
 
         logging.info(f'--- write_df ---  {time.time() - start_time}')
