@@ -30,7 +30,7 @@ from(bucket: "{collection}")
     def build_fields_filter_string(self, source: IndicatorSource):
         # r["_field"] == "open" or r["_field"] == "close"
 
-        if len(source.config.values) == 0:
+        if source.config.values is None or len(source.config.values) == 0:
             return "true"
 
         field_concat_str = ""

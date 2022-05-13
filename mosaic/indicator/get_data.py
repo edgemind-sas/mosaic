@@ -5,7 +5,7 @@ from ..db_bakend.query_indicator import InfluxIndicatorQueryClient
 import pandas as pd
 
 
-def get_data(name, tags, values, collection, start_date, stop_date, history_bw=0, history_fw=0):
+def get_data(name, tags, collection, start_date, stop_date, history_bw=0, history_fw=0, values=None):
     source_config = IndicatorSourceConfig(
         name=name, tags=tags, history_bw=history_bw, history_fw=history_fw, values=values)
 
@@ -21,5 +21,6 @@ def get_data(name, tags, values, collection, start_date, stop_date, history_bw=0
 
     client = InfluxIndicatorQueryClient()
     df = client.query_as_dataframe(query)
-    df = df.reindex(values, axis="columns")
+    if values is not None:
+        df = df.reindex(values, axis="columns")
     return df

@@ -7,7 +7,7 @@ class IndicatorSourceConfig(BaseModel):
     tags: Dict[str, str] = Field(None)
     history_bw: int = Field(0)
     history_fw: int = Field(0)
-    values: List[str] = Field([])
+    values: List[str] = Field(None)
     collection: str = Field(None)
 
 
