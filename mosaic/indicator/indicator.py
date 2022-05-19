@@ -12,6 +12,7 @@ from .query_builder import QueryBuilder
 from .indicator_source import IndicatorSource
 from ..config.indicator_config import IndicatorConfig
 from pandas.tseries.frequencies import to_offset
+from .tools import reindex_dataframe
 
 
 class Indicator(BaseModel):
@@ -47,15 +48,7 @@ class Indicator(BaseModel):
 
     def get_sources_data(self,  time: Timestamp):
 
-        sourceData: Dict[str, Any] = {}
-
-        for source in self.sources.values():
-            query = self.query_builder.build_query(
-                source=source, collection=source.collection, time=time)
-            result = self.query_client.query_as_dataframe(query=query)
-            sourceData.update({source.name: result})
-
-        return sourceData
+        return self.get_sources_data_for_period(time, time)
 
     def get_sources_data_for_period(self, start: Timestamp, stop: Timestamp):
 
@@ -65,6 +58,9 @@ class Indicator(BaseModel):
             query = self.query_builder.build_query_for_period(
                 source=source, collection=source.collection, start=start, stop=stop)
             result = self.query_client.query_as_dataframe(query=query)
+
+            result = reindex_dataframe(result, source, start, stop)
+
             sourceData.update({source.name: result})
 
         return sourceData

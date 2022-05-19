@@ -12,7 +12,7 @@ def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, e
     ohlcv = []
 
     logging.info(
-        f'{ccxt_exchange.id} {timeframe} {symbol}/{base_pair}')
+        f'Download {ccxt_exchange.id} {timeframe} {symbol}/{base_pair}')
 
     end_time_in_ms = int(end.value / 1000000)
     start_in_ms = int(start.value / 1000000)
@@ -30,7 +30,7 @@ def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, e
     df['time'] = df['time'].astype('datetime64[ms]')
     df.set_index("time", inplace=True)
 
-    # TODO : limit Dataframe to max <= end !!!
+    df.drop(df.loc[df.index > end].index, inplace=True)
 
     return df
 
@@ -51,10 +51,15 @@ def start_download(downloader_config: HistoryConfig):
                     df = download_from_exchange(
                         ccxt_exchange, timeframe, symbol, base_pair, start, end)
 
+                    df.info()
+
+                    logging.info(f'\n {df.head()} \n\n{df.tail()}')
+
                     fixtags = {"symbol": f'{symbol}/{base_pair}',
                                "base": symbol,
                                "quote": base_pair,
                                "period": timeframe,
                                "exchange": exchange_name}
                     writer = InfluxIndicatorWriter(fixtags=fixtags)
-                    writer.write_df(df, data_frame_measurement_name="ohlcv")
+                    writer.write_df(df, data_frame_measurement_name="ohlcv4",
+                                    collection=downloader_config.collection)

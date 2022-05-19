@@ -11,3 +11,4 @@ class HistoryConfig(BaseModel):
     interval: List[str] = Field([])
     start: date = Field(None)
     end: date = Field(None)
+    collection: str = Field(None)
