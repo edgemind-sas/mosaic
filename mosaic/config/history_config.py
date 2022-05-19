@@ -12,3 +12,4 @@ class HistoryConfig(BaseModel):
     start: date = Field(None)
     end: date = Field(None)
     collection: str = Field(None)
+    measurement_name: str = Field(None)

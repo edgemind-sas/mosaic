@@ -61,5 +61,5 @@ def start_download(downloader_config: HistoryConfig):
                                "period": timeframe,
                                "exchange": exchange_name}
                     writer = InfluxIndicatorWriter(fixtags=fixtags)
-                    writer.write_df(df, data_frame_measurement_name="ohlcv4",
+                    writer.write_df(df, data_frame_measurement_name=downloader_config.measurement_name,
                                     collection=downloader_config.collection)
