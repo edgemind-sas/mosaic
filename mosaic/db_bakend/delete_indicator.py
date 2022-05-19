@@ -21,7 +21,7 @@ class InfluxIndicatorDeleteClient(BaseModel):
 
         self.influx_client = InfluxDBClient(
             url=db_config.url, token=db_config.token,
-            org=db_config.org, debug=False, enable_gzip=True, timeout=100000)
+            org=db_config.org, debug=False, enable_gzip=True, timeout=10000000)
         self.delete_api = self.influx_client.delete_api()
 
     def delete_indicator(self, collection, indicator_name, start="2010-01-01T00:00:00Z", stop="2023-01-01T00:00:00Z"):
