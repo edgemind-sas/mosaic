@@ -14,8 +14,8 @@ class IndicatorResultValidator:
         period_string = source.config.tags.get("period")
         period = pd.to_timedelta(period_string)
 
-        start_time: Timestamp = time - (period * source.config.history_bw)
-        nb_steps = source.config.history_bw + source.config.history_fw
+        start_time: Timestamp = time - (period * source.get_history_bw())
+        nb_steps = source.get_history_bw() + source.get_history_fw()
         step_times = []
         for i in range(nb_steps+1):
             step_times.append(start_time + period*i)

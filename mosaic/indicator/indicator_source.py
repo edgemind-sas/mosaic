@@ -1,4 +1,3 @@
-
 from pandas import Timestamp
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -38,4 +37,10 @@ class IndicatorSource(BaseModel):
         return True
 
     def dataframe_size(self):
-        return 1 + self.config.history_bw + self.config.history_fw
+        return 1 + self.get_history_bw() + self.get_history_fw()
+
+    def get_history_bw(self):
+        return self.config.history_bw
+
+    def get_history_fw(self):
+        return self.config.history_fw

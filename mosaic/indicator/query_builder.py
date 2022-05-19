@@ -61,10 +61,10 @@ from(bucket: "{collection}")
                                 start: pd.Timestamp, stop: pd.Timestamp):
 
         start_time: pd.Timestamp = start - \
-            (source.period * source.config.history_bw)
+            (source.period * source.get_history_bw())
 
         # we add 1ns to include last value
         stop_time: pd.Timestamp = stop + \
-            (source.period * source.config.history_fw) + pd.to_timedelta("1ns")
+            (source.period * source.get_history_fw()) + pd.to_timedelta("1ns")
 
         return f'start: time(v:{start_time.value}), stop: time(v:{stop_time.value})'

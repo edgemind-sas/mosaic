@@ -16,8 +16,8 @@ class ReturnsIndicator(Indicator):
         if "horizon" in indicator_config.parameters:
             self.horizon = indicator_config.parameters["horizon"]
 
-    def compute_indicator(self, sourceData: Dict[str, DataFrame],
-                          start: Timestamp, stop: Timestamp):
+    def compute(self, sourceData: Dict[str, DataFrame],
+                start: Timestamp, stop: Timestamp):
 
         # get the df of ohlcv source
         df: DataFrame = sourceData.get("ohlcv")

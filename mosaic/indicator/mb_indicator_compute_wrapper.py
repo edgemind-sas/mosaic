@@ -49,7 +49,7 @@ class MbIndicatorComputeWrapper(BaseModel):
 
                 sources_data = self.indicator.get_sources_data(
                     indic_message.time)
-                value = self.indicator.compute_indicator_point(sources_data)
+                value = self.indicator.compute_point(sources_data)
                 self.save_indicator(value, indic_message)
                 break
 

@@ -69,13 +69,13 @@ class Indicator(BaseModel):
 
         return sourceData
 
-    def compute_indicator_point(self, sourceData: Dict[str, DataFrame], date_time: Timestamp):
+    def compute_point(self, sourceData: Dict[str, DataFrame], date_time: Timestamp):
         logging.error(
             "Generic indicator type doesn't have a compute indicator implementation")
         return {}
 
-    def compute_indicator(self, sourceData: Dict[str, DataFrame], start: Timestamp,
-                          stop: Timestamp):
+    def compute(self, sourceData: Dict[str, DataFrame], start: Timestamp,
+                stop: Timestamp):
 
         result: List = []
         columns = None
@@ -85,14 +85,14 @@ class Indicator(BaseModel):
             sub_source_data: Dict[str, DataFrame] = {}
             for source in self.sources.values():
                 start_time: pd.Timestamp = t - \
-                    (source.period * source.config.history_bw)
+                    (source.period * self.get_history_bw(source))
                 stop_time: pd.Timestamp = t + \
-                    (source.period * source.config.history_fw)
+                    (source.period * self.get_history_fw(source))
 
                 subdata = sourceData.get(source.name).loc[start_time:stop_time]
 
                 sub_source_data.update({source.name: subdata})
-            value: Dict = self.compute_indicator_point(sub_source_data, t)
+            value: Dict = self.compute_point(sub_source_data, t)
 
             # dataframe columns name based on result dict
             if columns is None and len(value) > 0:
@@ -105,3 +105,9 @@ class Indicator(BaseModel):
 
         result_dataframe.set_index("time", inplace=True)
         return result_dataframe
+
+    def get_history_bw(self, source: IndicatorSource):
+        return source.get_history_bw()
+
+    def get_history_fw(self, source: IndicatorSource):
+        return source.get_history_fw()

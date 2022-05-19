@@ -30,7 +30,7 @@ class BatchIndicatorComputeWrapper(BaseModel):
         start_time = time.time()
 
         # compute all point
-        result: DataFrame = self.indicator.compute_indicator(
+        result: DataFrame = self.indicator.compute(
             self.sources_data, start, stop)
 
         logging.info(
