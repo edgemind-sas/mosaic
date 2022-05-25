@@ -1,1 +1,1 @@
-from .returns_indicator import ReturnsIndicator
+from .returns_indicator import ReturnsIndicator, ReturnsCloseIndicator
