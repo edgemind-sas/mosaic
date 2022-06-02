@@ -5,9 +5,10 @@ import pandas as pd
 from mosaic.config.history_config import HistoryConfig
 from pandas import Timestamp
 from mosaic.db_bakend import InfluxIndicatorWriter
+import numpy as np
 
 
-def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, end):
+def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, end, fetch_count=2000):
 
     ohlcv = []
 
@@ -18,19 +19,28 @@ def download_from_exchange(ccxt_exchange, timeframe, symbol, base_pair, start, e
     start_in_ms = int(start.value / 1000000)
 
     while start_in_ms < end_time_in_ms:
-        ohlcv.extend(ccxt_exchange.fetchOHLCV(
-            f'{symbol}/{base_pair}', timeframe, start_in_ms, 2000))
-        logging.info(
-            f'from {Timestamp(start_in_ms*1000000)} to \
-                {Timestamp(ohlcv[len(ohlcv)-1][0]*1000000)} : {len(ohlcv)}')
-        start_in_ms = ohlcv[len(ohlcv)-1][0]
+
+        new_ohlcv = ccxt_exchange.fetchOHLCV(
+            f'{symbol}/{base_pair}', timeframe, start_in_ms, fetch_count)
+
+        if len(new_ohlcv) == 0:
+            break
+
+        last_value = new_ohlcv[len(new_ohlcv)-1][0]
+
+        if len(new_ohlcv) == 1 and Timestamp(start_in_ms) == Timestamp(last_value):
+            break
+
+        ohlcv.extend(new_ohlcv)
+
+        start_in_ms = last_value
 
     df = pd.DataFrame(
         ohlcv, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
     df['time'] = df['time'].astype('datetime64[ms]')
     df.set_index("time", inplace=True)
 
-    df.drop(df.loc[df.index > end].index, inplace=True)
+    df.drop(df.loc[df.index > np.datetime64(end)].index, inplace=True)
 
     return df
 
