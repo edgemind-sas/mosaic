@@ -1,3 +1,4 @@
+from email import header
 from typing import Any, Dict
 from xmlrpc.client import boolean
 from mosaic.config.mosaic_config import MosaicConfig
@@ -20,13 +21,18 @@ class MessageProducer(BaseModel):
         self.producer = KafkaProducer(
             bootstrap_servers=host)
 
-    def send_message(self, message, topic=None, key=None):
+    def send_message(self, message, topic=None, key=None, collection=None):
         if topic is None:
             topic = self.topic
         if key is None:
             key = message.partition(",")[0]  # give measurement as key
+
+        headers = []
+        if collection is not None:
+            headers.append(("collection", str.encode(collection)))
+
         self.producer.send(topic, value=message.encode(
-            'utf-8'), key=key.encode('utf-8'))
+            'utf-8'), key=key.encode('utf-8'), headers=headers)
 
     def flush(self):
         self.producer.flush()

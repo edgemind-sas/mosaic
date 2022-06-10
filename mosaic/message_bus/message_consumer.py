@@ -26,7 +26,7 @@ class MessageConsumer(BaseModel):
                                  value_deserializer=self.get_value_serializer(),
                                  auto_offset_reset='earliest')
         for message in consumer:
-            self.callback(message.value)
+            self.callback(message.value, message.headers)
 
     def get_value_serializer(self):
         return lambda m: m.decode('utf-8')

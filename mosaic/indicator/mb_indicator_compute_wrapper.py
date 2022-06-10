@@ -6,6 +6,7 @@ from .indicator_message import IndicatorMessage
 from ..message_bus import MessageConsumer
 from ..message_bus import MessageProducer
 import logging
+import numpy as np
 
 
 class MbIndicatorComputeWrapper(BaseModel):
@@ -37,7 +38,7 @@ class MbIndicatorComputeWrapper(BaseModel):
 
         message_consumer.start_listening()
 
-    def treat_indicator_message(self,  message):
+    def treat_indicator_message(self,  message, headers):
         indic_message = IndicatorMessage(message)
         logging.info(f'new message receive : ')
         logging.info(indic_message)
@@ -48,8 +49,10 @@ class MbIndicatorComputeWrapper(BaseModel):
                 # if we have forward history, need to change time !
 
                 sources_data = self.indicator.get_sources_data(
-                    indic_message.time)
-                value = self.indicator.compute_point(sources_data)
+                    indic_message.time - source.get_history_fw()*self.indicator.period)
+
+                value = self.indicator.compute(
+                    sources_data, indic_message.time, indic_message.time)
                 self.save_indicator(value, indic_message)
                 break
 
@@ -58,12 +61,14 @@ class MbIndicatorComputeWrapper(BaseModel):
         if len(values) == 0:
             return
 
-        newIndicator = IndicatorMessage()
+        for index, row in values.dropna(how='all').iterrows():
+            newIndicator = IndicatorMessage()
+            newIndicator.tags = self.indicator.config.tags
+            newIndicator.fields = row.dropna().to_dict()
+            newIndicator.measurement = self.indicator.config.name
+            newIndicator.time = index
 
-        newIndicator.tags = self.indicator.config.tags
-        newIndicator.fields = values
-        newIndicator.measurement = self.indicator.config.name
-        newIndicator.time = indic_message.time
+            logging.info(f'{index} : {newIndicator.to_line_protocol()}')
 
-        self.message_producer.send_message(
-            newIndicator.to_line_protocol(), key=newIndicator.measurement)
+            self.message_producer.send_message(newIndicator.to_line_protocol(
+            ), key=newIndicator.measurement, collection=self.indicator.config.collection)

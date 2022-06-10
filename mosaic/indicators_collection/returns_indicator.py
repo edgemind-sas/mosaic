@@ -30,8 +30,8 @@ class ReturnsIndicator(Indicator):
 
 class ReturnsCloseIndicator(Indicator):
 
-    def compute_indicator(self, sourceData: Dict[str, DataFrame],
-                          start: Timestamp, stop: Timestamp):
+    def compute(self, sourceData: Dict[str, DataFrame],
+                start: Timestamp, stop: Timestamp):
 
         hrz_list = self.config.parameters.get("horizon")
 
