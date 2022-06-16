@@ -7,3 +7,5 @@ from .indicator_source import IndicatorSource
 from .query_builder import QueryBuilder
 from .get_data import get_data
 from .tools import reindex_dataframe
+from .impl.gh_indicator import GHIndicator
+from .impl.returns_indicator import ReturnsCloseIndicator

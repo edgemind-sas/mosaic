@@ -4,7 +4,6 @@ import pandas as pd
 
 from pydantic import Field
 from ..indicator import Indicator
-from ..config import IndicatorConfig
 
 
 def gh_indicator(ohlcv_df, alpha=0, ohlcv_names={}, indic_name_fmt="GH"):

@@ -4,7 +4,7 @@ import pandas as pd
 
 from pydantic import Field
 from ..indicator import Indicator
-from ..config import IndicatorConfig
+from ...config import IndicatorConfig
 
 
 class ReturnsIndicator(Indicator):
@@ -55,10 +55,3 @@ class ReturnsCloseIndicator(Indicator):
         ret_df = pd.concat(ret_list, axis=1)
 
         return ret_df
-
-        # # get the df of ohlcv source
-        # df: DataFrame = sourceData.get("ohlcv")
-
-        # df["ret"] = df.iloc[:-1].values/df.iloc[1:]-1
-
-        # return df[["ret"]]
