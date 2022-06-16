@@ -17,12 +17,19 @@ class IndicatorMessage(BaseModel):
         if message is not None:
             self.from_line_protocol(message)
 
+    def escape_strings(self, field):
+        value = self.fields.get(field)
+        if isinstance(value, str):
+            return f'"{value}"'
+        else:
+            return value
+
     def to_line_protocol(self):
 
         tags = ",".join(
             f'{tag}={self.tags.get(tag)}' for tag in self.tags.keys())
         fields = ",".join(
-            f'{field}={self.fields.get(field)}' for field in self.fields.keys())
+            f'{field}={self.escape_strings(field)}' for field in self.fields.keys())
 
         return f'{self.measurement},{tags} {fields} {self.time.value}'
 

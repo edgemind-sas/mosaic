@@ -19,3 +19,4 @@ class IndicatorConfig(BaseModel):
     source: Dict[str, IndicatorSourceConfig] = Field(None)
     parameters: Dict[str, Any] = Field(None)
     collection: str = Field(None)
+    class_name: str = Field(None)

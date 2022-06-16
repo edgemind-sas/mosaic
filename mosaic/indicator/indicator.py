@@ -107,3 +107,19 @@ class Indicator(BaseModel):
 
     def get_history_fw(self, source: IndicatorSource):
         return source.get_history_fw()
+
+    @classmethod
+    def from_dict(basecls, config: IndicatorConfig):
+        cls_sub_dict = {
+            cls.__name__: cls for cls in __class__.__subclasses__()}
+
+        logging.info(cls_sub_dict)
+
+        clsname = config.class_name
+        cls = cls_sub_dict.get(clsname)
+
+        if cls is None:
+            raise ValueError(
+                f"{clsname} is not a subclass of {__class__.__name__}")
+
+        return cls(config)
