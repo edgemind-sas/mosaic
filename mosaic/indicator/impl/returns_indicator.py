@@ -30,13 +30,13 @@ class ReturnsIndicator(Indicator):
 
 class ReturnsCloseIndicator(Indicator):
 
-    def compute(self, sourceData: Dict[str, DataFrame],
-                start: Timestamp, stop: Timestamp):
+    horizon: list = Field([0])
 
-        hrz_list = self.config.parameters.get("horizon")
+    def compute(self, ohlcv_df):
+
+        hrz_list = self.horizon
 
         # OHLCV variable identification
-        ohlcv_df = sourceData.get("ohlcv")
         close_var = "close"
         close_pm1 = ohlcv_df[close_var].shift(1)
 
