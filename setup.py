@@ -9,7 +9,7 @@ setup(name='mosaic',
       author_email='roland.donat@gmail.com, roland.donat@edgemind.fr, roland.donat@alphabayes.fr',
       maintainer='Roland Donat',
       maintainer_email='roland.donat@gmail.com',
-      keywords='pronostic datascience machine-learning ',
+      keywords='pronostic datascience machine-learning',
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',

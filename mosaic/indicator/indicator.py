@@ -72,3 +72,10 @@ class Indicator(BaseModel):
 
         # result_dataframe.set_index("time", inplace=True)
         # return result_dataframe
+
+
+class IndicatorOHLCV(Indicator):
+
+    ohlcv_names: dict = Field(
+        {v: v for v in ["open", "high", "low", "close", "volume"]},
+        description="OHLCV variable name dictionnary")

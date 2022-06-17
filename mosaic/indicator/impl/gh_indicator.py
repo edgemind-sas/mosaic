@@ -3,7 +3,7 @@ from typing import Dict
 import pandas as pd
 
 from pydantic import Field
-from ..indicator import Indicator
+from ..indicator import IndicatorOHLCV
 
 
 def gh_indicator(ohlcv_df, alpha=0, ohlcv_names={}, indic_name_fmt="GH"):
@@ -33,16 +33,26 @@ def gh_indicator(ohlcv_df, alpha=0, ohlcv_names={}, indic_name_fmt="GH"):
     return indic
 
 
-class GHIndicator(Indicator):
+class GHIndicator(IndicatorOHLCV):
 
-    def compute_bis(self, ohlcv_df, alpha=0, ohlcv_names={}, indic_name_fmt="GH"):
+    alpha: float = Field(
+        0, description="Body width lower bound to filter too small bodies")
+    beta: float = Field(
+        2, description="Threshold for absolute ratio between main shadow length and (body + small shadow) length")
+    labels: list = Field([-1, 0, 1], description="Discrete hammer labels")
+    indic_num_fmt: str = Field(
+        "GH", description="Numerical indicator name format")
+    indic_d_fmt: str = Field(
+        "GHd", description="Discrete indicator name format")
+
+    def compute(self, ohlcv_df):
         """Generalized hammer (GH) indicator"""
 
         # OHLCV variable identification
-        var_open = ohlcv_names.get("open", "open")
-        var_high = ohlcv_names.get("high", "high")
-        var_low = ohlcv_names.get("low", "low")
-        var_close = ohlcv_names.get("close", "close")
+        var_open = self.ohlcv_names.get("open", "open")
+        var_high = self.ohlcv_names.get("high", "high")
+        var_low = self.ohlcv_names.get("low", "low")
+        var_close = self.ohlcv_names.get("close", "close")
 
         oc_df = ohlcv_df[[var_open, var_close]]
         min_o_c = oc_df.min(axis=1)
@@ -53,31 +63,14 @@ class GHIndicator(Indicator):
         body_abs = (ohlcv_df[var_close] - ohlcv_df[var_open]).abs()
 
         body_rvar = body_abs.div(ohlcv_df[var_open])
-        body_abs.loc[body_rvar < alpha] = 1e100
+        body_abs.loc[body_rvar < self.alpha] = 1e100
 
-        indic = (s_upper - s_low).div(body_abs)
+        gh = (s_upper - s_low).div(body_abs)
+        gh.name = self.indic_num_fmt.format(alpha=self.alpha)
 
-        indic.name = indic_name_fmt.format(alpha=alpha)
+        ghd = pd.cut(gh, bins=[-float("inf"), -self.beta, self.beta, float("inf")],
+                     labels=self.labels)
 
-        return indic
+        ghd.name = self.indic_num_fmt.format(alpha=self.alpha, beta=self.beta)
 
-    def compute(self, sourceData: Dict[str, DataFrame],
-                start: Timestamp, stop: Timestamp):
-
-        alpha = self.config.parameters.get("alpha")
-        beta = self.config.parameters.get("beta")
-
-        # OHLCV variable identification
-        ohlcv_df = sourceData.get("ohlcv")
-
-        # , ohlcv_names=ohlcv_names)
-        gh = self.compute_bis(ohlcv_df, alpha=alpha)
-
-        indic = pd.cut(gh, bins=[-float("inf"), -beta, beta, float("inf")],
-                       labels=["-", "=", "+"])
-
-        # indic.name = indic_name_fmt.format(alpha=alpha,
-        #                                    beta=beta)
-        indic.name = 'GHd'
-
-        return indic.to_frame()
+        return pd.concat([gh, ghd], axis=1)
