@@ -7,4 +7,5 @@ from .scores import \
     eval_ers
 
 from .viz_tools import \
-    plotly_ohlcv
+    plotly_ohlcv, \
+    plotly_ohlcv_indics

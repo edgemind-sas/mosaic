@@ -71,6 +71,6 @@ class GHIndicator(IndicatorOHLCV):
         ghd = pd.cut(gh, bins=[-float("inf"), -self.beta, self.beta, float("inf")],
                      labels=self.labels)
 
-        ghd.name = self.indic_num_fmt.format(alpha=self.alpha, beta=self.beta)
+        ghd.name = self.indic_d_fmt.format(alpha=self.alpha, beta=self.beta)
 
         return pd.concat([gh, ghd], axis=1)
