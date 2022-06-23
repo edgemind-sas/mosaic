@@ -1,7 +1,7 @@
 import typing
 import pandas as pd
 from pydantic import Field
-from ..indicator import IndicatorOHLCV
+from .indicator import IndicatorOHLCV
 
 
 class ReturnsBaseIndicator(IndicatorOHLCV):
