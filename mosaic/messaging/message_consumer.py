@@ -1,5 +1,4 @@
 from typing import Callable, List
-from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 from kafka import KafkaConsumer
 

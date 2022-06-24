@@ -1,7 +1,5 @@
 import logging
 from typing import Dict
-from mosaic.config.mosaic_config import MosaicConfig
-from mosaic.db_bakend.write_indicator import InfluxIndicatorWriter
 from pandas import DataFrame, Timestamp
 from pydantic import BaseModel, Field
 from ..indicator import Indicator

@@ -1,9 +1,11 @@
 from setuptools import setup, find_packages
 
-version = "0.0.11"
+# read version as __version__
+exec(open('mosaic/version.py').read())
+
 
 setup(name='mosaic',
-      version=version,
+      version=__version__,
       url='https://github.com/edgemind-sas/mosaic',
       author='Roland Donat',
       author_email='roland.donat@gmail.com, roland.donat@edgemind.fr, roland.donat@alphabayes.fr',

@@ -1,10 +1,9 @@
 from typing import Dict, List
-from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 from ..indicator import Indicator
 from .indicator_message import IndicatorMessage
-from ..message_bus import MessageConsumer
-from ..message_bus import MessageProducer
+from .message_bus.message_consumer import MessageConsumer
+from .message_bus.message_producer import MessageProducer
 import logging
 import numpy as np
 import uuid

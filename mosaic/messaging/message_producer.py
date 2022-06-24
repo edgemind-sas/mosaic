@@ -1,7 +1,6 @@
 from email import header
 from typing import Any, Dict
 from xmlrpc.client import boolean
-from mosaic.config.mosaic_config import MosaicConfig
 from pydantic import BaseModel, Field
 from kafka import KafkaProducer
 

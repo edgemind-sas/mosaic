@@ -1,21 +1,20 @@
 import logging
 from typing import Dict, List
 
-from .server_config import ServerConfig
-from .indicator_config import IndicatorConfig
-from .history_config import HistoryConfig
+from ..indicator.config.server_config import ServerConfig
+from .indicator_wrapper import IndicatorWrapper
+from ..exchange.exchange import ExchangeConfig
 from pydantic import BaseSettings, Field
-from pprint import pformat
 import yaml
 
 
 class MosaicSettings(BaseSettings):
 
-    indicators: List[IndicatorConfig] = Field([])
+    indicators: List[IndicatorWrapper] = Field([])
 
-    server: ServerConfig = Field({})
+    server: ServerConfig = Field(None)
 
-    history: HistoryConfig = Field({})
+    history: ExchangeConfig = Field(None)
 
 
 class MosaicConfig():
@@ -23,6 +22,15 @@ class MosaicConfig():
     __instance = None
 
     settings: MosaicSettings = None
+
+    def history_config(self):
+        return self.settings.history
+
+    def indicators(self):
+        return self.settings.indicators
+
+    def server_config(self):
+        return self.settings.server
 
     def __new__(cls, *args, **kwargs):
         if MosaicConfig.__instance is None:
