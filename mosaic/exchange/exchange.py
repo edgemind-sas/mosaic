@@ -123,7 +123,7 @@ class Exchange(BaseModel):
         for m in messages:
             logging.info(m)
 
-    def download_live(self, callback=_default_callback):
+    def download_live(self, callback=_default_callback, line_protocol=False):
 
         symbols = {}
 
@@ -143,13 +143,17 @@ class Exchange(BaseModel):
                     symbol_data = data[symbol]
                     ts = Timestamp(
                         symbol_data["timestamp"], unit="ms", tz="utc")
-                    message = {
-                        "exchange": self.name,
-                        "base": symbols.get(symbol)["base"],
-                        "quote": symbols.get(symbol)["quote"],
-                        "price": symbol_data["last"],
-                        "timestamp": ts
-                    }
+
+                    if line_protocol:
+                        message = f'live,exchange={self.name},origin=ccxt,base={symbols.get(symbol)["base"]},quote={symbols.get(symbol)["quote"]} price={symbol_data["last"]} {ts.value}'
+                    else:
+                        message = {
+                            "exchange": self.name,
+                            "base": symbols.get(symbol)["base"],
+                            "quote": symbols.get(symbol)["quote"],
+                            "price": symbol_data["last"],
+                            "timestamp": ts
+                        }
                     messages.append(message)
 
                 callback(messages)
