@@ -10,12 +10,8 @@ class IndicatorMessage(BaseModel):
     tags: Dict[str, str] = Field({})
     fields: Dict[str, Any] = Field({})
 
-    def __init__(self, message: str = None):
-
-        super().__init__()
-
-        if message is not None:
-            self.from_line_protocol(message)
+    def __init__(self, **data):
+        super().__init__(**data)
 
     def escape_strings(self, field):
         value = self.fields.get(field)
@@ -33,14 +29,19 @@ class IndicatorMessage(BaseModel):
 
         return f'{self.measurement},{tags} {fields} {self.time.value}'
 
-    def from_line_protocol(self, line_protocol_str: str):
-        self.measurement = line_protocol_str.partition(",")[0]
+    @classmethod
+    def from_line_protocol(basecls, line_protocol_str: str):
+        measurement = line_protocol_str.partition(",")[0]
 
         timestamp = int(line_protocol_str.rpartition(" ")[2])
-        self.time = pd.to_datetime(timestamp, utc=True, unit='ns')
+        time = pd.to_datetime(timestamp, utc=True, unit='ns')
 
+        tags = {}
         for tag in line_protocol_str.split(" ")[0].partition(",")[2].split(","):
-            self.tags.update({tag.split("=")[0]: tag.split("=")[1]})
+            tags.update({tag.split("=")[0]: tag.split("=")[1]})
 
+        fields = {}
         for field in line_protocol_str.split(" ")[1].split(","):
-            self.fields.update({field.split("=")[0]: field.split("=")[1]})
+            fields.update({field.split("=")[0]: field.split("=")[1]})
+
+        return basecls(measurement, time, tags, fields)

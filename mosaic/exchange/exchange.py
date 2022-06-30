@@ -3,8 +3,10 @@ from typing import Any, List, Union
 
 import ccxt
 import numpy as np
-from pandas import DataFrame, Timestamp, to_datetime
+from pandas import DataFrame, Timedelta, Timestamp, to_datetime
 from pydantic import BaseModel, Field
+from time import sleep
+from ..indicator.indicator_message import IndicatorMessage
 
 
 class Exchange(BaseModel):
@@ -119,11 +121,11 @@ class Exchange(BaseModel):
                     )
         return return_structure
 
-    def _default_callback(messages):
+    def _default_download_live_callback(messages):
         for m in messages:
             logging.info(m)
 
-    def download_live(self, callback=_default_callback, line_protocol=False):
+    def download_live(self, callback=_default_download_live_callback, line_protocol=False):
 
         symbols = {}
 
@@ -144,17 +146,18 @@ class Exchange(BaseModel):
                     ts = Timestamp(
                         symbol_data["timestamp"], unit="ms", tz="utc")
 
-                    if line_protocol:
-                        message = f'live,exchange={self.name},origin=ccxt,base={symbols.get(symbol)["base"]},quote={symbols.get(symbol)["quote"]} price={symbol_data["last"]} {ts.value}'
-                    else:
-                        message = {
+                    # convert df to IndicatorMessage
+                    tags = {"symbol": symbol,
+                            "base": symbols[symbol]["base"],
+                            "quote": symbols[symbol]["quote"],
                             "exchange": self.name,
-                            "base": symbols.get(symbol)["base"],
-                            "quote": symbols.get(symbol)["quote"],
-                            "price": symbol_data["last"],
-                            "timestamp": ts
-                        }
-                    messages.append(message)
+                            "origin": "ccxt_fetchTickers"}
+
+                    im = IndicatorMessage(measurement="live", fields={
+                                          "price": symbol_data["last"]}, time=ts, tags=tags)
+
+                    messages.append(
+                        im.to_line_protocol() if line_protocol else im)
 
                 callback(messages)
 
@@ -163,6 +166,56 @@ class Exchange(BaseModel):
                 logging.info("Error")
                 logging.error(e)
                 continue
+
+    def download_new_ohlcv(self, callback=_default_download_live_callback, line_protocol=False):
+
+        # strutcture to store last date
+        last_downloaded_date = {}
+
+        while True:
+
+            logging.info("##############################################")
+            logging.info(f'Scrapping data @{Timestamp.now()}')
+            logging.info("##############################################")
+
+            try:
+
+                messages = []
+
+                for symbol in self.symbol:
+                    for base_pair in self.base_pair:
+                        for interval in self.interval:
+                            df = self._download_from_exchange(interval, symbol, base_pair,  Timestamp.now(
+                                "utc") - 2*Timedelta(interval),  Timestamp.now("utc"), 1)
+
+                            new_time = df.index[0]
+
+                            cache_key = f'{symbol}_{base_pair}_{interval}'
+
+                            if cache_key not in last_downloaded_date or last_downloaded_date[cache_key] != new_time:
+                                last_downloaded_date[cache_key] = new_time
+
+                                # convert df to IndicatorMessage
+                                tags = {"symbol": f'{symbol}/{base_pair}',
+                                        "base": symbol,
+                                        "quote": base_pair,
+                                        "period": interval,
+                                        "exchange": self.name}
+
+                                im = IndicatorMessage(measurement="ohlcv", fields=df.to_dict(
+                                    'records')[0], time=new_time, tags=tags)
+
+                                messages.append(
+                                    im.to_line_protocol() if line_protocol else im)
+
+                            else:
+                                logging.info('no new data')
+                callback(messages)
+            except Exception as e:
+                logging.info("Error")
+                logging.error(e)
+
+            sleep(20)
 
     @classmethod
     def available_exchange(basecls, search_symbols=["BTC/USDT", "BTC/USDC"]):
