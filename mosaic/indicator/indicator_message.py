@@ -31,17 +31,23 @@ class IndicatorMessage(BaseModel):
 
     @classmethod
     def from_line_protocol(basecls, line_protocol_str: str):
-        measurement = line_protocol_str.partition(",")[0]
+
+        struct = {}
+
+        struct["measurement"] = line_protocol_str.partition(",")[0]
 
         timestamp = int(line_protocol_str.rpartition(" ")[2])
-        time = pd.to_datetime(timestamp, utc=True, unit='ns')
+        struct["time"] = pd.to_datetime(timestamp, utc=True, unit='ns')
 
         tags = {}
         for tag in line_protocol_str.split(" ")[0].partition(",")[2].split(","):
             tags.update({tag.split("=")[0]: tag.split("=")[1]})
+        struct["tags"] = tags
 
         fields = {}
         for field in line_protocol_str.split(" ")[1].split(","):
             fields.update({field.split("=")[0]: field.split("=")[1]})
 
-        return basecls(measurement, time, tags, fields)
+        struct["fields"] = fields
+
+        return basecls(**struct)

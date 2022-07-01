@@ -12,6 +12,11 @@ class ReturnsBaseIndicator(IndicatorOHLCV):
     period_fmt: str = \
         Field(None, description="Returns columns format")
 
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.history_bw = 1
+        self.history_fw = len(self.horizon) - 1
+
 
 class ReturnsCloseIndicator(ReturnsBaseIndicator):
 

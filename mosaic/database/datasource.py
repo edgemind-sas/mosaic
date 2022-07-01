@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 from pandas import Timedelta, Timestamp, to_timedelta
@@ -12,11 +13,13 @@ class DataSource(BaseModel):
 class InfluxDataSource(DataSource):
 
     tags: Dict[str, str] = Field({})
+    """
     history_bw: int = Field(0)
-    history_fw: int = Field(0)
+    history_fw: int = Field(0)"""
     values: List[str] = Field(None)
     collection: str = Field(None)
     period: Timedelta = Field(None)
+    key: str = Field(None)
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -24,6 +27,11 @@ class InfluxDataSource(DataSource):
             self.period = to_timedelta(self.tags.get("period"))
         else:
             self.period = to_timedelta("0")
+
+        self.key = f'{self.collection}.{self.name}'
+
+        for tag in sorted(self.tags.keys()):
+            self.key += f'.{tag}:{self.tags.get(tag)}'
 
     def accept(self, message: IndicatorMessage):
 
@@ -40,8 +48,10 @@ class InfluxDataSource(DataSource):
     def has_period(self):
         return self.period.total_seconds() > 0
 
+    '''
     def real_start(self, start: Timestamp):
         return start - (self.period * self.history_bw)
 
     def real_stop(self, stop: Timestamp):
         return stop + (self.period * self.history_fw)
+    '''

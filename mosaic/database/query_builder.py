@@ -39,12 +39,10 @@ def __build_tags_filter_string(source: InfluxDataSource):
 def __build_range_from_period(source: InfluxDataSource,
                               start: pd.Timestamp, stop: pd.Timestamp):
 
-    start_time: pd.Timestamp = source.real_start(start)
-
     # we add 1ns to include last value
-    stop_time: pd.Timestamp = source.real_stop(stop) + pd.to_timedelta("1ns")
+    stop += pd.to_timedelta("1ns")
 
-    return f'start: time(v:{start_time.value}), stop: time(v:{stop_time.value})'
+    return f'start: time(v:{start.value}), stop: time(v:{stop.value})'
 
 
 def build_query_for_period(source: InfluxDataSource,

@@ -1,7 +1,7 @@
 from typing import Any, Dict, Union
 
 from influxdb_client import InfluxDBClient, WriteOptions
-from influxdb_client.client.write_api import SYNCHRONOUS, PointSettings
+from influxdb_client.client.write_api import PointSettings, WriteType, SYNCHRONOUS
 from .datasource import InfluxDataSource
 from .query_builder import build_query_for_period
 from pandas import DataFrame, Timestamp
@@ -29,19 +29,10 @@ class DbClient(BaseModel):
 
         self.influx_client = InfluxDBClient(
             url=self.url, token=self.token,
-            org=self.org, debug=False, enable_gzip=True)
-
-        write_options = WriteOptions(batch_size=500,
-                                     flush_interval=10_000,
-                                     jitter_interval=2_000,
-                                     retry_interval=5_000,
-                                     max_retries=5,
-                                     max_retry_delay=30_000,
-                                     exponential_base=2,
-                                     write_type=SYNCHRONOUS)
+            org=self.org, debug=False, enable_gzip=False)
 
         self.write_api = self.influx_client.write_api(
-            write_options=write_options, point_settings=PointSettings(**self.fixtags))
+            write_options=SYNCHRONOUS, point_settings=PointSettings(**self.fixtags))
         self.query_api = self.influx_client.query_api()
         self.delete_api = self.influx_client.delete_api()
 
@@ -85,8 +76,8 @@ class DbClient(BaseModel):
             df = df.reindex(source.values, axis="columns")
 
         if fill_with_NaN:
-            df = reindex_dataframe(df, source.real_start(start_date_ts),
-                                   source.real_stop(stop_date_ts), source.period)
+            df = reindex_dataframe(
+                df, start_date_ts,  stop_date_ts, source.period)
 
         return df
 
