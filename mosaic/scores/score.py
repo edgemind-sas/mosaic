@@ -2,7 +2,7 @@ import logging
 from pydantic import BaseModel, Field
 
 
-class Indicator(BaseModel):
+class ScoreBase(BaseModel):
 
     @classmethod
     def from_config(basecls, **config):
@@ -19,12 +19,16 @@ class Indicator(BaseModel):
 
         return cls(**config)
 
+    def fit(self, *data):
+        raise NotImplementedError(
+            "Implementation of fit method required")
+
     def compute(self, *data):
         raise NotImplementedError(
-            "Generic indicator type doesn't have a compute indicator implementation")
+            "Implementation of compute method required")
 
 
-class IndicatorOHLCV(Indicator):
+class ScoreOHLCV(ScoreBase):
 
     ohlcv_names: dict = Field(
         {v: v for v in ["open", "high", "low", "close", "volume"]},
