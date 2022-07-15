@@ -1,6 +1,7 @@
 from .data_management import \
     lag, \
-    prepare_returns_indic
+    prepare_returns_indic, \
+    compute_combinations
 
 from .scores import \
     eval_returns_emp_quantiles, \

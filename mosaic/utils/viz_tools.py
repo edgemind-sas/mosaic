@@ -7,6 +7,7 @@ def plotly_ohlcv(ohlcv_df, fig=None, ohlcv_names={}, trace_params={}, layout={})
     high_var = ohlcv_names.get("high", "high")
     low_var = ohlcv_names.get("low", "low")
     close_var = ohlcv_names.get("close", "close")
+    volume_var = ohlcv_names.get("volume", "volume")
 
     if fig is None:
         fig = go.Figure()
@@ -18,7 +19,19 @@ def plotly_ohlcv(ohlcv_df, fig=None, ohlcv_names={}, trace_params={}, layout={})
                                  close=ohlcv_df[close_var], name="OHLC"),
                   **trace_params)
 
+    # include a go.Bar trace for volumes
+    fig.add_trace(go.Bar(x=ohlcv_df.index,
+                         y=ohlcv_df[volume_var], name="Volume"),
+                  secondary_y=True)
+    fig.layout.yaxis2.showgrid = False
+
     fig.update_layout(**layout)
+
+    fig.for_each_trace(
+        lambda trace: trace.update(
+            visible=True) if trace.name == "Volume"
+        else trace.update(visible=False)
+    )
 
     return fig
 
@@ -50,9 +63,12 @@ def plotly_ohlcv_indics(ohlcv_df, indic_dict={},
 
     nb_indics = len(indic_dict)
 
+    secondaryy_specs = [[{"secondary_y": True}]] + \
+        [[{"secondary_y": False}]*nb_indics]
     fig = make_subplots(rows=nb_indics + 1, cols=1,
                         shared_xaxes=True,
-                        vertical_spacing=0.02)
+                        vertical_spacing=0.02,
+                        specs=secondaryy_specs)
 
     ohlcv_params.setdefault("layout", {})
     ohlcv_params["layout"]["xaxis_rangeslider_visible"] = False
