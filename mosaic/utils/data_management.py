@@ -2,6 +2,7 @@
 # ============================
 import pandas as pd
 import numpy as np
+import itertools
 
 # Misc functions
 # --------------
@@ -41,3 +42,8 @@ def prepare_returns_indic(ret_dfd, indic):
     ret_indic_df = pd.concat(ret_indic_list, axis=0)
 
     return ret_indic_df
+
+
+def compute_combinations(**params_dict):
+    keys, values = zip(*params_dict.items())
+    return [dict(zip(keys, v)) for v in itertools.product(*values)]

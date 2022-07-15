@@ -33,6 +33,15 @@ class InfluxDataSource(DataSource):
         for tag in sorted(self.tags.keys()):
             self.key += f'.{tag}:{self.tags.get(tag)}'
 
+    def get_str_info(self):
+
+        str_info = []
+        str_info.append(self.name)
+        str_info.append(self.collection)
+        tags_str = ':'.join(self.tags.values())
+        str_info.append(tags_str)
+        return "_".join(str_info)
+
     def accept(self, message: IndicatorMessage):
 
         if self.name != message.measurement:

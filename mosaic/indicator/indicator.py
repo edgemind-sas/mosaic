@@ -40,10 +40,8 @@ class Indicator(BaseModel):
         return cls(**config)
 
     def compute(self, *data):
-
-        logging.error(
+        raise NotImplementedError(
             "Generic indicator type doesn't have a compute indicator implementation")
-        return {}
 
 
 class IndicatorOHLCV(Indicator):
