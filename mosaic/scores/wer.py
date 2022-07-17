@@ -3,6 +3,9 @@ import pandas as pd
 from pydantic import Field, PrivateAttr
 from ..indicator import ReturnsCloseIndicator, ReturnsHighIndicator, ReturnsLowIndicator
 from . import ScoreOHLCV
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import plotly.express as px
 
 import pkg_resources
 
@@ -20,7 +23,7 @@ class WERScore(ScoreOHLCV):
     period_name: str = \
         Field("period", description="Returns period column index name")
     period_fmt: str = \
-        Field(None, description="Returns columns format")
+        Field(None, description="Period columns format")
     returns_hlc: typing.Dict[str, PandasDataFrame] = \
         Field({}, description="Returns dictionnary")
 
@@ -132,6 +135,23 @@ class WERScore(ScoreOHLCV):
         wer = rho_high_base*pi_high + rho_low_base*pi_low + rho_close_base*pi_c
 
         return wer
+
+    def plotly(self, indic=None, layout={}, **params):
+
+        score = self.compute(indic=indic, **params)
+        score_bis = pd.melt(score, ignore_index=False,
+                            var_name=self.period_name,
+                            value_name="returns").reset_index()
+
+        fig = px.line(score_bis,
+                      x=self.period_name,
+                      y="returns",
+                      color=indic.name,
+                      markers=True)
+        fig.layout.yaxis.tickformat = ',.4'
+
+        fig.update_layout(**layout)
+        return fig
 
 
 class PWERScore(WERScore):
