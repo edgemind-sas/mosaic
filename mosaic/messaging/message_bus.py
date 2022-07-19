@@ -32,7 +32,6 @@ class MessageConsumer(MessageBase):
 
 class MessageProducer(MessageBase):
 
-    topic: str = Field(None)
     producer: Any = None
 
     def _get_producer(self):
@@ -40,10 +39,8 @@ class MessageProducer(MessageBase):
             self.producer = KafkaProducer(bootstrap_servers=self.host)
         return self.producer
 
-    def send_message(self, message, topic=None, key=None, headers={}):
+    def send_message(self, message, topic, key=None, headers={}):
 
-        if topic is None:
-            topic = self.topic
         if key is not None and isinstance(key, str):
             key = key.encode('utf-8')
 

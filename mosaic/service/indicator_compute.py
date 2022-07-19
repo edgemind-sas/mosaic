@@ -1,8 +1,9 @@
 import logging
+from re import I
 from typing import Any, Dict, List
 
 from mosaic.indicator.indicator_message import IndicatorMessage
-from pandas import DataFrame
+from pandas import DataFrame, Timestamp
 from ..database import DbClient, InfluxDataSource
 from ..messaging import MessageProducer
 from ..messaging import MessageConsumer
@@ -73,6 +74,7 @@ class IndicatorCompute(BaseModel):
             logging.info(f'{index} : {newIndicator.to_line_protocol()}')
 
             self.message_producer.send_message(newIndicator.to_line_protocol(),
+                                               topic=self.write_topic,
                                                key=indicator.output.key,
                                                headers={"collection": indicator.output.collection})
 
@@ -98,3 +100,38 @@ class IndicatorCompute(BaseModel):
         logging.info(f'Listen to topics {topics}')
 
         self.message_consumer.listen(callback=self.new_message, topics=topics)
+
+
+class IndicatorHistoryCompute(BaseModel):
+
+    indicators: List[IndicatorWrapper] = Field(...)
+    db_client: DbClient = Field(...)
+    from_date: Timestamp = Field(...)
+    to_date: Timestamp = Field(...)
+
+    def save_indicator(self, values: DataFrame, indicator: IndicatorWrapper):
+
+        if len(values) == 0:
+            return
+
+        self.db_client.write_df(values, datasource=indicator.output)
+
+    def start(self):
+
+        for indicator in self.indicators:
+            sources_data = []
+
+            for source in indicator.input:
+                real_start = self.from_date - \
+                    (source.period * indicator.indicator_impl.history_bw)
+                real_stop = self.to_date + \
+                    (source.period * indicator.indicator_impl.history_fw)
+
+                data = self.db_client.get_data(
+                    source=source, start=real_start, stop=real_stop)
+
+                sources_data.append(data)
+
+            result = indicator.indicator_impl.compute(*sources_data)
+
+            self.save_indicator(result, indicator)

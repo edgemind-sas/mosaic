@@ -24,4 +24,5 @@ class DataWritter(BaseModel):
             message.value, topic=measure, key=message.key)
 
     def start(self):
-        self.message_consumer.listen(self.new_message)
+        self.message_consumer.listen(
+            self.new_message, topics=[self.write_topic])
