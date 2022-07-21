@@ -75,11 +75,7 @@ class RangeIndexIndicator(IndicatorOHLCV):
             indic_df[self.var_close_min]
 
         indic_df[self.indic_name] = \
-<<<<<<< HEAD
-            2*(indic_df[self.var_close_max] -
-=======
             2*(data_close -
->>>>>>> dev-indic_sri
                indic_df[self.var_close_min]).div(close_range) - 1
         indic_df[self.indic_d_name] = pd.cut(indic_df[self.indic_name],
                                              bins=self.levels_all,
@@ -88,22 +84,14 @@ class RangeIndexIndicator(IndicatorOHLCV):
 
         return indic_df
 
-<<<<<<< HEAD
-    def plotly(self, ohlcv_df, layout={}, **params):
-=======
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, **params):
->>>>>>> dev-indic_sri
 
         var_open = self.ohlcv_names.get("open", "open")
         var_high = self.ohlcv_names.get("high", "high")
         var_low = self.ohlcv_names.get("low", "low")
         var_close = self.ohlcv_names.get("close", "close")
 
-<<<<<<< HEAD
-        indic_df = self.compute(ohlcv_df)
-=======
         indic_df = self.compute(ohlcv_df).reset_index().dropna()
->>>>>>> dev-indic_sri
 
         fig = make_subplots(rows=2, cols=1,
                             shared_xaxes=True,
@@ -116,8 +104,6 @@ class RangeIndexIndicator(IndicatorOHLCV):
                                      close=ohlcv_df[var_close], name="OHLC"),
                       row=1, col=1)
 
-<<<<<<< HEAD
-=======
         color_indic = px.colors.qualitative.T10[0]
         fig.add_trace(go.Scatter(
             x=indic_df["time"],
@@ -148,23 +134,10 @@ class RangeIndexIndicator(IndicatorOHLCV):
         ),
             row=2, col=1)
 
->>>>>>> dev-indic_sri
         layout["xaxis_rangeslider_visible"] = False
         fig.update_layout(**layout)
 
         # include a go.Bar trace for volumes
-<<<<<<< HEAD
-        fig2 = px.line(indic_df.reset_index().dropna(),
-                       x="time",
-                       y=self.indic_name,
-                       markers=True)
-
-        # fig2.update_traces(mode="lines+markers")
-        fig.add_trace(fig2.data[0],
-                      row=2, col=1)
-
-        return fig
-=======
         # fig2 = px.line(indic_df,
         #                x="time",
         #                y=self.indic_name,
@@ -178,29 +151,12 @@ class RangeIndexIndicator(IndicatorOHLCV):
             return fig, indic_df
         else:
             return fig
->>>>>>> dev-indic_sri
 
 
 class SRIIndicator(RangeIndexIndicator):
     """Support range index"""
     window: int = Field(
         0, description="Past time window to compute volume levels")
-<<<<<<< HEAD
-    levels: typing.List[float] = Field(
-        [0.5], description="Positive level bins")
-    indic_fmt: str = Field(
-        "RI", description="Indicator name format")
-    indic_d_fmt: str = Field(
-        "{indic_name}d", description="Discrete indicator name format")
-
-    @property
-    def var_hits_min(self):
-        return self.indic_name + "_hits_min"
-
-    @property
-    def var_hits_max(self):
-        return self.indic_name + "_hits_max"
-=======
     indic_fmt: str = Field(
         "SRI", description="Indicator name format")
     indic_d_fmt: str = Field(
@@ -238,7 +194,6 @@ class SRIIndicator(RangeIndexIndicator):
     def var_hits_d_max(self):
         return self.hits_d_fmt.format(indic_name=self.indic_name,
                                       hits_str="max")
->>>>>>> dev-indic_sri
 
     def compute(self, ohlcv_df):
         """Generalized hammer (GH) indicator"""
@@ -256,9 +211,6 @@ class SRIIndicator(RangeIndexIndicator):
         indic_df[self.var_hits_min] = idx_hits_min.rolling(self.window).sum()
         indic_df[self.var_hits_max] = idx_hits_max.rolling(self.window).sum()
 
-<<<<<<< HEAD
-        return indic_df
-=======
         hits_bins = [-float("inf")] + \
             [x - 0.5 for x in self.hits_levels] + \
             [float("inf")]
@@ -315,4 +267,3 @@ class SRIIndicator(RangeIndexIndicator):
             row=1, col=1)
 
         return fig
->>>>>>> dev-indic_sri
