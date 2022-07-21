@@ -93,14 +93,14 @@ class IndicatorCompute(BaseModel):
 
     def new_message(self, message):
 
-        logging.info(f'Receive new message : \n {message}')
+        logging.info(f'Receive new message : {message}')
         im = IndicatorMessage.from_line_protocol(message.value)
 
         for indicator in self.indicators:
             if indicator.accept_message(im):
 
                 logging.info(
-                    f'\nCompute indicator @ {im.time} : {type(indicator.indicator_impl).__name__} ')
+                    f'Compute indicator @ {im.time} : {type(indicator.indicator_impl).__name__} ')
                 data = self.treat_message(indicator, im)
                 logging.info(data)
                 self.save_indicator(data, indicator)
