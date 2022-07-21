@@ -30,7 +30,6 @@ class Indicator(BaseModel):
         cls_sub_dict = {
             cls.__name__: cls for cls in Indicator.get_subclasses(basecls)}
 
-        logging.info(cls_sub_dict)
         clsname = config.pop("class_name")
         cls = cls_sub_dict.get(clsname)
 
