@@ -10,6 +10,7 @@ from ..messaging import MessageConsumer
 from mosaic.indicator import Indicator, ReturnsCloseIndicator
 from pydantic import BaseModel, Field
 import numpy as np
+import io
 
 
 class IndicatorWrapper(BaseModel):
@@ -65,10 +66,20 @@ class IndicatorCompute(BaseModel):
         if len(values) == 0:
             return
 
-        for index, row in values.dropna(how='all').iterrows():
+        for (index, row) in values.dropna(how='all').iterrows():
+
             newIndicator = IndicatorMessage()
             newIndicator.tags = indicator.output.tags
-            newIndicator.fields = row.dropna().to_dict()
+
+            for key in row.dropna().to_dict().keys():
+                value = row.dropna().to_dict().get(key)
+
+                # when we are in caregorical column, force str
+                if values[key].dtype.name == "category":
+                    value = str(value)
+
+                newIndicator.fields.update({key: value})
+
             newIndicator.measurement = indicator.output.name
             newIndicator.time = index
 
@@ -119,6 +130,7 @@ class IndicatorHistoryCompute(BaseModel):
 
     def start(self):
 
+        infos = []
         for indicator in self.indicators:
             sources_data = []
 
@@ -142,3 +154,7 @@ class IndicatorHistoryCompute(BaseModel):
             logging.debug(result.to_string())
 
             self.save_indicator(result, indicator)
+            infos.append(
+                {"indicator": indicator, "dataframe": result})
+
+        return infos
