@@ -42,7 +42,8 @@ setup(name='mosaic',
           "kafka-python",
           "influxdb-client",
           "pandas",
-          "ccxt"
+          "ccxt",
+          "plotly",
       ],
       zip_safe=False,
       )
