@@ -23,6 +23,10 @@ class RangeIndexIndicator(IndicatorOHLCV):
         "{indic_name}d", description="Discrete indicator name format")
 
     @property
+    def history_bw(self):
+        return self.window
+
+    @property
     def indic_name(self):
         return self.indic_fmt.format(window=self.window,
                                      levels=self.levels)

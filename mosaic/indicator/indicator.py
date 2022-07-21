@@ -4,8 +4,13 @@ from pydantic import BaseModel, Field
 
 class Indicator(BaseModel):
 
-    history_fw: int = Field(0)
-    history_bw: int = Field(0)
+    @property
+    def history_bw(self):
+        return 0
+
+    @property
+    def history_fw(self):
+        return 0
 
     @classmethod
     def get_subclasses(cls, recursive=True):
