@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Union
+from typing import Any, List, Set, Union
 
 import ccxt
 import numpy as np
@@ -12,9 +12,9 @@ from ..indicator.indicator_message import IndicatorMessage
 class Exchange(BaseModel):
 
     name: str = Field(None)
-    symbol: List[str] = Field([])
-    base_pair: List[str] = Field([])
-    interval: List[str] = Field([])
+    symbol: Set[str] = Field(set())
+    base_pair: Set[str] = Field(set())
+    interval: Set[str] = Field(set())
 
     ccxt_exchange: Any = Field(None)
 
