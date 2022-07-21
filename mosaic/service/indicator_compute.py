@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from mosaic.indicator.indicator_message import IndicatorMessage
 from pandas import DataFrame, Timestamp
 from ..database import DbClient, InfluxDataSource
+from ..database.df_utils import reindex_dataframe
 from ..messaging import MessageProducer
 from ..messaging import MessageConsumer
 from mosaic.indicator import Indicator, ReturnsCloseIndicator
@@ -92,11 +93,14 @@ class IndicatorCompute(BaseModel):
 
     def new_message(self, message):
 
-        logging.info(f'receive new message : {message}')
+        logging.info(f'Receive new message : \n {message}')
         im = IndicatorMessage.from_line_protocol(message.value)
 
         for indicator in self.indicators:
             if indicator.accept_message(im):
+
+                logging.info(
+                    f'\nCompute indicator @ {im.time} : {type(indicator.indicator_impl).__name__} ')
                 data = self.treat_message(indicator, im)
                 logging.info(data)
                 self.save_indicator(data, indicator)
@@ -150,6 +154,9 @@ class IndicatorHistoryCompute(BaseModel):
 
             # remove inf and - inf value
             result.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+            result = reindex_dataframe(
+                result, self.from_date, self.to_date, indicator.output.period)
 
             logging.debug(result.to_string())
 
