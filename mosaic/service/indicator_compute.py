@@ -9,6 +9,7 @@ from ..messaging import MessageProducer
 from ..messaging import MessageConsumer
 from mosaic.indicator import Indicator, ReturnsCloseIndicator
 from pydantic import BaseModel, Field
+import numpy as np
 
 
 class IndicatorWrapper(BaseModel):
@@ -131,7 +132,13 @@ class IndicatorHistoryCompute(BaseModel):
                     source=source, start=real_start, stop=real_stop)
 
                 sources_data.append(data)
+                logging.debug(data.to_string())
 
             result = indicator.indicator_impl.compute(*sources_data)
+
+            # remove inf and - inf value
+            result.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+            logging.debug(result.to_string())
 
             self.save_indicator(result, indicator)
