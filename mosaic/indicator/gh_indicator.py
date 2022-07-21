@@ -10,7 +10,8 @@ class GHIndicator(IndicatorOHLCV):
         0, description="Body width lower bound to filter too small bodies")
     beta: float = Field(
         2, description="Threshold for absolute ratio between main shadow length and (body + small shadow) length")
-    labels: list = Field([-1, 0, 1], description="Discrete hammer labels")
+    labels: list = Field(
+        ["-1", "0", "1"], description="Discrete hammer labels")
     indic_num_fmt: str = Field(
         "GH", description="Numerical indicator name format")
     indic_d_fmt: str = Field(
