@@ -93,13 +93,20 @@ class DbClient(BaseModel):
                              data_frame_measurement_name=datasource.name)
 
     def delete_indicator(self, datasource: InfluxDataSource, start="2010-01-01T00:00:00Z",
-                         stop="2023-01-01T00:00:00Z"):
+                         stop="2023-01-01T00:00:00Z", with_tags=True):
 
         logging.info(
             f'Deleting indicator {datasource.name} from collection {datasource.collection}')
 
+        predicate = f'_measurement="{datasource.name}"'
+
+        if with_tags:
+            for idx, tag in enumerate(datasource.tags.keys()):
+                predicate += f' AND {tag}="{datasource.tags.get(tag)}"'
+            logging.info(predicate)
+
         self.delete_api.delete(
-            start, stop, f'_measurement="{datasource.name}"', bucket=datasource.collection,
+            start, stop, predicate, bucket=datasource.collection,
             org=self.org)
 
     def close(self):
