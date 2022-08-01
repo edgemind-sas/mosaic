@@ -6,6 +6,7 @@ import typing
 from pydantic import Field
 from .indicator import IndicatorOHLCV
 import pkg_resources
+import numpy as np
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
@@ -40,11 +41,11 @@ class RangeIndexIndicator(IndicatorOHLCV):
 
     @property
     def var_close_min(self):
-        return self.indic_name + "_min"
+        return self.indic_name + "_cmin"
 
     @property
     def var_close_max(self):
-        return self.indic_name + "_max"
+        return self.indic_name + "_cmax"
 
     @property
     def levels_all(self):
@@ -167,10 +168,14 @@ class SRIIndicator(RangeIndexIndicator):
         "{indic_name}d", description="Discrete indicator name format")
     hits_levels: typing.List[float] = Field(
         [2, 4], description="Range hits levels")
+    low_str: str = Field(
+        "low", description="Lower range bound name")
+    high_str: str = Field(
+        "high", description="Higher range bound name")
     hits_fmt: str = Field(
-        "{indic_name}_hits_{hits_str}", description="Range hit indicator name format")
+        "{indic_name}_nhits_{hits_str}", description="Range hit indicator name format")
     hits_d_fmt: str = Field(
-        "{indic_name}d_hits_{hits_str}", description="Discrete range hit indicator name format")
+        "{indic_name}d_nhits_{hits_str}", description="Discrete range hit indicator name format")
 
     @property
     def hits_d_labels(self):
@@ -180,50 +185,105 @@ class SRIIndicator(RangeIndexIndicator):
             [f"{int(self.hits_levels[-1])}+"]
 
     @property
-    def var_hits_min(self):
+    def var_nhits_low(self):
         return self.hits_fmt.format(indic_name=self.indic_name,
-                                    hits_str="min")
+                                    hits_str=self.low_str)
 
     @property
-    def var_hits_max(self):
+    def var_nhits_high(self):
         return self.hits_fmt.format(indic_name=self.indic_name,
-                                    hits_str="max")
+                                    hits_str=self.high_str)
 
     @property
-    def var_hits_d_min(self):
+    def var_nhits_d_low(self):
         return self.hits_d_fmt.format(indic_name=self.indic_name,
-                                      hits_str="min")
+                                      hits_str=self.low_str)
 
     @property
-    def var_hits_d_max(self):
+    def var_nhits_d_high(self):
         return self.hits_d_fmt.format(indic_name=self.indic_name,
-                                      hits_str="max")
+                                      hits_str=self.high_str)
 
     def compute(self, ohlcv_df):
-        """Generalized hammer (GH) indicator"""
+        """Compute method"""
 
         # OHLCV variable identification
-        var_close = self.ohlcv_names.get("close", "close")
         var_low = self.ohlcv_names.get("low", "low")
         var_high = self.ohlcv_names.get("high", "high")
 
         indic_df = super().compute(ohlcv_df)
 
-        idx_hits_min = ohlcv_df[var_low] <= indic_df[self.var_close_min]
-        idx_hits_max = ohlcv_df[var_high] >= indic_df[self.var_close_max]
+        ohlcv_low_shift_df = pd.concat([ohlcv_df[var_low].shift(i).rename(i)
+                                        for i in range(self.window)], axis=1)
+        indic_bmin_dup_df = pd.concat([indic_df[self.var_close_min].rename(i)
+                                       for i in range(self.window)], axis=1)
+        indic_df[self.var_nhits_low] = \
+            (ohlcv_low_shift_df < indic_bmin_dup_df).sum(axis=1).astype(float)
 
-        indic_df[self.var_hits_min] = idx_hits_min.rolling(self.window).sum()
-        indic_df[self.var_hits_max] = idx_hits_max.rolling(self.window).sum()
+        ohlcv_high_shift_df = pd.concat([ohlcv_df[var_high].shift(i).rename(i)
+                                        for i in range(self.window)], axis=1)
+        indic_bmax_dup_df = pd.concat([indic_df[self.var_close_max].rename(i)
+                                       for i in range(self.window)], axis=1)
+        indic_df[self.var_nhits_high] = \
+            (ohlcv_high_shift_df > indic_bmax_dup_df).sum(axis=1).astype(float)
 
         hits_bins = [-float("inf")] + \
             [x - 0.5 for x in self.hits_levels] + \
             [float("inf")]
-        indic_df[self.var_hits_d_min] = \
-            pd.cut(indic_df[self.var_hits_min],
+        indic_df[self.var_nhits_d_low] = \
+            pd.cut(indic_df[self.var_nhits_low],
                    bins=hits_bins,
                    labels=self.hits_d_labels)
-        indic_df[self.var_hits_d_max] = \
-            pd.cut(indic_df[self.var_hits_max],
+        indic_df[self.var_nhits_d_high] = \
+            pd.cut(indic_df[self.var_nhits_high],
+                   bins=hits_bins,
+                   labels=self.hits_d_labels)
+
+        return indic_df
+
+    def compute_nhits_low_point(self, bmin, ohlcv_low_window):
+        """Helpers for original slow compute method"""
+
+        return np.nan if np.isnan(bmin) \
+            else (ohlcv_low_window < bmin).sum()
+
+    def compute_nhits_high_point(self, bmax, ohlcv_high_window):
+        """Helpers for original slow compute method"""
+        return np.nan if np.isnan(bmax) \
+            else (ohlcv_high_window > bmax).sum()
+
+    def compute_bis(self, ohlcv_df):
+        """Original slow compute method"""
+
+        # OHLCV variable identification
+        var_low = self.ohlcv_names.get("low", "low")
+        var_high = self.ohlcv_names.get("high", "high")
+
+        indic_df = super().compute(ohlcv_df)
+
+        nhits_list = [
+            (self.compute_nhits_low_point(
+                cmin, ohlcv_df[var_low].iloc[(i - self.window + 1):(i+1)]),
+             self.compute_nhits_high_point(
+                cmax, ohlcv_df[var_high].iloc[(i - self.window + 1):(i+1)]))
+            for i, (cmin, cmax) in enumerate(zip(indic_df[self.var_close_min],
+                                                 indic_df[self.var_close_max]))]
+
+        nhits_df = \
+            pd.DataFrame(nhits_list,
+                         columns=[self.var_nhits_low, self.var_nhits_high],
+                         index=indic_df.index)
+        indic_df[nhits_df.columns] = nhits_df
+
+        hits_bins = [-float("inf")] + \
+            [x - 0.5 for x in self.hits_levels] + \
+            [float("inf")]
+        indic_df[self.var_nhits_d_low] = \
+            pd.cut(indic_df[self.var_nhits_low],
+                   bins=hits_bins,
+                   labels=self.hits_d_labels)
+        indic_df[self.var_nhits_d_high] = \
+            pd.cut(indic_df[self.var_nhits_high],
                    bins=hits_bins,
                    labels=self.hits_d_labels)
 
@@ -242,31 +302,31 @@ class SRIIndicator(RangeIndexIndicator):
 
         hits_min_marker_color = \
             [hits_color_palette[i]
-             for i in indic_df[self.var_hits_d_min].cat.codes]
+             for i in indic_df[self.var_nhits_d_low].cat.codes]
         fig.add_trace(go.Scatter(
             x=indic_df["time"],
             y=indic_df[self.var_close_min],
-            name=self.var_hits_min,
+            name=self.var_nhits_low,
             mode='markers',
             showlegend=False,
             marker_color=hits_min_marker_color,
             marker_size=4,
-            customdata=indic_df[[self.var_hits_min, self.var_hits_d_min]],
+            customdata=indic_df[[self.var_nhits_low, self.var_nhits_d_low]],
             hovertemplate=hits_hovertemplate),
             row=1, col=1)
 
         hits_max_marker_color = \
             [hits_color_palette[i]
-             for i in indic_df[self.var_hits_d_max].cat.codes]
+             for i in indic_df[self.var_nhits_d_high].cat.codes]
         fig.add_trace(go.Scatter(
             x=indic_df["time"],
             y=indic_df[self.var_close_max],
-            name=self.var_hits_max,
+            name=self.var_nhits_high,
             mode='markers',
             showlegend=False,
             marker_color=hits_max_marker_color,
             marker_size=4,
-            customdata=indic_df[[self.var_hits_max, self.var_hits_d_max]],
+            customdata=indic_df[[self.var_nhits_high, self.var_nhits_d_high]],
             hovertemplate=hits_hovertemplate),
             row=1, col=1)
 

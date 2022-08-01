@@ -139,14 +139,22 @@ class WERScore(ScoreOHLCV):
     def plotly(self, indic=None, layout={}, **params):
 
         score = self.compute(indic=indic, **params)
+
         score_bis = pd.melt(score, ignore_index=False,
                             var_name=self.period_name,
-                            value_name="returns").reset_index()
+                            value_name="returns")
+        indics_names_joined = "|".join(score_bis.index.names)
+        score_bis[indics_names_joined] = \
+            score_bis.index.map(lambda x: "|".join([str(i) for i in x]))
+        score_bis.reset_index(drop=True, inplace=True)
 
+        # ipdb.set_trace()
+
+        # MANAGE MULTINDEX CASE
         fig = px.line(score_bis,
                       x=self.period_name,
                       y="returns",
-                      color=indic.name,
+                      color=indics_names_joined,
                       markers=True)
         fig.layout.yaxis.tickformat = ',.4'
 

@@ -44,6 +44,7 @@ setup(name='mosaic',
           "pandas",
           "ccxt",
           "plotly",
+          "pandas-ta",
       ],
       zip_safe=False,
       )
