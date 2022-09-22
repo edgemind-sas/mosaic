@@ -78,6 +78,10 @@ class DbClient(BaseModel):
         if fill_with_NaN:
             df = reindex_dataframe(
                 df, start_date_ts,  stop_date_ts, source.period)
+          
+            # check if there is some NaN
+            count = len(df[df.isnull().any(axis='columns')])
+            logging.warning(f'There is {count} missing data in source {source.get_str_info()}')
 
         return df
 
