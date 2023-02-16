@@ -1,15 +1,24 @@
-import logging
+import pandas as pd
 from pydantic import BaseModel, Field
+from ..utils import lag as lagfun
+import warnings
 
 
 class Indicator(BaseModel):
 
+    lag: int = Field(0, description="Use `offset` attribute of compute method instead")
+
+    offset: int = Field(0, description="Use to return indic_(t - offset)")
+
+    offset_fmt: str = Field("{indic_name}[{offset}]",
+                            description="Offset format for columns naming")
+    
     @property
-    def history_bw(self):
-        return 0
+    def bw_window(self):
+        return self.offset
 
     @property
-    def history_fw(self):
+    def fw_window(self):
         return 0
 
     @classmethod
@@ -44,9 +53,36 @@ class Indicator(BaseModel):
 
         return cls(**config)
 
-    def compute(self, *data):
-        raise NotImplementedError(
-            "Generic indicator type doesn't have a compute indicator implementation")
+    def apply_lag(self, indic, lag=None):
+
+        warnings.warn("apply_lag is deprecated use apply_offset instead",
+                      DeprecationWarning)
+
+        lag_to_apply = lag if not(lag is None) else self.lag
+            
+        return lagfun(indic, lag_to_apply) if lag_to_apply != 0 else indic
+
+    def apply_offset(self, indic):
+
+        indic_offset = indic.shift(self.offset)
+        if isinstance(indic_offset, pd.DataFrame):
+            indic_offset.columns = [self.offset_fmt.format(
+                indic_name=col, offset=-self.offset) for col in indic_offset.columns]
+        else:
+            indic_offset.name = \
+                self.offset_fmt.format(
+                    indic_name=indic_offset.name,
+                    offset=-self.offset)
+
+        return indic_offset
+    
+    def compute(self, *data, offset=None, **kwrds):
+
+        if not (offset is None):
+            self.offset = offset
+
+        # raise NotImplementedError(
+        #     "Generic indicator type doesn't have a compute indicator implementation")
 
 
 class IndicatorOHLCV(Indicator):

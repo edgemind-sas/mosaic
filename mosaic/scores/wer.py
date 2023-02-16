@@ -1,6 +1,6 @@
 import typing
 import pandas as pd
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from ..indicator import ReturnsCloseIndicator, ReturnsHighIndicator, ReturnsLowIndicator
 from . import ScoreOHLCV
 from plotly.subplots import make_subplots
@@ -15,6 +15,7 @@ if 'ipdb' in installed_pkg:
 
 PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
+
 
 
 class WERScore(ScoreOHLCV):
@@ -136,11 +137,13 @@ class WERScore(ScoreOHLCV):
 
         return wer
 
-    def plotly(self, indic=None, layout={}, **params):
+    def plotly(self, indic=None, layout={}, score_thresh_min=-float('inf'), **params):
 
         score = self.compute(indic=indic, **params)
 
-        score_bis = pd.melt(score, ignore_index=False,
+        score_sel = score.loc[(score > score_thresh_min).all(axis=1)]
+                                  
+        score_bis = pd.melt(score_sel, ignore_index=False,
                             var_name=self.period_name,
                             value_name="returns")
         indics_names_joined = "|".join(score_bis.index.names)
@@ -148,9 +151,7 @@ class WERScore(ScoreOHLCV):
             score_bis.index.map(lambda x: "|".join([str(i) for i in x]))
         score_bis.reset_index(drop=True, inplace=True)
 
-        # ipdb.set_trace()
 
-        # MANAGE MULTINDEX CASE
         fig = px.line(score_bis,
                       x=self.period_name,
                       y="returns",
@@ -167,7 +168,8 @@ class PWERScore(WERScore):
     def compute(self,
                 indic,
                 level_high: float = 0.5,
-                level_low: float = 0.5):
+                level_low: float = 0.5,
+                adj_occ=True):
         """
         level_high: [0,1] = High returns expected level
         level_low: [0,1] = Low returns expected level
@@ -180,6 +182,12 @@ class PWERScore(WERScore):
                                     indic=indic)
         pwer = wer_indic - wer_ref
 
+        if adj_occ:
+            # Compute occurrences
+            indic_occ = indic.value_counts()
+            # Compute return w/r to indic occurrences
+            pwer = pwer.multiply(indic_occ, axis=0)
+        
         return pwer
 
 
@@ -202,7 +210,8 @@ class PAWERScore(AWERScore):
 
     def compute(self,
                 indic,
-                level_risk: float = 0.5):
+                level_risk: float = 0.5,
+                adj_occ=True):
         """
         level_risk: [0,1] = High returns expected level
         """
@@ -212,4 +221,58 @@ class PAWERScore(AWERScore):
                                      indic=indic)
         pawer = awer_indic - awer_ref
 
+        if adj_occ:
+            # Compute occurrences
+            indic_occ = indic.value_counts()
+            # Compute return w/r to indic occurrences
+            #ipdb.set_trace()
+            pawer = pawer.multiply(indic_occ, axis=0)
+
         return pawer
+
+
+class PAWER2Score(PAWERScore):
+
+    def compute(self,
+                indic,
+                level_risk: float = 0.5,
+                adj_occ=True):
+        """
+        level_risk: [0,1] = High returns expected level
+        """
+        pawer = super().compute(
+            indic=indic,
+            level_risk=level_risk,
+            adj_occ=adj_occ)
+
+        indic_names_joined = "|".join(pawer.index.names)
+        indic_conf = pd.Series(pawer.index.map(lambda x: "|".join([str(i) for i in x])),
+                               index=pawer.index,
+                               name=indic_names_joined)
+
+        indic_bis = indic.dropna()
+        var_to_joined = pawer.index.names
+        indic_bis[indic_names_joined] = indic_bis[var_to_joined[0]].astype(str)
+        for var in var_to_joined[1:]:
+            indic_bis[indic_names_joined] = \
+                indic_bis[indic_names_joined].str.cat(
+                    indic_bis[var].astype(str), sep="|")
+
+        tdelta = indic.index[1] - indic.index[0]
+
+        indic_occ_df = \
+            pd.concat(
+                [indic_bis.groupby(indic_names_joined)[indic_names_joined]\
+                 .rolling((hrz + 1)*tdelta)\
+                 .count()\
+                 .groupby(level=0)\
+                 .mean()\
+                 .rename(hrz)  for hrz in self.horizon], axis=1)
+
+        indic_occ_bis_df = \
+            indic_conf.reset_index()\
+                      .set_index(indic_names_joined)\
+                      .join(indic_occ_df)\
+                      .set_index(var_to_joined)
+
+        return pawer.div(indic_occ_bis_df)

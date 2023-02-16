@@ -2,6 +2,10 @@ import typing
 import pandas as pd
 from pydantic import Field
 from .indicator import IndicatorOHLCV
+import pkg_resources
+installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
+if 'ipdb' in installed_pkg:
+    import ipdb  # noqa: F401
 
 
 class ReturnsBaseIndicator(IndicatorOHLCV):
@@ -27,7 +31,6 @@ class ReturnsCloseIndicator(ReturnsBaseIndicator):
 
         close_var = self.ohlcv_names.get("close", "close")
         close_pm1 = ohlcv_df[close_var].shift(1)
-
         ret_list = []
         for k in self.horizon:
             if k >= 0:

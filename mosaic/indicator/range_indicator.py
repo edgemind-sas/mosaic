@@ -40,6 +40,10 @@ class RangeIndexIndicator(IndicatorOHLCV):
             levels=self.levels)
 
     @property
+    def indic_d_names(self):
+        return [self.indic_d_name]
+
+    @property
     def var_close_min(self):
         return self.indic_name + "_cmin"
 
@@ -57,10 +61,10 @@ class RangeIndexIndicator(IndicatorOHLCV):
         nb_pos_bins = len(self.levels)
 
         return [f"{k + 1 if k > 0 else ''}-" for k in reversed(range(nb_pos_bins))] + \
-            ["="] + \
+            ["~"] + \
             [f"{k + 1 if k > 0 else ''}+" for k in range(nb_pos_bins)]
 
-    def compute(self, ohlcv_df):
+    def compute(self, ohlcv_df, lag=None, discrete_only=False):
         """Generalized hammer (GH) indicator"""
 
         # OHLCV variable identification
@@ -87,7 +91,10 @@ class RangeIndexIndicator(IndicatorOHLCV):
                                              labels=self.labels,
                                              include_lowest=True)
 
-        return indic_df
+        if discrete_only:
+            indic_df = indic_df[self.indic_d_names]
+            
+        return self.apply_lag(indic_df, lag=lag)
 
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, **params):
 
@@ -96,7 +103,7 @@ class RangeIndexIndicator(IndicatorOHLCV):
         var_low = self.ohlcv_names.get("low", "low")
         var_close = self.ohlcv_names.get("close", "close")
 
-        indic_df = self.compute(ohlcv_df).reset_index().dropna()
+        indic_df = self.compute(ohlcv_df, lag=0).reset_index().dropna()
 
         fig = make_subplots(rows=2, cols=1,
                             shared_xaxes=True,
@@ -178,6 +185,10 @@ class SRIIndicator(RangeIndexIndicator):
         "{indic_name}d_nhits_{hits_str}", description="Discrete range hit indicator name format")
 
     @property
+    def indic_d_names(self):
+        return super().indic_d_names + [self.var_nhits_d_low, self.var_nhits_d_high]
+
+    @property
     def hits_d_labels(self):
         return [f"{int(self.hits_levels[0])-1}-"] + \
             [f"{int(x)}-{int(y)-1}"
@@ -204,15 +215,15 @@ class SRIIndicator(RangeIndexIndicator):
         return self.hits_d_fmt.format(indic_name=self.indic_name,
                                       hits_str=self.high_str)
 
-    def compute(self, ohlcv_df):
+    def compute(self, ohlcv_df, lag=None, discrete_only=False):
         """Compute method"""
 
         # OHLCV variable identification
         var_low = self.ohlcv_names.get("low", "low")
         var_high = self.ohlcv_names.get("high", "high")
 
-        indic_df = super().compute(ohlcv_df)
-
+        indic_df = super().compute(ohlcv_df, lag=0)
+        
         ohlcv_low_shift_df = pd.concat([ohlcv_df[var_low].shift(i).rename(i)
                                         for i in range(self.window)], axis=1)
         indic_bmin_dup_df = pd.concat([indic_df[self.var_close_min].rename(i)
@@ -239,7 +250,10 @@ class SRIIndicator(RangeIndexIndicator):
                    bins=hits_bins,
                    labels=self.hits_d_labels)
 
-        return indic_df
+        if discrete_only:
+            indic_df = indic_df[self.indic_d_names]
+
+        return self.apply_lag(indic_df, lag=lag)
 
     def compute_nhits_low_point(self, bmin, ohlcv_low_window):
         """Helpers for original slow compute method"""
@@ -251,43 +265,6 @@ class SRIIndicator(RangeIndexIndicator):
         """Helpers for original slow compute method"""
         return np.nan if np.isnan(bmax) \
             else (ohlcv_high_window > bmax).sum()
-
-    def compute_bis(self, ohlcv_df):
-        """Original slow compute method"""
-
-        # OHLCV variable identification
-        var_low = self.ohlcv_names.get("low", "low")
-        var_high = self.ohlcv_names.get("high", "high")
-
-        indic_df = super().compute(ohlcv_df)
-
-        nhits_list = [
-            (self.compute_nhits_low_point(
-                cmin, ohlcv_df[var_low].iloc[(i - self.window + 1):(i+1)]),
-             self.compute_nhits_high_point(
-                cmax, ohlcv_df[var_high].iloc[(i - self.window + 1):(i+1)]))
-            for i, (cmin, cmax) in enumerate(zip(indic_df[self.var_close_min],
-                                                 indic_df[self.var_close_max]))]
-
-        nhits_df = \
-            pd.DataFrame(nhits_list,
-                         columns=[self.var_nhits_low, self.var_nhits_high],
-                         index=indic_df.index)
-        indic_df[nhits_df.columns] = nhits_df
-
-        hits_bins = [-float("inf")] + \
-            [x - 0.5 for x in self.hits_levels] + \
-            [float("inf")]
-        indic_df[self.var_nhits_d_low] = \
-            pd.cut(indic_df[self.var_nhits_low],
-                   bins=hits_bins,
-                   labels=self.hits_d_labels)
-        indic_df[self.var_nhits_d_high] = \
-            pd.cut(indic_df[self.var_nhits_high],
-                   bins=hits_bins,
-                   labels=self.hits_d_labels)
-
-        return indic_df
 
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, **params):
 

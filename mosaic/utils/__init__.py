@@ -1,7 +1,9 @@
 from .data_management import \
     lag, \
     prepare_returns_indic, \
-    compute_combinations
+    compute_combinations, \
+    join_obj_columns, \
+    ValueNeighborhood
 
 from .scores import \
     eval_returns_emp_quantiles, \

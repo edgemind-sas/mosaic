@@ -5,3 +5,4 @@ from .returns_indicator import ReturnsCloseIndicator, ReturnsHighIndicator, Retu
 from .volume_indicator import MVLIndicator
 from .range_indicator import RangeIndexIndicator, SRIIndicator
 from .trend_indicator import RSIIndicator
+from .ml_model import ReturnsHLCModel

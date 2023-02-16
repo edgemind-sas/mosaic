@@ -19,15 +19,15 @@ class RSIIndicator(IndicatorOHLCV):
     levels: typing.List[float] = Field(
         [30, 70], description="Discretization levels")
     indic_fmt: str = Field(
-        "RSI", description="Indicator name format")
+        "RSI{window}", description="Indicator name format")
     indic_d_fmt: str = Field(
         "{indic_name}d", description="Discrete indicator name format")
     mode: str = Field(
         "classic", description="Calulation mode 'classic' or 'wilder'")
 
     @property
-    def history_bw(self):
-        return self.window
+    def bw_window(self):
+        return super().bw_window + self.window
 
     @property
     def indic_name(self):
@@ -42,14 +42,25 @@ class RSIIndicator(IndicatorOHLCV):
             levels=self.levels)
 
     @property
+    def indic_name_offset(self):
+        return self.offset_fmt.format(indic_name=self.indic_name,
+                                      offset=-self.offset)
+
+    @property
+    def indic_d_name_offset(self):
+        return self.offset_fmt.format(indic_name=self.indic_d_name,
+                                      offset=-self.offset)
+    
+    @property
     def labels(self):
         return [f"{int(self.levels[0])}-"] + \
             [f"{int(x)}-{int(y)}"
              for x, y in zip(self.levels[:-1], self.levels[1:])] + \
             [f"{int(self.levels[-1])}+"]
 
-    def compute(self, ohlcv_df):
-        """Generalized hammer (GH) indicator"""
+    def compute(self, ohlcv_df, **kwrds):
+        """Compute RSI"""
+        super().compute(ohlcv_df, **kwrds)
 
         # OHLCV variable identification
         var_close = self.ohlcv_names.get("close", "close")
@@ -80,7 +91,7 @@ class RSIIndicator(IndicatorOHLCV):
                    labels=self.labels)
 
         # ipdb.set_trace()
-        return indic_df
+        return self.apply_offset(indic_df)
 
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, **params):
 
