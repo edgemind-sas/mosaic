@@ -64,6 +64,9 @@ class Indicator(BaseModel):
 
     def apply_offset(self, indic):
 
+        if not self.offset:
+            return indic
+        
         indic_offset = indic.shift(self.offset)
         if isinstance(indic_offset, pd.DataFrame):
             indic_offset.columns = [self.offset_fmt.format(

@@ -108,7 +108,7 @@ class WERScore(ScoreOHLCV):
         #     (ret_indic_df_d["high"] < rho_high) & \
         #     (ret_indic_df_d["low"] > rho_low)
 
-        if not(indic is None):
+        if not (indic is None):
             idx_pi_pm_grp = idx_pi_pm.reset_index().groupby(indic_names)
             # idx_pi_plus_grp = idx_pi_plus.groupby(idx_pi_plus.index)
             # idx_pi_minus_grp = idx_pi_minus.groupby(idx_pi_minus.index)
@@ -132,7 +132,6 @@ class WERScore(ScoreOHLCV):
         # check_ones = pi_plus + pi_minus + pi_pm + pi_c
         # check_true = pi_c == pi_c_check
         # check_ones_bis = pi_high + pi_low + pi_c
-
         wer = rho_high_base*pi_high + rho_low_base*pi_low + rho_close_base*pi_c
 
         return wer
@@ -146,6 +145,7 @@ class WERScore(ScoreOHLCV):
         score_bis = pd.melt(score_sel, ignore_index=False,
                             var_name=self.period_name,
                             value_name="returns")
+        
         indics_names_joined = "|".join(score_bis.index.names)
         score_bis[indics_names_joined] = \
             score_bis.index.map(lambda x: "|".join([str(i) for i in x]))
@@ -225,8 +225,10 @@ class PAWERScore(AWERScore):
             # Compute occurrences
             indic_occ = indic.value_counts()
             # Compute return w/r to indic occurrences
-            #ipdb.set_trace()
             pawer = pawer.multiply(indic_occ, axis=0)
+            #ipdb.set_trace()
+            pawer.index.names = awer_indic.index.names
+
 
         return pawer
 

@@ -380,7 +380,6 @@ class BotLong(BotBase):
 
     def dm_tuning_sa(self, ohlcv_df,
                      neighbor_specs: typing.Dict[str, ValueNeighborhood] = {},
-                     temperature=100,
                      cooling_rate=0.99,
                      iter_max=1000,
                      nchanges=None,
@@ -413,14 +412,13 @@ class BotLong(BotBase):
         params_best = params_cur.copy()
         obj_value_cur, tmp = obj_fun(params_cur)
         obj_value_best = obj_value_cur
+        cooling_rate_cur = 1.0
         
         bot_eval_list = []
         for iter in tqdm.tqdm(range(iter_max),
                               disable=not progress_mode,
                               desc="SA Iteration",
                               ):
-            # Reduce the temperature
-            temperature *= cooling_rate
 
             # Choose random neighbor
             params_new = \
@@ -429,11 +427,19 @@ class BotLong(BotBase):
                     nchanges=nchanges)
 
             obj_value_new, bot_new = obj_fun(params_new)
+            obj_value_ret = obj_value_new/obj_value_cur
             obj_value_diff = obj_value_new - obj_value_cur
 
+            # Jump criterion
+            cooling_rate_cur *= cooling_rate
+            jump_crit = 1/(1 + np.exp(obj_value_diff/cooling_rate_cur))
+            
             # Metropolis Hasting criterion
-            mh_crit = np.exp(obj_value_diff/temperature)
-            params_jump_mh = False
+            # Reduce the temperature
+            # temperature *= cooling_rate
+            # jump_crit = np.exp(obj_value_ret/temperature)
+
+            params_jump_accepted = False
             
             if obj_value_new > obj_value_cur:
                 params_cur = params_new.copy()
@@ -444,12 +450,12 @@ class BotLong(BotBase):
             else:
                 # Metropolis Hasting criterion
                 rand_num = np.random.rand()
-                params_jump_mh = mh_crit > rand_num
-                if params_jump_mh:
+                params_jump_accepted = jump_crit < rand_num
+                if params_jump_accepted:
                     params_cur = params_new.copy()
 
             if verbose_mode:
-                log_str = f"[SA Tuning] #Iter = {iter:6d}/{iter_max:6d} | Temp = {temperature:7.3e} | MH = {mh_crit:7.3e} | Obj. cur. = {obj_value_cur:5.3f} | Obj. best. = {obj_value_best:5.3f} {'*'*params_jump_mh}\n\n"\
+                log_str = f"[SA Tuning] #Iter = {iter:6d}/{iter_max:6d} | JC = {jump_crit:7.3e} | Obj. cur. = {obj_value_cur:5.3f} | Obj. best. = {obj_value_best:5.3f} {'*'*params_jump_accepted}\n\n"\
                     f"Current parameters:\n{params_cur}\n\n"\
                     f"Best parameters:\n{params_best}\n\n"
                 sys.stdout.write(log_str)

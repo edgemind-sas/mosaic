@@ -199,7 +199,7 @@ class BotBase(ObjMOSAIC):
         self.evaluate_test()
 
 
-    def run_live(self, dt_cur, ohlcv_df, **kwards):
+    def run_live(self, ohlcv_df, **kwards):
 
         ipdb.set_trace()
         signals = self.decision_model.compute(ohlcv_df, **kwrds)

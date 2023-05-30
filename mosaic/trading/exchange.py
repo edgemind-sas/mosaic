@@ -9,6 +9,7 @@ import ccxt
 import tqdm
 
 import pandas as pd
+from ..core import ObjMOSAIC
 
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -65,25 +66,14 @@ class ExchangeErrors(pydantic.BaseModel):
         return "\n".join(repr_strlist)
 
 
-class ExchangeBase(pydantic.BaseModel):
+class ExchangeBase(ObjMOSAIC):
     name: str = pydantic.Field(
         "binance", description="Exchange name")
 
-    use_testnet: bool = pydantic.Field(
-        True, description="Indicates if we use testnet platform (if exchange has it)")
 
-    live_api_key: str = pydantic.Field(
-        None, description="Exchange API key")
-    live_secret: str = pydantic.Field(
-        None, description="Exchange API secret")
-    testnet_api_key: str = pydantic.Field(
-        None, description="Exchange API key")
-    testnet_secret: str = pydantic.Field(
-        None, description="Exchange API secret")
-
-    portfolio_init_from_exchange: bool = pydantic.Field(
-        True,
-        description="Init portfolio information from exchange")
+    # portfolio_init_from_exchange: bool = pydantic.Field(
+    #     True,
+    #     description="Init portfolio information from exchange")
 
     portfolio: Portfolio = pydantic.Field(
         Portfolio(),
@@ -101,11 +91,15 @@ class ExchangeBase(pydantic.BaseModel):
     errors: ExchangeErrors = pydantic.Field(
         ExchangeErrors(), description="Exchange error tracking")
 
+    ohlcv_names: dict = pydantic.Field(
+        {v: v for v in ["open", "high", "low", "close", "volume"]},
+        description="OHLCV variable name dictionnary")
+
     bkd: typing.Any = pydantic.Field(
         None, description="Exchange backend")
 
-    class Config:
-        arbitrary_types_allowed = True
+    # class Config:
+    #     arbitrary_types_allowed = True
 
     @staticmethod
     def timeframe_to_seconds(timeframe):
@@ -122,8 +116,43 @@ class ExchangeBase(pydantic.BaseModel):
         return self.portfolio.to_df().to_string()
 
 
-class ExchangeCCXT(ExchangeBase):
+class ExchangeOffline(ExchangeBase):
 
+    ohlcv_df: PandasDataFrame = pydantic.Field(
+        None, description="Exchange data")
+
+    def get_ohlcv(self):
+
+        var_open = self.ohlcv_names.get("open", "open")
+        var_low = self.ohlcv_names.get("low", "low")
+        var_high = self.ohlcv_names.get("high", "high")
+
+        quote_current_s = self.ohlcv_df[[
+            var_open, var_low, var_high,
+        ]].stack().rename("quote")\
+                      .reset_index(1, drop=True)
+
+        return quote_current_s, self.ohlcv_df.shift(1)
+
+
+    
+class ExchangeOnline(ExchangeBase):
+
+    use_testnet: bool = pydantic.Field(
+        True, description="Indicates if we use testnet platform (if exchange has it)")
+
+    live_api_key: str = pydantic.Field(
+        None, description="Exchange API key")
+    live_secret: str = pydantic.Field(
+        None, description="Exchange API secret")
+    testnet_api_key: str = pydantic.Field(
+        None, description="Exchange API key")
+    testnet_secret: str = pydantic.Field(
+        None, description="Exchange API secret")
+
+
+class ExchangeCCXT(ExchangeOnline):
+    
     def init_portfolio(self, assets_list):
         if self.portfolio_init_from_exchange:
             self.update_portfolio(assets_list)

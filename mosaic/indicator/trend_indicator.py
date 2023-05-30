@@ -114,7 +114,6 @@ class RSIIndicator(IndicatorOHLCV):
                       row=1, col=1)
 
         color_indic = px.colors.qualitative.T10[0]
-
         fig.add_trace(go.Scatter(
             x=indic_df["time"],
             y=indic_df[self.indic_name],
