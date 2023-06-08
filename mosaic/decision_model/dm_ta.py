@@ -38,6 +38,45 @@ class DML_TA(DMLong):
 
         if self.indic_s is None:
             self.indic_s = pd.Series(np.nan, index=ohlcv_df.index)
+
+    def plotly(self, ohlcv_df, layout={}, ret_signals=False, layout_indic={}, **params):
+
+        signals_raw = self.compute(ohlcv_df, **params)
+
+        signals_buy = signals_raw.loc[signals_raw == 1]
+        signals_buy_trace = go.Scatter(
+            x=signals_buy.index,
+            y=ohlcv_df.loc[signals_buy.index, "close"],
+            mode='markers',
+            marker=dict(color="#FFD700"),
+            name='buy signals')
+
+        signals_sell = signals_raw.loc[signals_raw == 0]
+        signals_sell_trace = go.Scatter(
+            x=signals_sell.index,
+            y=ohlcv_df.loc[signals_sell.index, "close"],
+            mode='markers',
+            marker=dict(color="#C74AFF"),
+            name='sell signals')
+
+        opt_sub = {}
+        if hasattr(self.indic_bkd, "plotly"):
+            fig = self.indic_bkd.plotly(ohlcv_df, layout=layout_indic, **params)
+            opt_sub = dict(row=1, col=1)
+        else:
+            fig = go.Figure()
+        
+        fig.add_trace(signals_buy_trace, **opt_sub)
+        fig.add_trace(signals_sell_trace, **opt_sub)
+
+        fig.update_layout(**layout)
+
+        if ret_signals:
+            return fig, signals_raw
+        else:
+            return fig
+
+
             
 class DML_RSI_params(DMBaseParams):
 
@@ -51,7 +90,6 @@ class DML_RSI_params(DMBaseParams):
         pydantic.Field(70, description="RSI level to trigger a sell signal")
 
 
-
 class DML_RSI(DML_TA):
 
     params: DML_RSI_params = \
@@ -62,7 +100,6 @@ class DML_RSI(DML_TA):
 
         self.indic_bkd = \
             RSIIndicator(window=self.params.window,
-                         levels=[self.params.buy_level, self.params.sell_level],
                          offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
@@ -89,11 +126,21 @@ class DML_RSI2_params(DML_RSI_params):
         pydantic.Field(1, description="Signal confirmation window")
 
     window_conf_change: int = \
-        pydantic.Field(1, description="Change confirmation window")
+        pydantic.Field(0, description="Change confirmation window")
 
     
 class DML_RSI2(DML_RSI):
+    """ RSI2 Decision model adds both parameters :
+    - window_conf_signal : buy/sell signals are produced if buy/sell conditions are met during a winfow of length window_conf_signal.
+    - window_conf_change : buy/sell signals are produced if a change of buy/sell conditions occurre during a window of length window_conf_change.
 
+    A buy signal is set at period p if :
+    - RSI(t) < buy_level during periods [p - window_conf_signal - window_conf_change, p - window_conf_signal]
+    - RSI(t) > buy_level during periods [p - window_conf_change, p]
+    => A buy signal is set at a change of RSI trend
+
+    Analogous process is used for sell signal
+    """
     params: DML_RSI2_params = \
         pydantic.Field(DML_RSI2_params(), description="RSI parameters")
 
@@ -108,7 +155,6 @@ class DML_RSI2(DML_RSI):
 
         self.indic_bkd = \
             RSIIndicator(window=self.params.window,
-                         levels=[self.params.buy_level, self.params.sell_level],
                          offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
@@ -120,24 +166,27 @@ class DML_RSI2(DML_RSI):
             pd.concat([self.indic_s.shift(self.params.window_conf_change + k)
                        for k in range(self.params.window_conf_signal)], axis=1)
 
-        indic_conf_change = \
-            pd.concat([self.indic_s.shift(k)
-                       for k in range(self.params.window_conf_change)], axis=1)
-
-        
         # Confirmation time for buy/sell signals
         indic_conf_signal_buy = \
             (indic_conf_signal < self.params.buy_level).all(axis=1)
         indic_conf_signal_sell = \
             (indic_conf_signal > self.params.sell_level).all(axis=1)
 
-        # Confirmation time for buy/sell trend changes
-        indic_conf_change_buy = \
-            (indic_conf_change > self.params.buy_level).all(axis=1)
-        indic_conf_change_sell = \
-            (indic_conf_change < self.params.sell_level).all(axis=1)
+        if self.params.window_conf_change:
+            indic_conf_change = \
+                pd.concat([self.indic_s.shift(k)
+                           for k in range(self.params.window_conf_change)], axis=1)
 
-        
+            # Confirmation time for buy/sell trend changes
+            indic_conf_change_buy = \
+                (indic_conf_change > self.params.buy_level).all(axis=1)
+            indic_conf_change_sell = \
+                (indic_conf_change < self.params.sell_level).all(axis=1)
+
+        else:
+            indic_conf_change_buy = pd.Series(True, index=ohlcv_df.index)
+            indic_conf_change_sell = pd.Series(True, index=ohlcv_df.index)
+            
         # Go out of buy/sell signal after confirmation time
         idx_buy = indic_conf_signal_buy & indic_conf_change_buy
         idx_sell = indic_conf_signal_sell & indic_conf_change_sell

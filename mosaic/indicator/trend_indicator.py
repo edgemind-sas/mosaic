@@ -17,7 +17,7 @@ class RSIIndicator(IndicatorOHLCV):
     window: int = Field(
         0, description="MA window size used to compute the indicator")
     levels: typing.List[float] = Field(
-        [30, 70], description="Discretization levels")
+        None, description="Discretization levels if None no discretization is performed")
     indic_fmt: str = Field(
         "RSI{window}", description="Indicator name format")
     indic_d_fmt: str = Field(
@@ -29,28 +29,28 @@ class RSIIndicator(IndicatorOHLCV):
     def bw_window(self):
         return super().bw_window + self.window
 
-    @property
-    def indic_name(self):
-        return self.indic_fmt.format(window=self.window,
-                                     levels=self.levels)
+    # @property
+    # def indic_name(self):
+    #     return self.indic_fmt.format(window=self.window,
+    #                                  levels=self.levels)
 
-    @property
-    def indic_d_name(self):
-        return self.indic_d_fmt.format(
-            indic_name=self.indic_name,
-            window=self.window,
-            levels=self.levels)
+    # @property
+    # def indic_d_name(self):
+    #     return self.indic_d_fmt.format(
+    #         indic_name=self.indic_name,
+    #         window=self.window,
+    #         levels=self.levels)
 
-    @property
-    def indic_name_offset(self):
-        return self.offset_fmt.format(indic_name=self.indic_name,
-                                      offset=-self.offset)
+    # @property
+    # def indic_name_offset(self):
+    #     return self.offset_fmt.format(indic_name=self.indic_name,
+    #                                   offset=-self.offset)
 
-    @property
-    def indic_d_name_offset(self):
-        return self.offset_fmt.format(indic_name=self.indic_d_name,
-                                      offset=-self.offset)
-    
+    # @property
+    # def indic_d_name_offset(self):
+    #     return self.offset_fmt.format(indic_name=self.indic_d_name,
+    #                                   offset=-self.offset)
+
     @property
     def labels(self):
         return [f"{int(self.levels[0])}-"] + \
@@ -85,12 +85,12 @@ class RSIIndicator(IndicatorOHLCV):
         else:
             raise ValueError(f"{self.mode} not supported")
 
-        indic_df[self.indic_d_name] = \
-            pd.cut(indic_df[self.indic_name],
-                   bins=[0] + self.levels + [100],
-                   labels=self.labels)
+        if self.levels:
+            indic_df[self.indic_d_name] = \
+                pd.cut(indic_df[self.indic_name],
+                       bins=[0] + self.levels + [100],
+                       labels=self.labels)
 
-        # ipdb.set_trace()
         return self.apply_offset(indic_df)
 
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, **params):
@@ -116,7 +116,7 @@ class RSIIndicator(IndicatorOHLCV):
         color_indic = px.colors.qualitative.T10[0]
         fig.add_trace(go.Scatter(
             x=indic_df["time"],
-            y=indic_df[self.indic_name],
+            y=indic_df[self.indic_name_offset],
             name=self.indic_name,
             mode='markers+lines',
             line_color=color_indic

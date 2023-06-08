@@ -21,6 +21,27 @@ class Indicator(BaseModel):
     def fw_window(self):
         return 0
 
+    @property
+    def indic_name(self):
+        return self.indic_fmt.format(**self.dict())
+
+    @property
+    def indic_d_name(self):
+        return self.indic_d_fmt.format(
+            indic_name=self.indic_name,
+            **self.dict())
+
+    @property
+    def indic_name_offset(self):
+        return self.offset_fmt.format(indic_name=self.indic_name,
+                                      offset=-self.offset)
+
+    @property
+    def indic_d_name_offset(self):
+        return self.offset_fmt.format(indic_name=self.indic_d_name,
+                                      offset=-self.offset)
+
+
     @classmethod
     def get_subclasses(cls, recursive=True):
         """ Enumerates all subclasses of a given class.
