@@ -29,7 +29,7 @@ class DML_TA(DMLong):
 
     @property
     def bw_window(self):
-        return self.indic_bkd.bw_window
+        return self.indic_bkd.bw_length
 
     def compute(self, ohlcv_df, **kwrds):
 

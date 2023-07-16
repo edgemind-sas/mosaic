@@ -27,7 +27,7 @@ class RSIIndicator(IndicatorOHLCV):
 
     @property
     def bw_window(self):
-        return super().bw_window + self.window
+        return super().bw_length + self.window
 
     # @property
     # def indic_name(self):
