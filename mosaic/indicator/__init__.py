@@ -9,3 +9,4 @@ from .ml_model import ReturnsHLCModel
 
 
 from .rsi import RSI
+from .mfi import MFI
