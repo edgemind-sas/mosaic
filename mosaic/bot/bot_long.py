@@ -251,7 +251,7 @@ class BotLong(BotBase):
             shared_xaxes=True,
             vertical_spacing=0.1,
             subplot_titles=('Asset cotation',
-                            'Returns distribution',
+                            'Bot performance',
                             ),
             # column_widths=[0.7, 0.3],
             # specs=[[{"type": "xy"}, {"type": "xy"}],
@@ -475,38 +475,3 @@ class BotLong(BotBase):
         else:
             return dm_cls(params=params_best)
 
-#import numpy as np
-# import random
-
-# def simulated_annealing(objective_function, initial_state, temperature, cooling_rate, num_iter):
-#     """
-#     Simulated Annealing optimization algorithm
-#     """
-#     current_state = initial_state
-#     best_state = initial_state
-#     best_energy = objective_function(initial_state)
-
-#     for i in range(num_iter):
-#         # Reduce the temperature
-#         temperature *= cooling_rate
-
-#         # Choose a random neighbor
-#         neighbor_state = current_state + np.random.normal(scale=0.1, size=current_state.shape)
-
-#         # Calculate the energy difference
-#         current_energy = objective_function(current_state)
-#         neighbor_energy = objective_function(neighbor_state)
-#         energy_difference = neighbor_energy - current_energy
-
-#         # Decide whether to accept the neighbor
-#         if energy_difference < 0:
-#             current_state = neighbor_state
-#             current_energy = neighbor_energy
-#             if current_energy < best_energy:
-#                 best_state = current_state
-#                 best_energy = current_energy
-#         else:
-#             if np.exp(-energy_difference/temperature) > random.random():
-#                 current_state = neighbor_state
-
-#     return best_state, best_energy

@@ -1,10 +1,10 @@
 import pydantic
 import typing
+import sys
 import pandas as pd
-import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pkg_resources
-import tqdm
-from ..utils import compute_combinations
 from .dm_base import DMBase
 #from ..backtest.dm_optim import DMLongOptimizer
 
@@ -37,8 +37,100 @@ class DMLong(DMBase):
         signals_raw.loc[idx_sell] = 0
 
         return signals_raw
+    
+    def plotly(self, ohlcv_df,
+               ret_signals=False,
+               layout={},
+               layout_ohlcv={},
+               layout_indic={},
+               **params):
 
+        signals_raw = self.compute(ohlcv_df, **params)
 
+        buy_style = dict(
+            color="#FFD700",
+        )
+        sell_style = dict(
+            color="#C74AFF",
+        )
+        
+        signals_buy = signals_raw.loc[signals_raw == 1]
+        signals_buy_trace = go.Scatter(
+            x=signals_buy.index,
+            y=ohlcv_df.loc[signals_buy.index, "close"],
+            mode='markers',
+            marker=dict(color=buy_style.get("color")),
+            name='buy signals')
+
+        signals_sell = signals_raw.loc[signals_raw == 0]
+        signals_sell_trace = go.Scatter(
+            x=signals_sell.index,
+            y=ohlcv_df.loc[signals_sell.index, "close"],
+            mode='markers',
+            marker=dict(color=sell_style.get("color")),
+            name='sell signals')
+
+        ohlcv_sub = dict(row=1, col=1)
+        indic_sub = {}
+        if hasattr(self.indic_bkd, "plotly"):
+            fig_indic = self.indic_bkd.plotly(ohlcv_df,
+                                              layout=layout_indic,
+                                              **params)
+            subplot_layout = dict(rows=2, cols=1)
+            indic_sub = dict(row=2, col=1)
+        else:
+            subplot_layout = dict(rows=1, cols=1)
+
+        fig_sp = make_subplots(shared_xaxes=True,
+                               vertical_spacing=0.02,
+                               **subplot_layout)
+
+        var_open = self.ohlcv_names.get("open", "open")
+        var_high = self.ohlcv_names.get("high", "high")
+        var_low = self.ohlcv_names.get("low", "low")
+        var_close = self.ohlcv_names.get("close", "close")
+
+        trace_ohlcv = go.Candlestick(x=ohlcv_df.index,
+                                     open=ohlcv_df[var_open],
+                                     high=ohlcv_df[var_high],
+                                     low=ohlcv_df[var_low],
+                                     close=ohlcv_df[var_close],
+                                     name="OHLC")
+        #fig_ohlcv.update_layout(**layout_ohlcv)
+        fig_sp.add_trace(trace_ohlcv, **ohlcv_sub)
+        fig_sp.add_trace(fig_indic.data[0], **indic_sub)
+            
+        fig_sp.add_trace(signals_buy_trace, **ohlcv_sub)
+        fig_sp.add_trace(signals_sell_trace, **ohlcv_sub)
+        if indic_sub:
+            try:
+                for dt in signals_buy.index:
+                    fig_sp.add_shape(
+                        type="line",
+                        x0=dt, y0=fig_indic.data[0]["y"].min(),
+                        x1=dt, y1=fig_indic.data[0]["y"].max(),
+                        line=dict(color=buy_style.get("color"),
+                                  width=3,
+                                  dash="dot"), **indic_sub)
+
+                for dt in signals_sell.index:
+                    fig_sp.add_shape(
+                        type="line",
+                        x0=dt, y0=fig_indic.data[0]["y"].min(),
+                        x1=dt, y1=fig_indic.data[0]["y"].max(),
+                        line=dict(color=sell_style.get("color"),
+                                  width=3,
+                                  dash="dot"), **indic_sub)
+            except Exception as e:
+                sys.stdout.write("Exception in DMLong.plotly while drawing buy/sell vertical lines on indicators plot :", e)
+
+        layout["xaxis_rangeslider_visible"] = False
+        fig_sp.update_layout(**layout)
+
+        if ret_signals:
+            return fig_sp, signals_raw
+        else:
+            return fig_sp
 
         
 # class DMLongOptimizer(pydantic.BaseModel):

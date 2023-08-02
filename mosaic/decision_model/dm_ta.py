@@ -1,6 +1,5 @@
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import plotly.express as px
 import pandas as pd
 import numpy as np
 import typing
@@ -8,9 +7,8 @@ import pydantic
 from .dm_base import DMBaseParams
 from .dm_long import DMLong
 from ..indicator.indicator import IndicatorOHLCV
-from ..indicator.trend_indicator import RSIIndicator
+from ..indicator.rsi import RSI
 import pkg_resources
-import numpy as np
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
@@ -34,47 +32,10 @@ class DML_TA(DMLong):
     def compute(self, ohlcv_df, **kwrds):
 
         self.indic_s = \
-            self.indic_bkd.compute(ohlcv_df)[self.indic_bkd.indic_name_offset]
-
+            self.indic_bkd.compute(ohlcv_df)[self.indic_bkd.names[0]]
         if self.indic_s is None:
             self.indic_s = pd.Series(np.nan, index=ohlcv_df.index)
 
-    def plotly(self, ohlcv_df, layout={}, ret_signals=False, layout_indic={}, **params):
-
-        signals_raw = self.compute(ohlcv_df, **params)
-
-        signals_buy = signals_raw.loc[signals_raw == 1]
-        signals_buy_trace = go.Scatter(
-            x=signals_buy.index,
-            y=ohlcv_df.loc[signals_buy.index, "close"],
-            mode='markers',
-            marker=dict(color="#FFD700"),
-            name='buy signals')
-
-        signals_sell = signals_raw.loc[signals_raw == 0]
-        signals_sell_trace = go.Scatter(
-            x=signals_sell.index,
-            y=ohlcv_df.loc[signals_sell.index, "close"],
-            mode='markers',
-            marker=dict(color="#C74AFF"),
-            name='sell signals')
-
-        opt_sub = {}
-        if hasattr(self.indic_bkd, "plotly"):
-            fig = self.indic_bkd.plotly(ohlcv_df, layout=layout_indic, **params)
-            opt_sub = dict(row=1, col=1)
-        else:
-            fig = go.Figure()
-        
-        fig.add_trace(signals_buy_trace, **opt_sub)
-        fig.add_trace(signals_sell_trace, **opt_sub)
-
-        fig.update_layout(**layout)
-
-        if ret_signals:
-            return fig, signals_raw
-        else:
-            return fig
 
 
             
@@ -99,8 +60,8 @@ class DML_RSI(DML_TA):
         super().__init__(**params)
 
         self.indic_bkd = \
-            RSIIndicator(window=self.params.window,
-                         offset=offset)
+            RSI(length=self.params.window,
+                offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
 
@@ -154,8 +115,8 @@ class DML_RSI2(DML_RSI):
         super().__init__(**params)
 
         self.indic_bkd = \
-            RSIIndicator(window=self.params.window,
-                         offset=offset)
+            RSI(length=self.params.window,
+                offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
 

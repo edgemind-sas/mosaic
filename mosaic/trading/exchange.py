@@ -122,15 +122,21 @@ class ExchangeOffline(ExchangeBase):
         None, description="Exchange data")
 
     def get_ohlcv(self):
+        """ Transform OHLCV dataframe into a OHL vector to simulate live data.
 
+        For each timestep, the vector contains opening quote value, then
+        low quote value and finally high quote value.
+
+        Then the vector goes to the next timestep and so on.
+        """
         var_open = self.ohlcv_names.get("open", "open")
         var_low = self.ohlcv_names.get("low", "low")
         var_high = self.ohlcv_names.get("high", "high")
-
+        
         quote_current_s = self.ohlcv_df[[
             var_open, var_low, var_high,
         ]].stack().rename("quote")\
-                      .reset_index(1, drop=True)
+                              .reset_index(1, drop=True)
 
         return quote_current_s, self.ohlcv_df.shift(1)
 

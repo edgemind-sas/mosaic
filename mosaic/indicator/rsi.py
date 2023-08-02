@@ -76,7 +76,9 @@ class RSI(IndicatorOHLCV):
             line_color=color_indic
         ), **fig_trace)
 
-        layout["xaxis_rangeslider_visible"] = False
+        if plot_ohlcv:
+            layout["xaxis_rangeslider_visible"] = False
+            
         fig.update_layout(**layout)
 
         if ret_indic:
