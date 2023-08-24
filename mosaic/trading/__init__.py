@@ -1,3 +1,3 @@
 # Trading package
-from .arch import TradingArch
+from .arch import BotTrading, Portfolio
 #from .exchange import ExchangeCCXT

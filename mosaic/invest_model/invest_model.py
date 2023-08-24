@@ -1,42 +1,24 @@
-import logging
 import pydantic
 import typing
+from ..core import ObjMOSAIC
 
 
-class InvestModel(pydantic.BaseModel):
 
-    @classmethod
-    def get_subclasses(cls, recursive=True):
-        """ Enumerates all subclasses of a given class.
+class InvestModelBase(ObjMOSAIC):
+    pass
 
-        # Arguments
-        cls: class. The class to enumerate subclasses for.
-        recursive: bool (default: True). If True, recursively finds all sub-classes.
 
-        # Return value
-        A list of subclasses of `cls`.
-        """
-        sub = cls.__subclasses__()
-        if recursive:
-            for cls in sub:
-                sub.extend(cls.get_subclasses(recursive))
-        return sub
+class InvestLongModel(InvestModelBase):
 
-    @classmethod
-    def from_config(basecls, **config):
+    buy_quote_rate: float = pydantic.Field(
+        1, description="Fraction of quote portfolio to be used to buy asset")
 
-        cls_sub_dict = {
-            cls.__name__: cls for cls in Indicator.get_subclasses(basecls)}
+    sell_base_rate: float = pydantic.Field(
+        1, description="Fraction of base portfolio to be used to sell asset")
 
-        clsname = config.pop("class_name")
-        cls = cls_sub_dict.get(clsname)
+    def get_buy_quote_amount(self, portfolio):
+        return (portfolio.quote_amount +
+                portfolio.quote_exposed)*self.buy_quote_rate
 
-        if cls is None:
-            raise ValueError(
-                f"{clsname} is not a subclass of {basecls.__name__}")
-
-        return cls(**config)
-
-    # def compute(ohlcv_df, indic_df, **kwrds):
-    #     raise NotImplementedError("compute method not implemented")
-
+    def get_sell_base_amount(self, portfolio):
+        return portfolio.base_amount*self.sell_base_rate

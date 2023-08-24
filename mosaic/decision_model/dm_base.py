@@ -84,11 +84,11 @@ class DMBase(ObjMOSAIC):
         description="OHLCV variable name dictionnary")
 
     @property
-    def bw_window(self):
+    def bw_length(self):
         return 0
 
     @property
-    def fw_window(self):
+    def fw_length(self):
         return 0
 
     

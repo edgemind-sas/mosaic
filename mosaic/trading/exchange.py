@@ -1,10 +1,11 @@
-from __future__ import annotations
 
-import logging
+import os
 import pydantic
 import typing
+from tzlocal import get_localzone
+import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import ccxt
 import tqdm
 
@@ -20,16 +21,16 @@ PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
 PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
-class Portfolio(pydantic.BaseModel):
-    balance: dict = pydantic.Field(
-        {}, description="Asserts balance")
-    in_orders: dict = pydantic.Field(
-        {}, description="Assets in orders")
+# class Portfolio(pydantic.BaseModel):
+#     balance: dict = pydantic.Field(
+#         {}, description="Asserts balance")
+#     in_orders: dict = pydantic.Field(
+#         {}, description="Assets in orders")
 
-    def to_df(self):
+#     def to_df(self):
 
-        return pd.DataFrame(data={"balance": self.balance,
-                                  "in_orders": self.in_orders})
+#         return pd.DataFrame(data={"balance": self.balance,
+#                                   "in_orders": self.in_orders})
 
 
 class Fees(pydantic.BaseModel):
@@ -75,9 +76,9 @@ class ExchangeBase(ObjMOSAIC):
     #     True,
     #     description="Init portfolio information from exchange")
 
-    portfolio: Portfolio = pydantic.Field(
-        Portfolio(),
-        description="Portfolio information")
+    # portfolio: Portfolio = pydantic.Field(
+    #     Portfolio(),
+    #     description="Portfolio information")
 
     # quote_currency_balance: float = pydantic.Field(
     #     0, description="Amount of quote currency available")
@@ -98,9 +99,22 @@ class ExchangeBase(ObjMOSAIC):
     bkd: typing.Any = pydantic.Field(
         None, description="Exchange backend")
 
+    logger: typing.Any = pydantic.Field(
+        None, description="Logger")
+
     # class Config:
     #     arbitrary_types_allowed = True
 
+    def dict(self, **kwrds):
+
+        if kwrds["exclude"]:
+            kwrds["exclude"].add("bkd")
+            kwrds["exclude"].add("logger")
+        else:
+            kwrds["exclude"] = {"bkd", "logger"}
+            
+        return super().dict(**kwrds)
+    
     @staticmethod
     def timeframe_to_seconds(timeframe):
         timeframe_to_sec = \
@@ -112,16 +126,18 @@ class ExchangeBase(ObjMOSAIC):
 
         return timeframe_fact*timeframe_nb_sec
 
+    @staticmethod
+    def timeframe_to_timedelta(timeframe):
+        value = int(timeframe[:-1])
+        unit = timeframe[-1]
+        timedelta_unit_map = \
+            {'s': "seconds", 'm': "minutes", 'h': "hours", 'd': "days"}
+        return timedelta(**{timedelta_unit_map.get(unit): value})
+
     def get_portfolio_as_str(self):
         return self.portfolio.to_df().to_string()
 
-
-class ExchangeOffline(ExchangeBase):
-
-    ohlcv_df: PandasDataFrame = pydantic.Field(
-        None, description="Exchange data")
-
-    def get_ohlcv(self):
+    def flatten_ohlcv(self, ohlcv_df):
         """ Transform OHLCV dataframe into a OHL vector to simulate live data.
 
         For each timestep, the vector contains opening quote value, then
@@ -133,12 +149,44 @@ class ExchangeOffline(ExchangeBase):
         var_low = self.ohlcv_names.get("low", "low")
         var_high = self.ohlcv_names.get("high", "high")
         
-        quote_current_s = self.ohlcv_df[[
+        quote_flatten_s = ohlcv_df[[
             var_open, var_low, var_high,
-        ]].stack().rename("quote")\
-                              .reset_index(1, drop=True)
+        ]].stack().rename("quote").reset_index(1, drop=True)
 
-        return quote_current_s, self.ohlcv_df.shift(1)
+        return quote_flatten_s, ohlcv_df.shift(1)
+
+
+# class ExchangeOffline(ExchangeBase):
+
+#     ohlcv_df: PandasDataFrame = pydantic.Field(
+#         None, description="Exchange data")
+
+#     def dict(self, **kwrds):
+
+#         if kwrds["exclude"]:
+#             kwrds["exclude"].add("ohlcv_df")
+#         else:
+#             kwrds["exclude"] = {"ohlcv_df"}
+            
+#         return super().dict(**kwrds)
+
+    # def get_ohlcv(self):
+    #     """ Transform OHLCV dataframe into a OHL vector to simulate live data.
+
+    #     For each timestep, the vector contains opening quote value, then
+    #     low quote value and finally high quote value.
+
+    #     Then the vector goes to the next timestep and so on.
+    #     """
+    #     var_open = self.ohlcv_names.get("open", "open")
+    #     var_low = self.ohlcv_names.get("low", "low")
+    #     var_high = self.ohlcv_names.get("high", "high")
+        
+    #     quote_current_s = self.ohlcv_df[[
+    #         var_open, var_low, var_high,
+    #     ]].stack().rename("quote").reset_index(1, drop=True)
+
+    #     return quote_current_s, self.ohlcv_df.shift(1)
 
 
     
@@ -183,7 +231,7 @@ class ExchangeCCXT(ExchangeOnline):
             {asset: balance_all.get(asset, {}).get("used", 0)
              for asset in assets_list}
 
-    def connect(self, logging=logging):
+    def connect(self):
         if self.use_testnet:
             self.bkd = getattr(ccxt, self.name)({
                 'apiKey': self.testnet_api_key,
@@ -195,7 +243,8 @@ class ExchangeCCXT(ExchangeOnline):
             ipdb.set_trace()
             self.bkd.set_sandbox_mode(True)
 
-            logging.info(f"Connected to the {self.name} testnet exchange")
+            if self.logger:
+                self.logger.info(f"Connected to the {self.name} testnet exchange")
         else:
             self.bkd = getattr(ccxt, self.name)({
                 'apiKey': self.live_api_key,
@@ -215,7 +264,8 @@ class ExchangeCCXT(ExchangeOnline):
                        timeframe="1h",
                        nb_data=2,
                        closed=True,
-                       logging=logging):
+                       index=datetime,
+                       ):
 
         data_ohlcv_var = ["timestamp", "open",
                           "high", "low", "close", "volume"]
@@ -224,12 +274,23 @@ class ExchangeCCXT(ExchangeOnline):
                                            timeframe=timeframe,
                                            limit=nb_data)
 
+        # Get local time zone
+        local_tz = get_localzone()
+
         data_ohlcv_df = pd.DataFrame(
             data_ohlcv, columns=data_ohlcv_var)
-        data_ohlcv_df["datetime"] = \
-            pd.to_datetime(data_ohlcv_df["timestamp"], unit="ms")
 
-        data_ohlcv_df.set_index("timestamp", inplace=True)
+        # Convert UTC timestamp to local timezone
+        data_ohlcv_df["datetime"] = \
+            pd.to_datetime(data_ohlcv_df["timestamp"],
+                           unit="ms", 
+                           utc=True).dt.tz_convert(local_tz)
+
+        # Convert local tz datetime to local timestamp
+        data_ohlcv_df["timestamp"] = \
+            (data_ohlcv_df["datetime"].astype(int)/1e6).astype(int)
+        
+        data_ohlcv_df.set_index(index, inplace=True)
 
         if closed:
             return data_ohlcv_df.iloc[:-1]
@@ -238,32 +299,81 @@ class ExchangeCCXT(ExchangeOnline):
 
     def get_historic_ohlcv(self,
                            date_start,
-                           date_end=datetime.utcnow(),
+                           date_end=None,
                            symbol="BTC/USDT",
                            timeframe="1h",
-                           logging=logging,
-                           progress_mode=False):
+                           fetch_limit=500,
+                           index="datetime",
+                           data_dir=".",
+                           force_reload=False,
+                           progress_mode=False,
+                           fetching_pause=30,
+                           fetching_max_tries=3,
+                           ):
+        if date_end is None:
+            date_end = datetime.utcnow()
+        
+        source_filename = os.path.join(
+            data_dir,
+            f"ohlcv_{self.name}_{symbol.replace('/',':')}"\
+            f"_{timeframe}_{date_start}_{date_end}.csv.bz2")
 
-        ts_start = date_start if isinstance(date_start, int) \
-            else self.bkd.parse8601(date_start)
-        ts_end = date_end if isinstance(date_end, int) \
-            else self.bkd.parse8601(date_end)
+        # Get local time zone
+        local_tz = get_localzone()
+
+        if os.path.exists(source_filename) and (not force_reload):
+            if self.logger:
+                self.logger.info(
+                    f"Read data from file {source_filename}")
+
+            ohlcv_df = pd.read_csv(source_filename,
+                                   index_col=index,
+                                   parse_dates=[index])
+            # ipdb.set_trace()
+            
+            # ohlcv_df.index = pd.DatetimeIndex(ohlcv_df.index,
+            #                                   tz=local_tz)
+        
+            return ohlcv_df
+
+        if self.logger:
+            self.logger.info(
+                "Fetching data from exchange")
+        
+        if isinstance(date_start, int):
+            ts_start = date_start
+        elif isinstance(date_start, datetime):
+            ts_start = int(1000*date_start.timestamp())
+        elif isinstance(date_start, str):
+            ts_start = self.bkd.parse8601(date_start)
+        else:
+            raise ValueError(f"data_start of type {type(date_start)} not supported")
+
+        if isinstance(date_end, int):
+            ts_end = date_end
+        elif isinstance(date_end, datetime):
+            ts_end = int(1000*date_end.timestamp())
+        elif isinstance(date_end, str):
+            ts_end = self.bkd.parse8601(date_end)
+        else:
+            raise ValueError(f"data_end of type {type(date_end)} not supported")
 
         # TODO: change to exchange static attribute
         fetch_limit = 500
 
         timedelta_sec = self.timeframe_to_seconds(timeframe)
         timedelta_ms = 1000*timedelta_sec
+
         fetch_limit_delta_ms = fetch_limit*timedelta_ms
         period_range = \
             range(ts_start, ts_end, fetch_limit_delta_ms)
 
-        data_ohlcv_var = ["timestamp", "open",
-                          "high", "low", "close", "volume"]
-
-        data_ohlcv_df_list = []
+        ohlcv_var = ["timestamp", "open",
+                     "high", "low", "close", "volume"]
+        
+        ohlcv_df_list = []
         for ts_s in tqdm.tqdm(period_range,
-                              disable=not(progress_mode),
+                              disable=not progress_mode,
                               desc=f"Fetching {symbol} OHLCV {timeframe} data"):
 
             ts_e = min(ts_s + fetch_limit_delta_ms,
@@ -273,31 +383,74 @@ class ExchangeCCXT(ExchangeOnline):
             dt_s = datetime.utcfromtimestamp(ts_s/1000)
             dt_e = datetime.utcfromtimestamp(ts_e/1000)
 
-            logging.debug(
-                f"Fetch {timeframe} {symbol} data between {dt_s} and {dt_e}")
-            data_ohlcv = self.bkd.fetch_ohlcv(symbol,
-                                               timeframe=timeframe,
-                                               since=ts_s,
-                                               limit=limit)
+            if self.logger:
+                self.logger.debug(
+                    f"Fetch {timeframe} {symbol} data between {dt_s} and {dt_e}")
 
-            data_ohlcv_cur_df = pd.DataFrame(
-                data_ohlcv, columns=data_ohlcv_var)
-            data_ohlcv_cur_df["datetime"] = \
-                pd.to_datetime(data_ohlcv_cur_df["timestamp"], unit="ms")
+            fetching_done = False
+            nb_fetch_tries = 0
+            while not fetching_done:
+                try:
+                    ohlcv = self.bkd.fetch_ohlcv(symbol,
+                                                 timeframe=timeframe,
+                                                 since=ts_s,
+                                                 limit=limit)
+                    # NOTE : We decide to drop na value while getting historical data
+                    ohlcv_cur_df = pd.DataFrame(
+                        ohlcv, columns=ohlcv_var)
+                    assert ts_s == ohlcv_cur_df["timestamp"].iloc[0]
 
-            data_ohlcv_df_list.append(data_ohlcv_cur_df)
+                except Exception as e:
+                    nb_fetch_tries += 1
+                    if nb_fetch_tries >= fetching_max_tries:
+                        if self.logger:
+                            self.logger.info(
+                                f"Fetching OHLCV problem {e} : failed after {fetching_max_tries} attemps")
+                            raise ValueError(f"Fetching OHLCV problem : failed after {fetching_max_tries} attemps")
+                    else:
+                        if self.logger:
+                            self.logger.info(
+                                f"Fetching failed (try {nb_fetch_tries}): retry in {fetching_pause} seconds")
+                            time.sleep(fetching_pause)
 
-        data_ohlcv_df = pd.concat(
-            data_ohlcv_df_list, axis=0, ignore_index=True).set_index("timestamp")
+                else:
+                    nb_fetch_tries = 0
+                    fetching_done = True
+            
+            # Convert UTC timestamp to local timezone
+            ohlcv_cur_df["datetime"] = \
+                pd.to_datetime(ohlcv_cur_df["timestamp"],
+                               unit="ms",
+                               utc=True).dt.tz_convert(local_tz)
+            # Convert local tz datetime to local timestamp
+            ohlcv_cur_df["timestamp"] = \
+                (ohlcv_cur_df["datetime"].astype(int)/1e6).astype(int)
 
-        return data_ohlcv_df
+            idx_na = ohlcv_cur_df.isna().any(axis=1)
+            nb_na = idx_na.sum()
+            if self.logger and nb_na > 0:
+                na_dt = ", ".join(ohlcv_cur_df.loc[idx_na, "datetime"].to_list())
+                self.logger.warning(f"Drop {nb_na} NAs")
+                self.logger.debug(f"NA datetimes {na_dt}")
+
+            if self.logger:
+                self.logger.debug(ohlcv_cur_df)
+
+            ohlcv_df_list.append(ohlcv_cur_df)
+
+        ohlcv_df = pd.concat(
+            ohlcv_df_list, axis=0, ignore_index=True).set_index(index)
+        
+        ohlcv_df.to_csv(source_filename,
+                        index=True)
+        
+        return ohlcv_df
 
     def get_next_historic_ohlcv(self,
                                 date_start,
                                 nb_data=1,
                                 symbol="BTC/USDT",
                                 timeframe="1h",
-                                logging=logging,
                                 progress_mode=False):
 
         timedelta_sec = self.timeframe_to_seconds(timeframe)
@@ -313,7 +466,6 @@ class ExchangeCCXT(ExchangeOnline):
                 date_end=ts_end,
                 symbol=symbol,
                 timeframe=timeframe,
-                logging=logging,
                 progress_mode=progress_mode)
 
         return data_ohlcv_df

@@ -3,7 +3,8 @@ from .data_management import \
     prepare_returns_indic, \
     compute_combinations, \
     join_obj_columns, \
-    ValueNeighborhood
+    ValueNeighborhood, \
+    fmt_currency
 
 from .scores import \
     eval_returns_emp_quantiles, \

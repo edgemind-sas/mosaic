@@ -25,8 +25,17 @@ class DML_TA(DMLong):
     indic_s: PandasSeries = \
         pydantic.Field(None, description="Indicator series")
 
+    def dict(self, **kwrds):
+
+        if kwrds["exclude"]:
+            kwrds["exclude"].add("indic_s")
+        else:
+            kwrds["exclude"] = {"indic_s"}
+            
+        return super().dict(**kwrds)
+
     @property
-    def bw_window(self):
+    def bw_length(self):
         return self.indic_bkd.bw_length
 
     def compute(self, ohlcv_df, **kwrds):
@@ -41,7 +50,7 @@ class DML_TA(DMLong):
             
 class DML_RSI_params(DMBaseParams):
 
-    window: int = \
+    length: int = \
         pydantic.Field(0, description="MA window size used to compute RSI "
                        "indicator")
     buy_level: float = \
@@ -60,7 +69,7 @@ class DML_RSI(DML_TA):
         super().__init__(**params)
 
         self.indic_bkd = \
-            RSI(length=self.params.window,
+            RSI(length=self.params.length,
                 offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
@@ -83,17 +92,17 @@ class DML_RSI(DML_TA):
 
 class DML_RSI2_params(DML_RSI_params):
 
-    window_conf_signal: int = \
-        pydantic.Field(1, description="Signal confirmation window")
+    length_conf_signal: int = \
+        pydantic.Field(1, description="Signal confirmation window length")
 
-    window_conf_change: int = \
-        pydantic.Field(0, description="Change confirmation window")
+    length_conf_change: int = \
+        pydantic.Field(0, description="Change confirmation window length")
 
     
 class DML_RSI2(DML_RSI):
     """ RSI2 Decision model adds both parameters :
-    - window_conf_signal : buy/sell signals are produced if buy/sell conditions are met during a winfow of length window_conf_signal.
-    - window_conf_change : buy/sell signals are produced if a change of buy/sell conditions occurre during a window of length window_conf_change.
+    - length_conf_signal : buy/sell signals are produced if buy/sell conditions are met during a winfow of length window_conf_signal.
+    - length_conf_change : buy/sell signals are produced if a change of buy/sell conditions occurre during a window of length window_conf_change.
 
     A buy signal is set at period p if :
     - RSI(t) < buy_level during periods [p - window_conf_signal - window_conf_change, p - window_conf_signal]
@@ -106,16 +115,16 @@ class DML_RSI2(DML_RSI):
         pydantic.Field(DML_RSI2_params(), description="RSI parameters")
 
     @property
-    def bw_window(self):
-        return max(super().bw_window,
-                   self.params.window_conf_change + \
-                   self.params.window_conf_signal)
+    def bw_length(self):
+        return max(super().bw_length,
+                   self.params.length_conf_change + \
+                   self.params.length_conf_signal)
     
     def __init__(self, offset=1, **params):
         super().__init__(**params)
 
         self.indic_bkd = \
-            RSI(length=self.params.window,
+            RSI(length=self.params.length,
                 offset=offset)
         
     def compute(self, ohlcv_df, **kwrds):
@@ -124,8 +133,8 @@ class DML_RSI2(DML_RSI):
 
         # --- Decision rule --- #
         indic_conf_signal = \
-            pd.concat([self.indic_s.shift(self.params.window_conf_change + k)
-                       for k in range(self.params.window_conf_signal)], axis=1)
+            pd.concat([self.indic_s.shift(self.params.length_conf_change + k)
+                       for k in range(self.params.length_conf_signal)], axis=1)
 
         # Confirmation time for buy/sell signals
         indic_conf_signal_buy = \
@@ -133,10 +142,10 @@ class DML_RSI2(DML_RSI):
         indic_conf_signal_sell = \
             (indic_conf_signal > self.params.sell_level).all(axis=1)
 
-        if self.params.window_conf_change:
+        if self.params.length_conf_change:
             indic_conf_change = \
                 pd.concat([self.indic_s.shift(k)
-                           for k in range(self.params.window_conf_change)], axis=1)
+                           for k in range(self.params.length_conf_change)], axis=1)
 
             # Confirmation time for buy/sell trend changes
             indic_conf_change_buy = \

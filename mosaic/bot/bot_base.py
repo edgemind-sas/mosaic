@@ -8,7 +8,7 @@ from ..core import ObjMOSAIC
 #from ..trading.core import TradeBase, SignalBase
 #from ..indicator import Indicator
 from ..decision_model.dm_base import DMBase
-from ..invest_model import InvestModel
+from ..invest_model.invest_model import InvestModelBase
 #from ..utils import join_obj_columns
 
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -130,7 +130,7 @@ class BotBase(ObjMOSAIC):
     decision_model: DMBase = pydantic.Field(
         None, description="Decision model")
 
-    invest_model: InvestModel = pydantic.Field(
+    invest_model: InvestModelBase = pydantic.Field(
         None, description="Invest model")
 
     ohlcv_df: PandasDataFrame = pydantic.Field(
@@ -194,13 +194,6 @@ class BotBase(ObjMOSAIC):
         self.compute_trades_test(fees=fees)
 
         self.evaluate_test()
-
-
-    def run_live(self, ohlcv_df, **kwards):
-
-        ipdb.set_trace()
-        signals = self.decision_model.compute(ohlcv_df, **kwrds)
-        
         
                 
     def evaluate_test(self, **kwrds):

@@ -1,1 +1,1 @@
-from .invest_model import InvestModel
+from .invest_model import InvestModelBase, InvestLongModel

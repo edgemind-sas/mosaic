@@ -4,9 +4,9 @@ from ..utils import lag as lagfun
 import warnings
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from ..core import ObjMOSAIC
 
-
-class Indicator(BaseModel):
+class Indicator(ObjMOSAIC):
     """
     Technical indicator base class.
 

@@ -45,6 +45,7 @@ setup(name='mosaic',
           "ccxt",
           "plotly",
           "pandas-ta",
+          "tzlocal",
       ],
       zip_safe=False,
       )
