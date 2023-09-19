@@ -47,6 +47,7 @@ setup(name='mosaic',
           "tzlocal",
           "statsmodels",
           "tqdm",
+          "colored",
       ],
       zip_safe=False,
       )
