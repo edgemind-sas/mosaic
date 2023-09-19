@@ -8,9 +8,12 @@ import time
 from datetime import datetime, timedelta
 import ccxt
 import tqdm
+import pytz
 
 import pandas as pd
 from ..core import ObjMOSAIC
+from ..utils.data_management import timeframe_to_seconds
+
 
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -114,25 +117,26 @@ class ExchangeBase(ObjMOSAIC):
             kwrds["exclude"] = {"bkd", "logger"}
             
         return super().dict(**kwrds)
-    
-    @staticmethod
-    def timeframe_to_seconds(timeframe):
-        timeframe_to_sec = \
-            {'s': 1, 'm': 60, 'h': 60*60, 'd': 24*60*60}
-        timeframe_unit = timeframe[-1]
-        timeframe_fact_str = timeframe[:-1]
-        timeframe_fact = int(timeframe_fact_str)
-        timeframe_nb_sec = timeframe_to_sec[timeframe_unit]
 
-        return timeframe_fact*timeframe_nb_sec
+    # MOVED TO utils.datamanagement
+    # @staticmethod
+    # def timeframe_to_seconds(timeframe):
+    #     timeframe_to_sec = \
+    #         {'s': 1, 'm': 60, 'h': 60*60, 'd': 24*60*60}
+    #     timeframe_unit = timeframe[-1]
+    #     timeframe_fact_str = timeframe[:-1]
+    #     timeframe_fact = int(timeframe_fact_str)
+    #     timeframe_nb_sec = timeframe_to_sec[timeframe_unit]
 
-    @staticmethod
-    def timeframe_to_timedelta(timeframe):
-        value = int(timeframe[:-1])
-        unit = timeframe[-1]
-        timedelta_unit_map = \
-            {'s': "seconds", 'm': "minutes", 'h': "hours", 'd': "days"}
-        return timedelta(**{timedelta_unit_map.get(unit): value})
+    #     return timeframe_fact*timeframe_nb_sec
+
+    # @staticmethod
+    # def timeframe_to_timedelta(timeframe):
+    #     value = int(timeframe[:-1])
+    #     unit = timeframe[-1]
+    #     timedelta_unit_map = \
+    #         {'s': "seconds", 'm': "minutes", 'h': "hours", 'd': "days"}
+    #     return timedelta(**{timedelta_unit_map.get(unit): value})
 
     def get_portfolio_as_str(self):
         return self.portfolio.to_df().to_string()
@@ -264,12 +268,15 @@ class ExchangeCCXT(ExchangeOnline):
                        timeframe="1h",
                        nb_data=2,
                        closed=True,
-                       index=datetime,
+                       index="datetime",
                        ):
 
         data_ohlcv_var = ["timestamp", "open",
                           "high", "low", "close", "volume"]
 
+        if closed:
+            nb_data += 1
+            
         data_ohlcv = self.bkd.fetch_ohlcv(symbol=symbol,
                                            timeframe=timeframe,
                                            limit=nb_data)
@@ -310,16 +317,18 @@ class ExchangeCCXT(ExchangeOnline):
                            fetching_pause=30,
                            fetching_max_tries=3,
                            ):
+
+        # Get local time zone
+        local_tz_name = get_localzone().key
+        local_tz = pytz.timezone(local_tz_name)
+
         if date_end is None:
-            date_end = datetime.utcnow()
+            date_end = local_tz.localize(datetime.now())
         
         source_filename = os.path.join(
             data_dir,
             f"ohlcv_{self.name}_{symbol.replace('/',':')}"\
             f"_{timeframe}_{date_start}_{date_end}.csv.bz2")
-
-        # Get local time zone
-        local_tz = get_localzone()
 
         if os.path.exists(source_filename) and (not force_reload):
             if self.logger:
@@ -361,7 +370,7 @@ class ExchangeCCXT(ExchangeOnline):
         # TODO: change to exchange static attribute
         fetch_limit = 500
 
-        timedelta_sec = self.timeframe_to_seconds(timeframe)
+        timedelta_sec = timeframe_to_seconds(timeframe)
         timedelta_ms = 1000*timedelta_sec
 
         fetch_limit_delta_ms = fetch_limit*timedelta_ms
@@ -416,7 +425,7 @@ class ExchangeCCXT(ExchangeOnline):
                 else:
                     nb_fetch_tries = 0
                     fetching_done = True
-            
+
             # Convert UTC timestamp to local timezone
             ohlcv_cur_df["datetime"] = \
                 pd.to_datetime(ohlcv_cur_df["timestamp"],
@@ -453,7 +462,7 @@ class ExchangeCCXT(ExchangeOnline):
                                 timeframe="1h",
                                 progress_mode=False):
 
-        timedelta_sec = self.timeframe_to_seconds(timeframe)
+        timedelta_sec = timeframe_to_seconds(timeframe)
         timedelta_ms = 1000*timedelta_sec
         # ipdb.set_trace()
         ts_start = date_start if isinstance(date_start, int) \

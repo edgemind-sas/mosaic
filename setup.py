@@ -46,6 +46,7 @@ setup(name='mosaic',
           "plotly",
           "pandas-ta",
           "tzlocal",
+          "statsmodels",
       ],
       zip_safe=False,
       )

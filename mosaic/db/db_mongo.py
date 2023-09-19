@@ -194,14 +194,14 @@ class DBMongo(DBBase):
             else:
                 ops_res_cur = \
                     db_coll.insert_one(data)
-                
+
                 res_dict["ops"]["nb_data_processed"] += 1
                 res_dict["ops"]["nb_inserts"] += ops_res_cur.acknowledged
 
         except Exception as err:
             if self.logger:
                 self.logger.error("Problem occurred inserting data in endpoint {} : {}"
-                             .format(endpoint, err))
+                                  .format(endpoint, err))
 
         self.log_db_ops(res_dict)
 

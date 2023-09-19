@@ -1,6 +1,7 @@
 import pydantic
 import pkg_resources
 import copy
+import typing
 
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
@@ -49,17 +50,17 @@ class ObjMOSAIC(pydantic.BaseModel):
             obj_copy = copy.deepcopy(obj)
             for key, value in obj_copy.items():
                 obj_copy[key] = basecls.from_dict(value)
-                
+
             if "cls" in obj_copy:
                 cls_sub_dict = {
                     cls.__name__: cls for cls in ObjMOSAIC.get_subclasses()}
-
+                
                 clsname = obj_copy.pop("cls")
                 cls = cls_sub_dict.get(clsname)
 
                 if cls is None:
                     raise ValueError(
-                        f"{clsname} is not a subclass of {basecls.__name__}")
+                        f"{clsname} is not a subclass of {ObjMOSAIC.__name__}")
 
                 return cls(**obj_copy)
             
@@ -94,4 +95,7 @@ class ObjMOSAIC(pydantic.BaseModel):
             
         return dict({"cls": self.__class__.__name__},
                     **super().dict(**kwrds))
+
+
+
 

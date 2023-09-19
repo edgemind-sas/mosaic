@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import typing
 import pydantic
-from .dm_base import DMBaseParams
+from ..utils.data_management import HyperParams
 from .dm_long import DMLong
 from ..indicator.indicator import IndicatorOHLCV
 from ..indicator.rsi import RSI
@@ -48,7 +48,7 @@ class DML_TA(DMLong):
 
 
             
-class DML_RSI_params(DMBaseParams):
+class DML_RSI_params(HyperParams):
 
     length: int = \
         pydantic.Field(0, description="MA window size used to compute RSI "

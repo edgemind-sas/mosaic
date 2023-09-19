@@ -1,12 +1,13 @@
 import pydantic
 import typing
-#import pandas as pd
+import pandas as pd
 import random
-import numpy as np
 #import tqdm
-from ..utils import ValueNeighborhood
+from ..utils.data_management import HyperParams
+
 #from ..trading.core import SignalBase
 from ..core import ObjMOSAIC
+from ..predict_model.pm_base import PredictModelBase
 
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -16,73 +17,26 @@ if 'ipdb' in installed_pkg:
 # PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 # PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
 
-
-
-class DMBaseParams(pydantic.BaseModel):
-
-    def __str__(self):
-        return "\n".join(
-            [f"{k}: {v}" for k, v in self.dict().items()])
-
-    def random_from_neighbor(
-            self,
-            neighbor_specs: typing.Dict[str, ValueNeighborhood] = {},
-            nchanges=None,
-            inplace=False,
-    ):
-        
-        nb_params = len(self.dict())
-        if inplace:
-            param_new = self
-        else:
-            param_new = self.copy()
-
-        if nchanges is None:
-            nchanges = int(np.ceil(np.random.rand()*nb_params))
-        
-        params_to_change = \
-            random.sample(self.dict().keys(),
-                          min(nchanges, nb_params))
-
-        for param_name in params_to_change:
-
-            param_neigh_spec = neighbor_specs.get(param_name)
-            if not (param_neigh_spec):
-                continue
-            param_value_cur = getattr(self, param_name)
-
-            param_value_new = \
-                param_neigh_spec.random_neighbor_from_value(param_value_cur)
-
-            setattr(param_new, param_name, param_value_new)
-
-        if not inplace:
-            return param_new
-
-    def domain_from_neighbor(
-            self,
-            neighbor_spec: typing.Dict[str, ValueNeighborhood] = {},
-    ):
-        
-        dm_params = {}
-
-        for param, param_spec in neighbor_spec.items():
-
-            param_value_cur = getattr(self, param)
-            dm_params[param] = \
-                param_spec.domain_from_value(param_value_cur)
-
-        return dm_params
         
 class DMBase(ObjMOSAIC):
 
-    params: DMBaseParams = \
-        pydantic.Field(0, description="Decision model parameters")
+    buy_threshold: float = \
+        pydantic.Field(None, description="If signal_score > buy_threshold => buy signal generated",
+                       ge=0)
+                       
+    sell_threshold: float = \
+        pydantic.Field(None, description="If signal_score < -sell_threshold => sell signal generated",
+                       ge=0)
+    
+    params: HyperParams = \
+        pydantic.Field(None, description="Decision model parameters")
 
     ohlcv_names: dict = pydantic.Field(
         {v: v for v in ["open", "high", "low", "close", "volume"]},
         description="OHLCV variable name dictionnary")
 
+
+    
     @property
     def bw_length(self):
         return 0
@@ -91,8 +45,27 @@ class DMBase(ObjMOSAIC):
     def fw_length(self):
         return 0
 
+    def compute_signal(self, signal_score, **kwrds):
+
+        #ipdb.set_trace()
+        signal_s = pd.Series(index=signal_score.index,
+                             name="signal",
+                             dtype="object")
+
+        if self.buy_threshold is not None:
+            idx_buy = signal_score > self.buy_threshold
+            signal_s.loc[idx_buy] = "buy"
+            
+        if self.sell_threshold is not None:
+            idx_sell = signal_score < -self.sell_threshold
+            signal_s.loc[idx_sell] = "sell"
+
+        return pd.concat([signal_s,
+                          signal_score.rename("score")],
+                         axis=1)
     
-    def compute(self, ohlcv_df, **kwrds):
+    def predict(self, ohlcv_df, **kwrds):
+        
         raise NotImplementedError("compute method not implemented")
 
     # def fit(self, ohlcv_df, method="brute_force", **fit_params):
@@ -145,3 +118,45 @@ class DMBase(ObjMOSAIC):
     #                           .to_dict()
 
     #     self.params = self.params.__class__(**dm_params_opt)
+
+
+class DM1ML(DMBase):
+    
+    pm: PredictModelBase = \
+        pydantic.Field(PredictModelBase(), description="Buy/sell predict model")
+
+    @property
+    def bw_length(self):
+        return self.pm.bw_length
+
+    def fit(self, ohlcv_df, **kwrds):
+        self.pm.fit(ohlcv_df, **kwrds)
+    
+    def predict(self, ohlcv_df, **kwrds):
+        signal_score = self.pm.predict(ohlcv_df, **kwrds)
+        return self.compute_signal(signal_score)
+
+    
+class DM2ML(DMBase):
+    
+    pm_buy: PredictModelBase = \
+        pydantic.Field(PredictModelBase(), description="Buy predict model")
+    pm_sell: PredictModelBase = \
+        pydantic.Field(PredictModelBase(), description="Buy predict model")
+
+    @property
+    def bw_length(self):
+        return max(self.pm_buy.bw_length, self.pm_sell.bw_length)
+
+    def fit(self, ohlcv_df, **kwrds):
+        self.pm_buy.fit(ohlcv_df, **kwrds)
+        self.pm_sell.fit(ohlcv_df, **kwrds)
+    
+    def predict(self, ohlcv_df, **kwrds):
+
+        buy_score = self.pm_buy.predict(ohlcv_df, **kwrds)
+        sell_score = self.pm_sell.predict(ohlcv_df, **kwrds)
+
+        signal_score = buy_score - sell_score
+
+        return self.compute_signal(signal_score)
