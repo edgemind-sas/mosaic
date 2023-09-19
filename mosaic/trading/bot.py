@@ -442,19 +442,10 @@ class BotTrading(ObjMOSAIC):
 
         signals_s = signals_df["signal"].copy()
         
-        if self.order_model.params.auto_reverse_order_horizon:
-            raise ValueError("Auto sell order not supported in btfast: use btclassic instead")
-            # idx_buy = signals_s == "buy"
-            # idx_sell = signals_s == "sell"
-            # idx_sell |= idx_buy.shift(auto_sell_shift)
-
-            # # Inhibate reverse order behaviour
-            # self.order_model.params.auto_reverse_order_horizon = None
-        else:
-            signals_s = signals_s.fillna(method="ffill")
-            signals_s = signals_s.loc[signals_s.shift() != signals_s]
-            idx_buy = signals_s.index[signals_s == "buy"]
-            idx_sell = signals_s.index[signals_s == "sell"]
+        signals_s = signals_s.fillna(method="ffill")
+        signals_s = signals_s.loc[signals_s.shift() != signals_s]
+        idx_buy = signals_s.index[signals_s == "buy"]
+        idx_sell = signals_s.index[signals_s == "sell"]
 
         orders_list = []
         for self.dt_ohlcv_current in tqdm.tqdm(idx_buy,
@@ -781,13 +772,9 @@ class BotTrading(ObjMOSAIC):
                 self.portfolio.update_order(od)
                 self.orders_executed[od_uid] = self.orders_open.pop(od_uid)
 
-                if isinstance(res, OrderBase):
-                    self.register_order(res)
+                # TODO : Check res to test order execution status
+
+                
+                # if isinstance(res, OrderBase):
+                #     self.register_order(res)
                     
-        # for od_uid in list(self.sell_orders_open.keys()):
-        #     od = self.sell_orders_open[od_uid]
-        #     if od.is_executable(dt=self.dt_ohlcv_current):
-        #         res = od.execute(dt=self.dt_ohlcv_current,
-        #                          quote_price=self.quote_current)
-        #         self.portfolio.update_order(od)
-        #         self.sell_orders_executed[od_uid] = self.sell_orders_open.pop(od_uid)
