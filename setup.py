@@ -48,6 +48,7 @@ setup(name='mosaic',
           "statsmodels",
           "tqdm",
           "colored",
+          "pymongo",
       ],
       zip_safe=False,
       )
