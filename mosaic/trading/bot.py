@@ -21,8 +21,8 @@ if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
 
 from ..core import ObjMOSAIC
-from .exchange import ExchangeBase
 from .orders import OrderBase, OrderMarket
+from .exchange import ExchangeBase
 #from ..bot.bot_base import BotBase
 from ..db.db_base import DBBase
 from ..decision_model.dm_base import DMBase

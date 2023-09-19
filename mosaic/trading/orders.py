@@ -74,8 +74,8 @@ class OrderBase(ObjMOSAIC):
         pydantic.Field(OrderParams(),
                        description="Order parameters")
     
-    bkd: typing.Any = pydantic.Field(
-        ExchangeBase, description="Original orde backend")
+    bkd: ExchangeBase = pydantic.Field(
+        None, description="Original orde backend")
 
     db: DBBase = pydantic.Field(
         None, description="Trading data backend")
