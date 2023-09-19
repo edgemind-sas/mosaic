@@ -34,6 +34,7 @@ from ..utils.data_management import \
     timeframe_to_timedelta
 from ..utils.io import \
     update_console
+from ..version import __version__ as MOSAIC_VERSION
 
 PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
 PandasSeries = typing.TypeVar('pandas.core.frame.Series')
@@ -281,6 +282,7 @@ class BotTrading(ObjMOSAIC):
         Timeframe       : {self.timeframe}
         Session DT      : {self.dt_session_start}
         Mode            : {self.mode}
+        MOSAIC version  : {MOSAIC_VERSION}
             
         Exchange
         Name            : {self.exchange.name}
