@@ -63,9 +63,17 @@ class Portfolio(pydantic.BaseModel):
 
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
+
+        self.reset()
+
+    def reset(self):
         
         self.quote_amount = self.quote_amount_init
-    
+        self.base_amount = 0
+        self.quote_price = None
+        self.dt = None
+        self.update()
+        
     def update_order(self, od):
 
         if od.side == "buy":
@@ -84,8 +92,8 @@ class Portfolio(pydantic.BaseModel):
 
     def update(self, fees=0):
 
-        self.quote_exposed = \
-            self.base_amount*self.quote_price*(1 - fees)
+        self.quote_exposed = 0 if self.quote_price is None \
+            else self.base_amount*self.quote_price*(1 - fees)
 
         self.quote_value = self.quote_amount + self.quote_exposed
 
@@ -110,6 +118,9 @@ class BotTrading(ObjMOSAIC):
     ds_trading: DSOHLCV = pydantic.Field(
         ..., description="Trading data source")
 
+    ds_dm: DSOHLCV = pydantic.Field(
+        None, description="Decision model data source")
+
     ds_fit: DSOHLCV = pydantic.Field(
         None, description="Fitting data source")
     
@@ -127,6 +138,12 @@ class BotTrading(ObjMOSAIC):
 
     quote_current: float = pydantic.Field(
         None, description="Current asset quotation")
+
+    bt_buy_on: str = pydantic.Field(
+        "open", description="Backtest buy price hypothesis")
+
+    bt_sell_on: str = pydantic.Field(
+        "open", description="Backtest sell price hypothesis")
     
     mode: str = pydantic.Field(
         'btfast', description="Bot mode: 'btfast', 'btclassic', 'livetest', 'live'")
@@ -167,6 +184,15 @@ class BotTrading(ObjMOSAIC):
     
     progress: float = pydantic.Field(
         0, description="Bot progress in backtest mode")
+
+    ohlcv_fit_dfd: dict = pydantic.Field(
+        {}, description="Bot progress in backtest mode")
+
+    ohlcv_dm_dfd: dict = pydantic.Field(
+        {}, description="Bot progress in backtest mode")
+
+    ohlcv_trading_dfd: dict = pydantic.Field(
+        {}, description="Bot progress in backtest mode")
 
     exchange: ExchangeBase = pydantic.Field(
         None, description="Trading architecture exchange")
@@ -233,6 +259,22 @@ class BotTrading(ObjMOSAIC):
     @property
     def quote(self):
         return self.symbol.split("/")[1]
+
+    @property
+    def ds_trading_code(self):
+        return f"{self.ds_trading.symbol}{self.ds_trading.timeframe}"\
+            f"{self.ds_trading.dt_s}{self.ds_trading.dt_e}"
+    
+    @property
+    def ds_dm_code(self):
+        return f"{self.ds_dm.symbol}{self.ds_dm.timeframe}"\
+            f"{self.ds_dm.dt_s}{self.ds_dm.dt_e}"
+    
+    @property
+    def ds_fit_code(self):
+        return f"{self.ds_fit.symbol}{self.ds_fit.timeframe}"\
+            f"{self.ds_fit.dt_s}{self.ds_fit.dt_e}"
+
     
     @property
     def nb_buy_orders_open(self):
@@ -257,11 +299,41 @@ class BotTrading(ObjMOSAIC):
             self.db.logger = self.logger
             self.db.connect()
 
+    def reset(self):
+
+        attr_reset = [
+            "dt_ohlcv_current",
+            "dt_ohlcv_closed",
+            "dt_session_start",
+            "dt_session_end",
+            "quote_current",
+            "orders_open",
+            "orders_executed",
+            "orders_cancelled",
+            "progress",
+        ]
+        for attr in attr_reset:
+            setattr(self, attr, self.__fields__[attr].default)
+
+        self.portfolio.reset()
+            
     def signal_handler(self, signum, frame):
         self.abort("Abort by user")
         sys.exit(1)
 
     def dict(self, orders_ids=False, **kwrds):
+
+        exclude_attr = {
+            "ohlcv_fit_dfd",
+            "ohlcv_dm_dfd",
+            "ohlcv_trading_dfd",
+        }
+
+        if kwrds["exclude"]:
+            [kwrds["exclude"].add(attr) for attr in exclude_attr]
+        else:
+            kwrds["exclude"] = exclude_attr
+            
         self_dict = super().dict(**kwrds)
 
         if orders_ids:
@@ -286,7 +358,8 @@ class BotTrading(ObjMOSAIC):
             
         Exchange
         Name            : {self.exchange.name}
-        Fees            : {self.exchange.fees.maker}
+        Fees maker      : {self.exchange.fees_rates.maker}
+        Fees taker      : {self.exchange.fees_rates.taker}
         
         Portfolio
         quote_amount    : {self.portfolio.quote_amount}
@@ -342,24 +415,33 @@ class BotTrading(ObjMOSAIC):
         
     def start(self, **kwrds):
         local_tz = pytz.timezone(get_localzone().key)
-
+        
         self.dt_session_start = local_tz.localize(datetime.now())
-        # Generate an id by hashing session attributes + an optional name
-        id_json = self.json(include={"name",
-                                     "symbol",
-                                     "timeframe",
-                                     "mode",
-                                     "dt_session_start"})
-        self.uid = hashlib.sha256(id_json.encode("utf-8")).hexdigest()
+
+        if not self.uid:
+            # Generate an id by hashing session attributes + an optional name
+            id_json = self.json(include={"name",
+                                         "symbol",
+                                         "timeframe",
+                                         "mode",
+                                         "dt_session_start"})
+            self.uid = hashlib.sha256(id_json.encode("utf-8")).hexdigest()
+            
         # Set status to "started"
         self.status = "started"
         self.portfolio.bot_uid = self.uid
+
+        # Init fees
+        self.exchange.set_trading_fees(self.symbol)
         
         self.db_update()
         if self.logger:
             self.logger.info(self.summary_header())
 
         self.fit_dm(**kwrds)
+
+        if self.ds_dm is None:
+            self.ds_dm = self.ds_trading
             
         # Start session !
         getattr(self, f"start_{self.mode}")(**kwrds)
@@ -408,45 +490,73 @@ class BotTrading(ObjMOSAIC):
             log_msg_str = "Fitting decision model"
             self.logger.info(log_msg_str)
 
-        ohlcv_df = \
-            self.exchange.get_historic_ohlcv(
-                date_start=self.ds_fit.dt_s,
-                date_end=self.ds_fit.dt_e,
-                symbol=self.ds_fit.symbol,
-                timeframe=self.ds_fit.timeframe,
-                index="datetime",
-                data_dir=data_dir,
-                force_reload=False,
-                progress_mode=progress_mode,
-            )
-        
-        self.decision_model.fit(ohlcv_df)
+        if not (self.ds_fit_code in self.ohlcv_fit_dfd.keys()):
+            self.ohlcv_fit_dfd[self.ds_fit_code] = \
+                self.exchange.get_historic_ohlcv(
+                    date_start=self.ds_fit.dt_s,
+                    date_end=self.ds_fit.dt_e,
+                    symbol=self.ds_fit.symbol,
+                    timeframe=self.ds_fit.timeframe,
+                    index="datetime",
+                    data_dir=data_dir,
+                    force_reload=False,
+                    progress_mode=progress_mode,
+                )
 
+        ohlcv_fit_df = self.ohlcv_fit_dfd[self.ds_fit_code]
+            
+        self.decision_model.fit(ohlcv_fit_df)
         
     def start_btfast(self, progress_mode=False, data_dir=".", **kwrds):
 
-        ohlcv_df = \
-            self.exchange.get_historic_ohlcv(
-                date_start=self.ds_trading.dt_s,
-                date_end=self.ds_trading.dt_e,
-                symbol=self.symbol,
-                timeframe=self.timeframe,
-                index="datetime",
-                data_dir=data_dir,
-                force_reload=False,
-                progress_mode=progress_mode
-            )
+        if self.logger:
+            self.logger.info("Getting trading data")
+
+        if not (self.ds_trading_code in self.ohlcv_trading_dfd.keys()):
+            self.ohlcv_trading_dfd[self.ds_trading_code] = \
+                self.exchange.get_historic_ohlcv(
+                    date_start=self.ds_trading.dt_s,
+                    date_end=self.ds_trading.dt_e,
+                    symbol=self.ds_trading.symbol,
+                    timeframe=self.timeframe,
+                    index="datetime",
+                    data_dir=data_dir,
+                    force_reload=False,
+                    progress_mode=progress_mode,
+                )
+        ohlcv_trading_df = self.ohlcv_trading_dfd[self.ds_trading_code]
+
+        if self.logger:
+            self.logger.info("Getting decision model data")
+
+        if self.ds_trading == self.ds_dm:
+            ohlcv_dm_df = ohlcv_trading_df
+        else:
+            if not (self.ds_dm_code in self.ohlcv_dm_dfd.keys()):
+                self.ohlcv_dm_dfd[self.ds_dm_code] = \
+                    self.exchange.get_historic_ohlcv(
+                        date_start=self.ds_dm.dt_s,
+                        date_end=self.ds_dm.dt_e,
+                        symbol=self.ds_dm.symbol,
+                        timeframe=self.timeframe,
+                        index="datetime",
+                        data_dir=data_dir,
+                        force_reload=False,
+                        progress_mode=progress_mode
+                    )
+            ohlcv_dm_df = self.ohlcv_dm_dfd[self.ds_dm_code]
         
         signals_df = \
-            self.decision_model.predict(ohlcv_df.shift(1), **kwrds)
+            self.decision_model.predict(ohlcv_dm_df.shift(1), **kwrds)
 
         signals_s = signals_df["signal"].copy()
         
         signals_s = signals_s.fillna(method="ffill")
         signals_s = signals_s.loc[signals_s.shift() != signals_s]
         idx_buy = signals_s.index[signals_s == "buy"]
-        idx_sell = signals_s.index[signals_s == "sell"]
-
+        idx_sell = signals_s.index[(signals_s == "sell") &
+                                   (signals_s.index >= idx_buy[0])]
+        
         orders_list = []
         for self.dt_ohlcv_current in tqdm.tqdm(idx_buy,
                                                disable=not progress_mode,
@@ -470,13 +580,17 @@ class BotTrading(ObjMOSAIC):
                             disable=not progress_mode,
                             desc="Executing orders",
                             ):
-            quote_current = \
-                ohlcv_df.loc[od.dt_open, self.ohlcv_names.get("open")]
 
             if od.side == "buy":
+                quote_current = \
+                    ohlcv_trading_df.loc[od.dt_open, self.ohlcv_names.get(self.bt_buy_on)]
+
                 od.quote_amount = \
                     self.invest_model.get_buy_quote_amount(self.portfolio)
             elif od.side == "sell":
+                quote_current = \
+                    ohlcv_trading_df.loc[od.dt_open, self.ohlcv_names.get(self.bt_sell_on)]
+
                 od.base_amount = \
                     self.invest_model.get_sell_base_amount(self.portfolio)
             else:
@@ -486,15 +600,23 @@ class BotTrading(ObjMOSAIC):
                        quote_price=quote_current)
             
             # Update buy and sell price
-            self.portfolio.dt = od.dt_open
+            self.portfolio.dt = od.dt_closed
             self.portfolio.quote_price = quote_current
             self.portfolio.update_order(od)
-            self.portfolio.update(fees=self.exchange.fees.maker)
+            self.portfolio.update(fees=self.exchange.fees_rates.taker)
             
             portfolio_list.append(self.portfolio.dict())
             
             self.orders_executed[od.uid] = od
-                        
+
+        # Register portfolio value at the last timestamp
+        self.portfolio.dt = ohlcv_trading_df.index[-1]
+        self.portfolio.quote_price = \
+            ohlcv_trading_df.loc[self.portfolio.dt,
+                                 self.ohlcv_names.get(self.bt_sell_on)]
+        self.portfolio.update(fees=self.exchange.fees_rates.taker)
+        portfolio_list.append(self.portfolio.dict())
+            
         if self.db:
             portfolio_index_var = ["bot_uid", "dt"]
             portfolio_df = \
@@ -522,7 +644,7 @@ class BotTrading(ObjMOSAIC):
             self.exchange.get_historic_ohlcv(
                 date_start=self.ds_trading.dt_s,
                 date_end=self.ds_trading.dt_e,
-                symbol=self.symbol,
+                symbol=self.ds_trading.symbol,
                 timeframe=self.timeframe,
                 index="datetime",
                 data_dir=data_dir,
@@ -577,7 +699,7 @@ class BotTrading(ObjMOSAIC):
                 # Updating portfolio
                 self.portfolio.dt = self.dt_ohlcv_current
                 self.portfolio.quote_price = self.quote_current
-                self.portfolio.update(fees=self.exchange.fees.maker)
+                self.portfolio.update(fees=self.exchange.fees_rates.maker)
                 self.progress_update()
                 if self.db:
                     self.db.update(endpoint="portfolio",
@@ -643,7 +765,7 @@ class BotTrading(ObjMOSAIC):
                 # Updating portfolio
                 self.portfolio.dt = self.dt_ohlcv_current
                 self.portfolio.quote_price = self.quote_current
-                self.portfolio.update(fees=self.exchange.fees.maker)
+                self.portfolio.update(fees=self.exchange.fees_rates.maker)
                 self.progress_update()
                 if self.db:
                     self.db.update(endpoint="portfolio",
@@ -716,7 +838,6 @@ class BotTrading(ObjMOSAIC):
             symbol=self.symbol,
             timeframe=self.ds_trading.timeframe,
             dt_open=self.dt_ohlcv_current,
-            fees=self.exchange.fees.maker,
             side="buy",
             quote_amount=self.invest_model.get_buy_quote_amount(self.portfolio),
             **self.order_model.dict_params(),
@@ -729,8 +850,10 @@ class BotTrading(ObjMOSAIC):
         else:
             order.db = self.db
 
-        if self.exchange and self.mode == "live":
+        if self.exchange:
             order.bkd = self.exchange
+
+        order.test_mode = not (self.mode in ["live"])
 
         return order
 
@@ -741,7 +864,6 @@ class BotTrading(ObjMOSAIC):
             symbol=self.symbol,
             timeframe=self.ds_trading.timeframe,
             dt_open=self.dt_ohlcv_current,
-            fees=self.exchange.fees.maker,
             side="sell",
             base_amount=self.invest_model.get_sell_base_amount(self.portfolio),
             **self.order_model.dict_params(),
@@ -753,8 +875,10 @@ class BotTrading(ObjMOSAIC):
         else:
             order.db = self.db
 
-        if self.exchange and self.mode == "live":
+        if self.exchange:
             order.bkd = self.exchange
+
+        order.test_mode = not (self.mode in ["live"])
             
         return order
 

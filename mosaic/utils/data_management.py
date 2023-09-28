@@ -6,6 +6,7 @@ import pytz
 from tzlocal import get_localzone
 import random
 import itertools
+import re
 import typing
 import pydantic
 import pkg_resources
@@ -336,6 +337,47 @@ def join_obj_columns(data_df, sep="|"):
     data_join.name = var_names_joined
 
     return data_join
+
+
+def set_obj_attr(obj, attr_path, value):
+    """
+    Set the value of a nested attribute or list item in an object.
+
+    Parameters:
+        obj (object): The object whose attribute you want to set.
+        attr_path (str): The path to the attribute, separated by dots. 
+                         For list indices, use square brackets.
+        value (any): The value you want to set the attribute to.
+
+    Examples:
+        set_nested_attr(bot, "decision_model.pm.features[0].length", 10)
+    """
+    
+    # Split the attribute path using dots and square brackets
+    attrs = re.split(r'\.|\[|\]', attr_path)
+    # Remove any empty strings resulting from the split
+    attrs = list(filter(lambda x: x != '', attrs))
+    
+    # Traverse the object to the second-last attribute or list item
+    for attr in attrs[:-1]:
+ 
+        if attr.isdigit():  # it's a list index
+            attr = int(attr)
+            obj = obj[attr]
+        else:
+            obj = getattr(obj, attr)
+
+
+    # The last attribute or list index whose value we want to set
+    last_attr = attrs[-1]
+    if last_attr.isdigit():
+        last_attr = int(last_attr)
+
+    # Set the value of the last attribute or list item
+    if isinstance(last_attr, int):
+        obj.__setitem__(last_attr, value)
+    else:
+        setattr(obj, last_attr, value)
 
 
 def flatten_dict(d, parent_key=(), level=-1, current_level=0, join_key=None):

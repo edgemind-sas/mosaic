@@ -8,7 +8,6 @@ import ccxt
 import uuid
 from ..core import ObjMOSAIC
 from ..db.db_base import DBBase
-import hashlib
 from ..utils.data_management import \
     timeframe_to_timedelta, HyperParams, parse_value
 from .exchange import ExchangeBase
@@ -22,6 +21,12 @@ PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
 PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
+class FeesValue(pydantic.BaseModel):
+
+    value: float = pydantic.Field(0, description="Fees value")
+    asset: str = pydantic.Field(0, description="Asset name")
+
+    
 class OrderParams(HyperParams):
     pass
     # auto_reverse_order_horizon: int = pydantic.Field(
@@ -34,8 +39,11 @@ class OrderBase(ObjMOSAIC):
                               description="Unique id of the trade")
 
     bot_uid: str = pydantic.Field(None,
-                                      description="Bot unique id")
+                                  description="Bot unique id")
 
+    test_mode: bool = pydantic.Field(
+        True, description="Indicates if order is really executed from backend")
+    
     symbol: str = pydantic.Field(
         None, description="Trading symbol")
     
@@ -68,7 +76,7 @@ class OrderBase(ObjMOSAIC):
         None,
         description="Order execution/cancellation UTC timestamp")
 
-    fees: float = pydantic.Field(0, description="Trade fees")
+    fees: FeesValue = pydantic.Field(FeesValue(), description="Trade fees")
 
     params: OrderParams = \
         pydantic.Field(OrderParams(),
@@ -87,14 +95,15 @@ class OrderBase(ObjMOSAIC):
     def set_default_id(cls, uid):
         return uid or str(uuid.uuid4())
 
-    # @pydantic.validator('base', always=True)
-    # def set_default_base(cls, base, values):
-    #     return values.get("symbol").split("/")[0]
+    @property
+    def base(self):
+        return self.symbol.split("/")[0]
 
-    # @pydantic.validator('quote', always=True)
-    # def set_default_quote(cls, quote, values):
-    #     return values.get("symbol").split("/")[1]
+    @property
+    def quote(self):
+        return self.symbol.split("/")[1]
 
+    
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
 
@@ -284,10 +293,6 @@ class OrderBase(ObjMOSAIC):
 
         self.quote_price = quote_price
         
-        if self.bkd is None:
-            self.dt_closed = dt
-            self.status = "executed"
-
     def execute_order(self, dt, quote_price):
         return True
             
@@ -338,7 +343,8 @@ class OrderBase(ObjMOSAIC):
             return int(self.order_backend_id)
         else:
             return self.order_backend_id
- 
+        
+        
     def update_from_backend(self):
 
         fetch_nb_try = 0
@@ -420,56 +426,54 @@ class OrderMarket(OrderBase):
         if self.side == "buy":
             self.base_amount = \
                 self.quote_amount/self.quote_price
-            
-            if not (self.bkd is None):
-                order = self.bkd.bkd.create_market_buy_order(
-                    self.symbol, self.base_amount)
-                self.uid = order["id"]
-                self.base_amount = order["amount"]
-                self.quote_amount = order["cost"]
-
-                # try:
-                #     print('Order successfully created:', order)
-                # except ccxt.NetworkError as e:
-                #     print('Network error:', e)
-                # except ccxt.ExchangeError as e:
-                #     print('Exchange error:', e)
-                # except ccxt.BaseError as e:
-                #     print('CCXT base error:', e)
-                dt_closed = \
-                    parse_value(
-                        datetime.fromisoformat(order["datetime"]
-                                               .replace("Z", "+00:00")))
-
-                self.dt_closed = dt_closed
-                self.status = "executed"
-
-            else:
-                self.base_amount *= (1 - self.fees)
-            
         elif self.side == "sell":
             self.quote_amount = \
                 self.base_amount*self.quote_price
+            
+        if not self.test_mode:
+            
+            order = self.bkd.create_market_order(
+                symbol=self.symbol,
+                side=self.side,
+                amount=self.base_amount,
+            )
 
-            if not (self.bkd is None):
-                order = self.bkd.bkd.create_market_sell_order(
-                    self.symbol, self.base_amount)
-                self.uid = order["id"]
-                self.base_amount = order["amount"]
-                self.quote_amount = order["cost"]
+            self.uid = order["id"]
+            self.base_amount = order["amount"]
+            self.quote_amount = order["cost"]
+            
+            fees_base = self.bkd.get_order_fees(order, symbol=self.base)
+            if fees_base > 0:
+                self.fees.value = fees_base
+                self.fees.asset = self.base
+                self.base_amount -= self.fees.value
 
-                dt_closed = \
-                    parse_value(
-                        datetime.fromisoformat(order["datetime"]
-                                               .replace("Z", "+00:00")))
-                self.dt_closed = dt
-                self.status = "executed"
+            fees_quote = self.bkd.get_order_fees(order, symbol=self.quote)
+            if fees_quote > 0:
+                self.fees.value = fees_quote
+                self.fees.asset = self.quote
+                self.quote_amount -= self.fees.value
+            
+            self.dt_closed = \
+                parse_value(
+                    datetime.fromisoformat(order["datetime"]
+                                           .replace("Z", "+00:00")))
 
-            else:
-                self.quote_amount *= (1 - self.fees)
+            self.status = "executed"
 
         else:
-            raise ValueError(f"Unrecognized order side {self.side}")
+            if self.side == "buy":
+                self.fees.value = self.base_amount*self.bkd.fees_rates.taker
+                self.fees.asset = self.base
+                self.base_amount -= self.fees.value
+            elif self.side == "sell":
+                self.fees.value = self.quote_amount*self.bkd.fees_rates.taker
+                self.fees.asset = self.quote
+                self.quote_amount -= self.fees.value
+
+            self.dt_closed = dt
+            self.status = "executed"
+
 
         self.update_db()
 

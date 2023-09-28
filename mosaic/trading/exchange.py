@@ -36,11 +36,11 @@ PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 #                                   "in_orders": self.in_orders})
 
 
-class Fees(pydantic.BaseModel):
+class FeesRates(pydantic.BaseModel):
     taker: float = pydantic.Field(
-        0.001, description="Taker fees (market orders)")
+        None, description="Taker fees (market orders)")
     maker: float = pydantic.Field(
-        0.001, description="Maker fees (limit orders)")
+        None, description="Maker fees (limit orders)")
 
 
 class ExchangeErrors(pydantic.BaseModel):
@@ -89,8 +89,8 @@ class ExchangeBase(ObjMOSAIC):
     #     0, description="Amount of base currency available")
 
     # Add a method to initiate fees using self.bkd.fetch_trading_fee("BTC/USDT")
-    fees: Fees = pydantic.Field(
-        Fees(), description="Order fees")
+    fees_rates: FeesRates = pydantic.Field(
+        FeesRates(), description="Order fees")
 
     errors: ExchangeErrors = pydantic.Field(
         ExchangeErrors(), description="Exchange error tracking")
@@ -159,6 +159,13 @@ class ExchangeBase(ObjMOSAIC):
 
         return quote_flatten_s, ohlcv_df.shift(1)
 
+    def set_trading_fees(self, **kwrds):
+
+        if self.fees_rates.maker is None:
+            self.fees_rates.maker = 0
+
+        if self.fees_rates.taker is None:
+            self.fees_rates.taker = 0
 
 # class ExchangeOffline(ExchangeBase):
 
@@ -196,17 +203,22 @@ class ExchangeBase(ObjMOSAIC):
     
 class ExchangeOnline(ExchangeBase):
 
-    use_testnet: bool = pydantic.Field(
-        True, description="Indicates if we use testnet platform (if exchange has it)")
-
     live_api_key: str = pydantic.Field(
         None, description="Exchange API key")
     live_secret: str = pydantic.Field(
         None, description="Exchange API secret")
-    testnet_api_key: str = pydantic.Field(
-        None, description="Exchange API key")
-    testnet_secret: str = pydantic.Field(
-        None, description="Exchange API secret")
+
+    use_testnet: bool = pydantic.Field(
+        False, description="Indicates if we use testnet platform (if exchange has it)")
+
+    # testnet_api_key: str = pydantic.Field(
+    #     None, description="Exchange API key")
+    # testnet_secret: str = pydantic.Field(
+    #     None, description="Exchange API secret")
+
+
+    def wait_for_order_fill(self, order, **kwrds):
+        return True
 
 
 class ExchangeCCXT(ExchangeOnline):
@@ -224,6 +236,15 @@ class ExchangeCCXT(ExchangeOnline):
                 {asset: val for asset, val in self.portfolio.balance.items()
                  if asset in assets_list}
 
+    def get_order_fees(self, order, symbol):
+
+        for fees in order.get("fees", []):
+            if symbol == fees.get("currency"):
+                return fees.get("cost", 0)
+            
+        return 0.0
+            
+            
     def update_portfolio(self, assets_list):
 
         balance_all = self.bkd.fetch_balance()
@@ -235,6 +256,93 @@ class ExchangeCCXT(ExchangeOnline):
             {asset: balance_all.get(asset, {}).get("used", 0)
              for asset in assets_list}
 
+    def wait_for_order_fill(self, order, symbol, timeout=300, poll_interval=None):
+        """
+        Waits for a given order to be fully filled.
+
+        Parameters:
+        - order_id (str): The order ID.
+        - symbol (str): The trading symbol (e.g., 'BTC/USDT').
+        - timeout (int): The maximum time to wait in seconds. Default is 300 seconds.
+        - poll_interval (int): The time interval between each poll in seconds. Default is 5 seconds.
+
+        Returns:
+        - dict: The updated order info if the order is filled within the timeout.
+        - None: If the order is not filled within the timeout.
+        """
+        # 'closed' indicates the order has been fully filled
+        if order['status'] == 'closed':
+            return order
+        
+        if poll_interval is None:
+            poll_interval = self.bkd.rateLimit
+        
+        elapsed_time = 0
+        while elapsed_time < timeout:
+            # Fetch the most recent order data
+            order = self.bkd.fetch_order(order['id'], symbol)
+
+            if order['status'] == 'closed': 
+                return order
+
+            if self.logger:
+                self.logger.debug(f"Wait to fill order {order['id']}")
+            # Sleep before polling again
+            time.sleep(poll_interval)
+            elapsed_time += poll_interval
+            
+        # Return None if the timeout is reached without the order being filled
+        return None  
+        
+
+    def create_market_order(self, symbol, side, amount,
+                            fill_order_timeout=300,
+                            poll_interval=None):
+        """
+        Creates a market order and waits for it to be fully filled.
+
+        Parameters:
+        - symbol (str): The trading symbol (e.g., 'BTC/USDT').
+        - side (str): The side of the order ('buy' or 'sell').
+        - amount (float): The amount of the asset to buy/sell.
+        - timeout (int): The maximum time to wait for the order to be filled in seconds. Default is 300 seconds.
+        - poll_interval (int): The time interval between each poll in seconds. Default is 5 seconds.
+
+        Returns:
+        - dict: The filled order info if the order is successfully created and filled within the timeout.
+        - None: If the order is not filled within the timeout or an exception occurs.
+        """
+
+        try:
+            # Create a market order
+            order = self.bkd.create_market_order(symbol, side, amount)
+
+            # Wait for the order to be filled
+            filled_order = self.wait_for_order_fill(
+                order=order,
+                symbol=symbol,
+                timeout=fill_order_timeout,
+                poll_interval=poll_interval,
+            )
+
+            if filled_order is not None:
+                return filled_order
+            else:
+                raise TimeoutError("Order was not filled within the timeout.")
+
+        except ccxt.NetworkError as e:
+            #self.errors.create_order_sell += 1
+            print(f"Network error: {e}")
+            return None
+        except ccxt.ExchangeError as e:
+            #self.errors.create_order_sell += 1
+            print(f"Exchange error: {e}")
+            return None            
+        except Exception as e:
+            #self.errors.create_order_sell += 1
+            print(f"An unexpected error occurred: {e}")
+            return None
+        
     def connect(self):
         if self.use_testnet:
             self.bkd = getattr(ccxt, self.name)({
@@ -258,10 +366,18 @@ class ExchangeCCXT(ExchangeOnline):
         return self.bkd
 
     def set_trading_fees(self, symbol):
-        fees_info_all = self.bkd.fetch_trading_fees()
 
-        self.fees.maker = fees_info_all[symbol]["maker"]
-        self.fees.taker = fees_info_all[symbol]["taker"]
+        if not (self.fees_rates.maker is None) and \
+           not (self.fees_rates.taker is None):
+            return
+        
+        markets = self.bkd.load_markets()
+        if self.fees_rates.maker is None:
+            self.fees_rates.maker = markets[symbol].get("maker", 0)
+
+        if self.fees_rates.taker is None:
+            self.fees_rates.taker = markets[symbol].get("taker", 0)
+            
 
     def get_last_ohlcv(self,
                        symbol="BTC/USDT",

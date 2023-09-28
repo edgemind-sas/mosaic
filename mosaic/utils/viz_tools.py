@@ -1,6 +1,12 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+import pkg_resources
+
+installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
+if 'ipdb' in installed_pkg:
+    import ipdb  # noqa: F401
+
 
 def plotly_ohlcv(ohlcv_df, fig=None, ohlcv_names={}, trace_params={}, layout={}):
     open_var = ohlcv_names.get("open", "open")
@@ -19,19 +25,20 @@ def plotly_ohlcv(ohlcv_df, fig=None, ohlcv_names={}, trace_params={}, layout={})
                                  close=ohlcv_df[close_var], name="OHLC"),
                   **trace_params)
 
-    # include a go.Bar trace for volumes
-    fig.add_trace(go.Bar(x=ohlcv_df.index,
-                         y=ohlcv_df[volume_var], name="Volume"),
-                  secondary_y=True)
-    fig.layout.yaxis2.showgrid = False
+    # PROBLEM: secondary_y does not work...
+    # # include a go.Bar trace for volumes
+    # fig.add_trace(go.Bar(x=ohlcv_df.index,
+    #                      y=ohlcv_df[volume_var], name="Volume"),
+    #               secondary_y=True)
+    # fig.layout.yaxis2.showgrid = False
 
     fig.update_layout(**layout)
 
-    fig.for_each_trace(
-        lambda trace: trace.update(
-            visible=True) if trace.name == "Volume"
-        else trace.update(visible=False)
-    )
+    # fig.for_each_trace(
+    #     lambda trace: trace.update(
+    #         visible=True) if trace.name == "Volume"
+    #     else trace.update(visible=False)
+    # )
 
     return fig
 
