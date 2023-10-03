@@ -32,7 +32,7 @@ http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:mone
         return super().bw_length + self.length
 
     def compute(self, ohlcv_df, **kwrds):
-        """Compute RSI"""
+        """Compute indicator"""
         super().compute(ohlcv_df, **kwrds)
 
         # OHLCV variable identification

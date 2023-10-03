@@ -3,4 +3,4 @@
 #from .dm_ta import DML_RSI, DML_RSI2
 #from .qhl import QHLDM
 
-from .pm_stats import PredictLinearRegression
+from .pm_stats import PMOLS, PMLogit

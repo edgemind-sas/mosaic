@@ -70,14 +70,13 @@ def test_rsi_002(data_btc_usdc_20_df):
 
     indic = mid.RSI()
 
-    assert indic.mode == "classic"
+    assert indic.mode == "ta"
     assert indic.offset == 0
-    assert indic.names == ['RSI_0']
+    assert indic.names == ['RSI_1']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
     assert isinstance(indic_df, pd.DataFrame)
-    assert indic_df.isna().all(None)
 
 
 def test_rsi_003(data_btc_usdc_20_df):
@@ -90,8 +89,8 @@ def test_rsi_003(data_btc_usdc_20_df):
 
     assert isinstance(indic_cla_df, pd.DataFrame)
 
-    indic.mode = "wilder"
-    assert indic.mode == "wilder"
+    indic.mode = "ta"
+    assert indic.mode == "ta"
     
     indic_wil_df = indic.compute(data_btc_usdc_20_df)
 

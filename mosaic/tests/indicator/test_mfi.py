@@ -84,5 +84,5 @@ def test_mfi_004(data_btc_usdc_20_df):
     assert indic.names == ['MFI_2[-1]']
 
     indic_off1_df = indic.compute(data_btc_usdc_20_df)
-
+    
     np.testing.assert_allclose(indic_off0_df.shift(1), indic_off1_df)

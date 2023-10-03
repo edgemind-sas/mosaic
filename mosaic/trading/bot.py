@@ -41,7 +41,10 @@ PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
 class Portfolio(pydantic.BaseModel):
-
+    """Keeps track of the current state of the trading portfolio.
+    Includes current performance metrics and current amounts in base and quote currency.
+    """
+    
     bot_uid: str = pydantic.Field(
         None, description="Bot id")
     dt: datetime = pydantic.Field(
@@ -99,30 +102,27 @@ class Portfolio(pydantic.BaseModel):
 
         self.performance = self.quote_value/self.quote_amount_init
 
-class DMConfig(pydantic.BaseModel):
-
-    fit_horizon: int = pydantic.Field(
-        None, description="Number of historical data used to adjust decision model")
-
-    predict_horizon: int = pydantic.Field(
-        None, description="Number of decisions before updating decision model")
 
 class BotTrading(ObjMOSAIC):
-
+    """Handles automated trading operations. 
+    Supports various backtesting and live trading modes. Capable of interacting 
+    with various data sources and decision models.
+    """
+    
     uid: str = pydantic.Field(
-        None, description="Bot Unique id")
+        None, description="Unique identifier for the bot")
     
     name: str = pydantic.Field(
-        None, description="Name of the trading architecture")
+        None, description="Descriptive name of the bot")
 
     ds_trading: DSOHLCV = pydantic.Field(
-        ..., description="Trading data source")
+        ..., description="Primary data source used for real-time trading or backtesting")
 
     ds_dm: DSOHLCV = pydantic.Field(
-        None, description="Decision model data source")
+        None, description="Data source specifically used for decision-making model")
 
     ds_fit: DSOHLCV = pydantic.Field(
-        None, description="Fitting data source")
+        None, description="Data source used for model fitting or optimization")
     
     dt_ohlcv_current: datetime = pydantic.Field(
         None, description="Session OHLCV current datetime")
@@ -426,7 +426,7 @@ class BotTrading(ObjMOSAIC):
                                          "mode",
                                          "dt_session_start"})
             self.uid = hashlib.sha256(id_json.encode("utf-8")).hexdigest()
-            
+
         # Set status to "started"
         self.status = "started"
         self.portfolio.bot_uid = self.uid
@@ -553,12 +553,17 @@ class BotTrading(ObjMOSAIC):
         
         signals_s = signals_s.fillna(method="ffill")
         signals_s = signals_s.loc[signals_s.shift() != signals_s]
-        idx_buy = signals_s.index[signals_s == "buy"]
-        idx_sell = signals_s.index[(signals_s == "sell") &
-                                   (signals_s.index >= idx_buy[0])]
+
+        idx_buy = signals_s == "buy"
+        dt_buy = signals_s.index[idx_buy]
+
+        idx_sell = signals_s == "sell"
+        if len(dt_buy) > 0:
+            idx_sell &= (signals_s.index >= dt_buy[0])
+        dt_sell = signals_s.index[idx_sell]
         
         orders_list = []
-        for self.dt_ohlcv_current in tqdm.tqdm(idx_buy,
+        for self.dt_ohlcv_current in tqdm.tqdm(dt_buy,
                                                disable=not progress_mode,
                                                desc="Buy orders",
                                                ):
@@ -566,7 +571,7 @@ class BotTrading(ObjMOSAIC):
             order = self.buy(no_db=True)
             orders_list.append(order)
 
-        for self.dt_ohlcv_current in tqdm.tqdm(idx_sell,
+        for self.dt_ohlcv_current in tqdm.tqdm(dt_sell,
                                                disable=not progress_mode,
                                                desc="Sell orders",
                                                ):

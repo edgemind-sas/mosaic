@@ -17,16 +17,16 @@ class RSI(IndicatorOHLCV):
     names_fmt: dict = Field(
         {"rsi": "RSI_{length}"}, description="Names format mapping")
     length: int = Field(
-        0, description="MA window length used to compute the indicator")
+        1, description="MA window length used to compute the indicator")
     mode: str = Field(
-        "classic", description="Calulation mode 'classic' or 'wilder'")
+        "ta", description="Calulation mode 'ta' or 'simple'")
 
     @property
     def bw_length(self):
         return super().bw_length + self.length
 
     def compute(self, ohlcv_df, **kwrds):
-        """Compute RSI"""
+        """Compute indicator"""
         super().compute(ohlcv_df, **kwrds)
 
         # OHLCV variable identification
@@ -35,7 +35,7 @@ class RSI(IndicatorOHLCV):
 
         indic_df = pd.DataFrame(index=ohlcv_df.index)
 
-        if self.mode == "classic":
+        if self.mode == "simple":
             close_delta = data_close.diff(1)
 
             delta_up = close_delta.copy(deep=True)
@@ -47,7 +47,7 @@ class RSI(IndicatorOHLCV):
             roll_down = delta_down.rolling(self.length).mean()
 
             indic_df[self.names[0]] = 100*roll_up/(roll_up + roll_down.abs())
-        elif self.mode == "wilder":
+        elif self.mode == "ta":
             indic_df[self.names[0]] = ta.rsi(data_close, length=self.length)
         else:
             raise ValueError(f"{self.mode} not supported")

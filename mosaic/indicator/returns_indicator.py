@@ -9,105 +9,72 @@ if 'ipdb' in installed_pkg:
 
 
 class ReturnsBaseIndicator(IndicatorOHLCV):
-    horizon: typing.List[int] = \
-        Field([0], description="Returns time steps in past or future")
-    period_name: str = \
-        Field("period", description="Returns column index name")
-    period_fmt: str = \
-        Field(None, description="Returns columns format")
+    var: str = Field(
+        "close", description="Variable name on which computing returns")
 
+    horizon: int = \
+        Field(0, description="Returns time step in past or future")
+    
     @property
-    def history_bw(self):
-        return 1
-
-    @property
-    def history_fw(self):
-        return max(self.horizon)
+    def bw_length(self):
+        length = (-self.horizon + 1) if self.horizon <= 0 else self.horizon
+        return super().bw_length + length
 
 
-class ReturnsCloseIndicator(ReturnsBaseIndicator):
-
+class Returns(ReturnsBaseIndicator):
+    
+    names_fmt: dict = Field(
+        {"ret": "ret_{var}_{horizon}"}, description="Names format mapping")
+    
     def compute(self, ohlcv_df: pd.DataFrame):
 
-        close_var = self.ohlcv_names.get("close", "close")
-        close_pm1 = ohlcv_df[close_var].shift(1)
-        ret_list = []
-        for k in self.horizon:
-            if k >= 0:
-                close_k = ohlcv_df[close_var].shift(-k)
-                ret_k = close_k/close_pm1 - 1
-            else:
-                close_k = ohlcv_df[close_var].shift(1-k)
-                ret_k = ohlcv_df[close_var]/close_k - 1
+        var = self.ohlcv_names.get(self.var)
 
-            ret_k.name = k if self.period_fmt is None \
-                else f"{self.period_fmt}{k:+}"
-            ret_list.append(ret_k)
+        indic_df = pd.DataFrame(index=ohlcv_df.index)
 
-        ret_df = pd.concat(ret_list, axis=1)
-        ret_df.columns.name = self.period_name.format(var=close_var, k=k)
-        return ret_df
+        if self.horizon <= 0:
+            indic_df[self.names[0]] = \
+                ohlcv_df[var].pct_change(-self.horizon+1)
+        else:
+            indic_df[self.names[0]] = \
+                ohlcv_df[var].pct_change(self.horizon+1)\
+                             .shift(-self.horizon)
+        
+        return indic_df
 
 
-class ReturnsHighIndicator(ReturnsBaseIndicator):
+class ReturnsRolling(ReturnsBaseIndicator):
+
+    var_ref: str = Field(
+        "close", description="Reference variable to compute returns")
+
+    fun: str = Field(
+        "max", description="Rolling function to be applied")
+
+    names_fmt: dict = Field(
+        {"ret": "ret_{fun}_{var_ref}_{var}_{horizon}"}, description="Names format mapping")
 
     def compute(self, ohlcv_df: pd.DataFrame):
 
         # OHLCV variable identification
-        close_var = self.ohlcv_names.get("close", "close")
-        high_var = self.ohlcv_names.get("high", "high")
+        var_ref = self.ohlcv_names.get(self.var_ref)
+        var = self.ohlcv_names.get(self.var)
 
-        close_pm1 = ohlcv_df[close_var].shift(1)
+        indic_df = pd.DataFrame(index=ohlcv_df.index)
 
-        ret_list = []
-        for k in self.horizon:
-            if k >= 0:
-                high_k = ohlcv_df.rolling(abs(k)+1)[high_var]\
-                                 .max().shift(-k)
-                ret_k = high_k/close_pm1 - 1
-            else:
-                close_k = ohlcv_df[close_var].shift(1-k)
-                high_k = ohlcv_df.rolling(abs(k)+1)[high_var]\
-                                 .max()
-                ret_k = high_k/close_k - 1
+        if self.horizon >= 0:
+            ref_pm1 = ohlcv_df[var_ref].shift(1)
+            indic_rolling = ohlcv_df.rolling(abs(self.horizon)+1)[var]
+        else:
+            ref_pm1 = ohlcv_df[var_ref].shift(1-self.horizon)
+            indic_rolling = ohlcv_df.rolling(abs(self.horizon)+1)[var]
 
-            ret_k.name = k if self.period_fmt is None \
-                else f"{self.period_fmt}{k:+}"
+        indic_rolling = getattr(indic_rolling, self.fun)()
 
-            ret_list.append(ret_k)
+        if self.horizon >= 0:
+            indic_rolling = indic_rolling.shift(-self.horizon)
+            
+        indic_df[self.names[0]] = indic_rolling/ref_pm1 - 1
 
-        ret_df = pd.concat(ret_list, axis=1)
-        ret_df.columns.name = self.period_name.format(var=high_var, k=k)
-        return ret_df
+        return indic_df
 
-
-class ReturnsLowIndicator(ReturnsBaseIndicator):
-
-    def compute(self, ohlcv_df: pd.DataFrame):
-
-        # OHLCV variable identification
-        close_var = self.ohlcv_names.get("close", "close")
-        low_var = self.ohlcv_names.get("low", "low")
-
-        close_pm1 = ohlcv_df[close_var].shift(1)
-
-        ret_list = []
-        for k in self.horizon:
-            if k >= 0:
-                low_k = ohlcv_df.rolling(abs(k)+1)[low_var]\
-                                .min().shift(-k)
-                ret_k = low_k/close_pm1 - 1
-            else:
-                close_k = ohlcv_df[close_var].shift(1-k)
-                low_k = ohlcv_df.rolling(abs(k)+1)[low_var]\
-                                .min()
-                ret_k = low_k/close_k - 1
-
-            ret_k.name = k if self.period_fmt is None \
-                else f"{self.period_fmt}{k:+}"
-
-            ret_list.append(ret_k)
-
-        ret_df = pd.concat(ret_list, axis=1)
-        ret_df.columns.name = self.period_name.format(var=low_var, k=k)
-        return ret_df
