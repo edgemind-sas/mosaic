@@ -3,6 +3,8 @@ import typing
 import pandas as pd
 import random
 #import tqdm
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from ..utils.data_management import HyperParams
 
 #from ..trading.core import SignalBase
@@ -39,10 +41,6 @@ class DMBase(ObjMOSAIC):
     
     @property
     def bw_length(self):
-        return 0
-
-    @property
-    def fw_length(self):
         return 0
 
     def compute_signal(self, signal_score, **kwrds):
@@ -118,6 +116,106 @@ class DMBase(ObjMOSAIC):
     #                           .to_dict()
 
     #     self.params = self.params.__class__(**dm_params_opt)
+
+    def plotly(self, ohlcv_df,
+               ret_signals=False,
+               layout={},
+               layout_ohlcv={},
+               layout_indic={},
+               var_buy="open",
+               var_sell="open",
+               **params):
+
+        signals = self.compute_signal(ohlcv_df, **params)
+        decisions_s = signals["signal"]
+        scores = signals["score"]
+        
+        buy_style = dict(
+            color="#FFD700",
+        )
+        sell_style = dict(
+            color="#C74AFF",
+        )
+        score_style = dict(
+            color="#3300CC",
+        )
+
+        var_buy_data = self.ohlcv_names.get(var_buy)
+        var_sell_data = self.ohlcv_names.get(var_sell)
+        
+        signals_buy = decisions_s.loc[decisions_s == "buy"]
+        signals_buy_trace = go.Scatter(
+            x=signals_buy.index,
+            y=ohlcv_df.loc[signals_buy.index, var_buy_data],
+            mode='markers',
+            marker=dict(color=buy_style.get("color")),
+            name='buy signals')
+
+        signals_sell = decisions_s.loc[decisions_s == "sell"]
+        signals_sell_trace = go.Scatter(
+            x=signals_sell.index,
+            y=ohlcv_df.loc[signals_sell.index, var_sell_data],
+            mode='markers',
+            marker=dict(color=sell_style.get("color")),
+            name='sell signals')
+
+        signals_score_trace = go.Scatter(
+            x=scores.index,
+            y=scores,
+            mode='markers+line',
+            marker=dict(color=score_style.get("color")),
+            name='Score')
+
+        ohlcv_sub = dict(row=1, col=1)
+        signal_score_sub = dict(row=2, col=1)
+        subplot_layout = dict(rows=2, cols=1)
+
+        fig_sp = make_subplots(shared_xaxes=True,
+                               vertical_spacing=0.02,
+                               **subplot_layout)
+
+        var_open = self.ohlcv_names.get("open", "open")
+        var_high = self.ohlcv_names.get("high", "high")
+        var_low = self.ohlcv_names.get("low", "low")
+        var_close = self.ohlcv_names.get("close", "close")
+
+        trace_ohlcv = go.Candlestick(x=ohlcv_df.index,
+                                     open=ohlcv_df[var_open],
+                                     high=ohlcv_df[var_high],
+                                     low=ohlcv_df[var_low],
+                                     close=ohlcv_df[var_close],
+                                     name="OHLC")
+        #fig_ohlcv.update_layout(**layout_ohlcv)
+        fig_sp.add_trace(trace_ohlcv, **ohlcv_sub)
+        fig_sp.add_trace(signals_score_trace, **signal_score_sub)
+            
+        fig_sp.add_trace(signals_buy_trace, **ohlcv_sub)
+        fig_sp.add_trace(signals_sell_trace, **ohlcv_sub)
+
+        # Threshold lines
+        fig_sp.add_shape(
+            type="line",
+            x0=scores.index.min(), y0=self.buy_threshold,
+            x1=scores.index.max(), y1=self.buy_threshold,
+            line=dict(color=buy_style.get("color"),
+                      width=3,
+                      dash="dot"), **signal_score_sub)
+
+        fig_sp.add_shape(
+            type="line",
+            x0=scores.index.min(), y0=self.sell_threshold,
+            x1=scores.index.max(), y1=self.sell_threshold,
+            line=dict(color=sell_style.get("color"),
+                      width=3,
+                      dash="dot"), **signal_score_sub)
+
+        layout["xaxis_rangeslider_visible"] = False
+        fig_sp.update_layout(**layout)
+
+        if ret_signals:
+            return fig_sp, signals
+        else:
+            return fig_sp
 
 
 class DM1ML(DMBase):

@@ -23,8 +23,12 @@ class ReturnsBaseIndicator(IndicatorOHLCV):
 
 class Returns(ReturnsBaseIndicator):
     
-    names_fmt: dict = Field(
-        {"ret": "ret_{var}_{horizon}"}, description="Names format mapping")
+    @property
+    def names_map(self):
+        """Indicator names format mapping"""
+        return {
+            "ret": f"ret_{self.var}_{self.horizon}",
+        }
     
     def compute(self, ohlcv_df: pd.DataFrame):
 
@@ -33,10 +37,10 @@ class Returns(ReturnsBaseIndicator):
         indic_df = pd.DataFrame(index=ohlcv_df.index)
 
         if self.horizon <= 0:
-            indic_df[self.names[0]] = \
+            indic_df[self.names('ret')] = \
                 ohlcv_df[var].pct_change(-self.horizon+1)
         else:
-            indic_df[self.names[0]] = \
+            indic_df[self.names('ret')] = \
                 ohlcv_df[var].pct_change(self.horizon+1)\
                              .shift(-self.horizon)
         
@@ -51,8 +55,12 @@ class ReturnsRolling(ReturnsBaseIndicator):
     fun: str = Field(
         "max", description="Rolling function to be applied")
 
-    names_fmt: dict = Field(
-        {"ret": "ret_{fun}_{var_ref}_{var}_{horizon}"}, description="Names format mapping")
+    @property
+    def names_map(self):
+        """Indicator names format mapping"""
+        return {
+            "ret": f"ret_{self.fun}_{self.var_ref}_{self.var}_{self.horizon}",
+        }
 
     def compute(self, ohlcv_df: pd.DataFrame):
 
@@ -74,7 +82,7 @@ class ReturnsRolling(ReturnsBaseIndicator):
         if self.horizon >= 0:
             indic_rolling = indic_rolling.shift(-self.horizon)
             
-        indic_df[self.names[0]] = indic_rolling/ref_pm1 - 1
+        indic_df[self.names('ret')] = indic_rolling/ref_pm1 - 1
 
         return indic_df
 

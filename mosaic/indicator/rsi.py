@@ -14,8 +14,6 @@ if 'ipdb' in installed_pkg:
 
 class RSI(IndicatorOHLCV):
 
-    names_fmt: dict = Field(
-        {"rsi": "RSI_{length}"}, description="Names format mapping")
     length: int = Field(
         1, description="MA window length used to compute the indicator")
     mode: str = Field(
@@ -25,6 +23,14 @@ class RSI(IndicatorOHLCV):
     def bw_length(self):
         return super().bw_length + self.length
 
+    @property
+    def names_map(self):
+        """Indicator names format mapping"""
+        return {
+            "rsi": f"RSI_{self.length}",
+        }
+
+    
     def compute(self, ohlcv_df, **kwrds):
         """Compute indicator"""
         super().compute(ohlcv_df, **kwrds)
@@ -46,9 +52,9 @@ class RSI(IndicatorOHLCV):
             roll_up = delta_up.rolling(self.length).mean()
             roll_down = delta_down.rolling(self.length).mean()
 
-            indic_df[self.names[0]] = 100*roll_up/(roll_up + roll_down.abs())
+            indic_df[self.names('rsi')] = 100*roll_up/(roll_up + roll_down.abs())
         elif self.mode == "ta":
-            indic_df[self.names[0]] = ta.rsi(data_close, length=self.length)
+            indic_df[self.names('rsi')] = ta.rsi(data_close, length=self.length)
         else:
             raise ValueError(f"{self.mode} not supported")
 
@@ -58,7 +64,7 @@ class RSI(IndicatorOHLCV):
         #                bins=[0] + self.levels + [100],
         #                labels=self.labels)
 
-        return self.apply_offset(indic_df)
+        return indic_df
 
     def plotly(self, ohlcv_df, layout={}, ret_indic=False, plot_ohlcv=False, **params):
 
@@ -70,8 +76,8 @@ class RSI(IndicatorOHLCV):
         color_indic = px.colors.qualitative.T10[0]
         fig.add_trace(go.Scatter(
             x=indic_df.index,
-            y=indic_df[self.names[0]],
-            name=self.names[0],
+            y=indic_df[self.names('rsi')],
+            name=self.names('rsi'),
             mode='markers+lines',
             line_color=color_indic
         ), **fig_trace)

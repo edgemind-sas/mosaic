@@ -10,3 +10,5 @@ from .returns_indicator import \
     Returns, ReturnsRolling
 from .rsi import RSI
 from .mfi import MFI
+from .bbands import BollingerBands
+from .sri import SRI

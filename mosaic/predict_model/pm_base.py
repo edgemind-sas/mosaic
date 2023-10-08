@@ -140,7 +140,7 @@ class PMReturnsUpDown(PMReturns):
                 
         else:
             raise ValueError(f"Threshold mode {self.threshold_mode} not supported")
-            
+        
         ret_d = ret > threshold if self.direction == "up" \
             else ret < threshold
         

@@ -35,7 +35,7 @@ setup(name='mosaic',
       description='',
       license='GPL V3',
       platforms='ALL',
-      python_requires='>=3.7',
+      python_requires='>=3.10',
       install_requires=[
           "pydantic==1.10.4",
           "pyyaml==6.0",

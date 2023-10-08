@@ -61,29 +61,28 @@ def data_btc_usdc_1000_df():
 # =============== Tests begin here ================== #
 
 
-def test_rsi_001():
+def test_sri_001():
 
-    indic = mid.RSI()
+    indic = mid.SRI()
 
 
-def test_rsi_002(data_btc_usdc_20_df):
+def test_sri_002(data_btc_usdc_20_df):
 
     indic = mid.RSI()
 
     assert indic.mode == "ta"
-    assert indic.offset == 0
-    assert indic.names == ['RSI_1']
+    assert indic.names() == ['RSI_1']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
     assert isinstance(indic_df, pd.DataFrame)
 
 
-def test_rsi_003(data_btc_usdc_20_df):
+def test_sri_003(data_btc_usdc_20_df):
 
     indic = mid.RSI(length=1)
 
-    assert indic.names == ['RSI_1']
+    assert indic.names() == ['RSI_1']
 
     indic_cla_df = indic.compute(data_btc_usdc_20_df)
 
@@ -97,20 +96,10 @@ def test_rsi_003(data_btc_usdc_20_df):
     np.testing.assert_allclose(indic_cla_df, indic_wil_df)
 
 
-def test_rsi_004(data_btc_usdc_20_df):
+def test_sri_004(data_btc_usdc_20_df):
 
     indic = mid.RSI(length=2)
 
-    assert indic.names == ['RSI_2']
-    assert indic.offset == 0
+    assert indic.names() == ['RSI_2']
 
-    indic_cla_off0_df = indic.compute(data_btc_usdc_20_df)
-
-    indic.offset = 1
-    assert indic.offset == 1
-    assert indic.names == ['RSI_2[-1]']
-
-    indic_cla_off1_df = indic.compute(data_btc_usdc_20_df)
-
-    np.testing.assert_allclose(indic_cla_off0_df.shift(1), indic_cla_off1_df)
 

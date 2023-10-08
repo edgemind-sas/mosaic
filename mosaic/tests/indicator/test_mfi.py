@@ -52,8 +52,7 @@ def test_mfi_002(data_btc_usdc_20_df):
 
     indic = mid.MFI()
 
-    assert indic.offset == 0
-    assert indic.names == [f'MFI_{indic.length}']
+    assert indic.names() == [f'MFI_{indic.length}']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
     assert isinstance(indic_df, pd.DataFrame)
@@ -63,7 +62,7 @@ def test_mfi_003(data_btc_usdc_20_df):
 
     indic = mid.MFI(length=1)
 
-    assert indic.names == ['MFI_1']
+    assert indic.names() == ['MFI_1']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
@@ -74,15 +73,5 @@ def test_mfi_004(data_btc_usdc_20_df):
 
     indic = mid.MFI(length=2)
 
-    assert indic.names == ['MFI_2']
-    assert indic.offset == 0
+    assert indic.names() == ['MFI_2']
 
-    indic_off0_df = indic.compute(data_btc_usdc_20_df)
-
-    indic.offset = 1
-    assert indic.offset == 1
-    assert indic.names == ['MFI_2[-1]']
-
-    indic_off1_df = indic.compute(data_btc_usdc_20_df)
-    
-    np.testing.assert_allclose(indic_off0_df.shift(1), indic_off1_df)
