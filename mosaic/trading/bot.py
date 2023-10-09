@@ -103,6 +103,12 @@ class Portfolio(pydantic.BaseModel):
         self.performance = self.quote_value/self.quote_amount_init
 
 
+    def report(self):
+
+        report_str = f"BOT: {self.bot_uid}\nDate: {self.dt}\nPerformance: {self.performance}"
+        return report_str
+
+
 class BotTrading(ObjMOSAIC):
     """Handles automated trading operations. 
     Supports various backtesting and live trading modes. Capable of interacting 
