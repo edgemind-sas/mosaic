@@ -46,21 +46,22 @@
 <ul>
 <li><a href="#introduction">1. Introduction</a></li>
 <li><a href="#init-env">2. Technical prerequisites</a></li>
-<li><a href="#org445f93d">3. Retrieving OHLCV data</a></li>
-<li><a href="#org9cc36aa">4. Creating an RSI technical indicator</a></li>
-<li><a href="#orgc9bad82">5. Creating a predictive model for upward movement</a></li>
-<li><a href="#org04005d7">6. Creating a predictive model for downward movement</a></li>
-<li><a href="#org8058f00">7. Creating a decision model</a></li>
-<li><a href="#org88adce3">8. Building the Bot</a>
+<li><a href="#org5c411be">3. Retrieving OHLCV data</a></li>
+<li><a href="#org1e390df">4. Creating an RSI technical indicator</a></li>
+<li><a href="#org75b9113">5. Creating a predictive model for upward movement</a></li>
+<li><a href="#orgbabd969">6. Creating a predictive model for downward movement</a></li>
+<li><a href="#orgf1a0419">7. Creating a decision model</a></li>
+<li><a href="#orga33fc22">8. Building the Bot</a>
 <ul>
-<li><a href="#org4287504">8.1. Exchange Definition</a></li>
-<li><a href="#orgf0e709a">8.2. Learning and Testing Data Sources</a></li>
-<li><a href="#org6dfd939">8.3. Bot Definition and Launch</a></li>
+<li><a href="#orga4780a6">8.1. Exchange Definition</a></li>
+<li><a href="#orgad4d98d">8.2. Learning and Testing Data Sources</a></li>
+<li><a href="#org4a77b22">8.3. Bot Definition and Launch</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
+
 <div id="outline-container-introduction" class="outline-2">
 <h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-introduction">
@@ -132,11 +133,15 @@ session and display its version:
 <span style="color: #DCDCCC; font-weight: bold;">print</span>(mosaic.__version__)
 </pre>
 </div>
+
+<pre class="example">
+0.0.40
+</pre>
 </div>
 </div>
 
-<div id="outline-container-org445f93d" class="outline-2">
-<h2 id="org445f93d"><span class="section-number-2">3.</span> Retrieving OHLCV data</h2>
+<div id="outline-container-org5c411be" class="outline-2">
+<h2 id="org5c411be"><span class="section-number-2">3.</span> Retrieving OHLCV data</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 First, download the <a href="ohlcv.csv">available OHLCV data here</a> to your working directory.
@@ -155,8 +160,8 @@ Then import the data with Pandas:
 </div>
 
 
-<div id="outline-container-org9cc36aa" class="outline-2">
-<h2 id="org9cc36aa"><span class="section-number-2">4.</span> Creating an RSI technical indicator</h2>
+<div id="outline-container-org1e390df" class="outline-2">
+<h2 id="org1e390df"><span class="section-number-2">4.</span> Creating an RSI technical indicator</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The MOSAIC library allows you to build trading strategies based on technical indicators.
@@ -181,7 +186,7 @@ indicator to calculate the RSI on our OHLCV data:
 </pre>
 </div>
 
-<pre class="example" id="orgec7a657">
+<pre class="example" id="org44f716b">
                               RSI_10
 datetime                            
 2023-09-12 00:00:00+02:00        NaN
@@ -201,8 +206,8 @@ datetime
 </div>
 </div>
 
-<div id="outline-container-orgc9bad82" class="outline-2">
-<h2 id="orgc9bad82"><span class="section-number-2">5.</span> Creating a predictive model for upward movement</h2>
+<div id="outline-container-org75b9113" class="outline-2">
+<h2 id="org75b9113"><span class="section-number-2">5.</span> Creating a predictive model for upward movement</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 The RSI indicator we just created can be used to create a model for predicting future return
@@ -247,7 +252,7 @@ in this case:
 </pre>
 </div>
 
-<pre class="example" id="orga57322e">
+<pre class="example" id="org3b9e610">
 datetime
 2023-09-12 00:00:00+02:00    False
 2023-09-12 00:00:01+02:00    False
@@ -287,14 +292,14 @@ consult the characteristics of the adjusted model with the command:
 </pre>
 </div>
 
-<pre class="example" id="org6e6b401">
+<pre class="example" id="orgfb1b66a">
                            Logit Regression Results                           
 ==============================================================================
 Dep. Variable:               ret_5_up   No. Observations:                  989
 Model:                          Logit   Df Residuals:                      987
 Method:                           MLE   Df Model:                            1
 Date:                Tue, 10 Oct 2023   Pseudo R-squ.:                 0.07302
-Time:                        11:45:57   Log-Likelihood:                -579.84
+Time:                        12:03:57   Log-Likelihood:                -579.84
 converged:                       True   LL-Null:                       -625.51
 Covariance Type:            nonrobust   LLR p-value:                 1.206e-21
 ==============================================================================
@@ -314,7 +319,7 @@ using the <code>predict</code> method.
 </pre>
 </div>
 
-<pre class="example" id="org3144641">
+<pre class="example" id="orgf49c20a">
 datetime
 2023-09-12 00:00:00+02:00         NaN
 2023-09-12 00:00:01+02:00         NaN
@@ -342,8 +347,8 @@ returns at \(t+5\) estimated by our model.</li>
 </div>
 
 
-<div id="outline-container-org04005d7" class="outline-2">
-<h2 id="org04005d7"><span class="section-number-2">6.</span> Creating a predictive model for downward movement</h2>
+<div id="outline-container-orgbabd969" class="outline-2">
+<h2 id="orgbabd969"><span class="section-number-2">6.</span> Creating a predictive model for downward movement</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 Now let's create a model to predict downward movements in returns based on some other indicators. We
@@ -374,14 +379,14 @@ pm_down.bkd.summary()
 </pre>
 </div>
 
-<pre class="example" id="org729a3e6">
+<pre class="example" id="org8f5e8be">
                            Logit Regression Results                           
 ==============================================================================
 Dep. Variable:             ret_5_down   No. Observations:                  773
 Model:                          Logit   Df Residuals:                      770
 Method:                           MLE   Df Model:                            2
 Date:                Tue, 10 Oct 2023   Pseudo R-squ.:                 0.03813
-Time:                        11:45:58   Log-Likelihood:                -476.10
+Time:                        12:03:58   Log-Likelihood:                -476.10
 converged:                       True   LL-Null:                       -494.97
 Covariance Type:            nonrobust   LLR p-value:                 6.374e-09
 ==============================================================================
@@ -395,8 +400,8 @@ MFI_20        -0.0064      0.003     -2.403      0.016      -0.012      -0.001
 </div>
 </div>
 
-<div id="outline-container-org8058f00" class="outline-2">
-<h2 id="org8058f00"><span class="section-number-2">7.</span> Creating a decision model</h2>
+<div id="outline-container-orgf1a0419" class="outline-2">
+<h2 id="orgf1a0419"><span class="section-number-2">7.</span> Creating a decision model</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 As we use logistic regression to predict futur returns we need to use a decision model based on both
@@ -446,7 +451,7 @@ buy/sell signals. The following call of <code>predict</code> shows the first 50 
 </pre>
 </div>
 
-<pre class="example" id="org7bb4ede">
+<pre class="example" id="org8299198">
                           signal     score
 datetime                                  
 2023-09-12 00:00:00+02:00    NaN       NaN
@@ -514,16 +519,16 @@ threshold and the sell threshold.</li>
 </div>
 </div>
 
-<div id="outline-container-org88adce3" class="outline-2">
-<h2 id="org88adce3"><span class="section-number-2">8.</span> Building the Bot</h2>
+<div id="outline-container-orga33fc22" class="outline-2">
+<h2 id="orga33fc22"><span class="section-number-2">8.</span> Building the Bot</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 We now have a decision model that forms the core of a trading strategy. To build a bot, which is capable of automatically applying the defined strategy on a set of OHLCV data, we need to add a few more elements.
 </p>
 </div>
 
-<div id="outline-container-org4287504" class="outline-3">
-<h3 id="org4287504"><span class="section-number-3">8.1.</span> Exchange Definition</h3>
+<div id="outline-container-orga4780a6" class="outline-3">
+<h3 id="orga4780a6"><span class="section-number-3">8.1.</span> Exchange Definition</h3>
 <div class="outline-text-3" id="text-8-1">
 <p>
 The MOSAIC library allows us to instantiate an object representing the exchange from which we want
@@ -548,8 +553,8 @@ this case.
 </div>
 </div>
 
-<div id="outline-container-orgf0e709a" class="outline-3">
-<h3 id="orgf0e709a"><span class="section-number-3">8.2.</span> Learning and Testing Data Sources</h3>
+<div id="outline-container-orgad4d98d" class="outline-3">
+<h3 id="orgad4d98d"><span class="section-number-3">8.2.</span> Learning and Testing Data Sources</h3>
 <div class="outline-text-3" id="text-8-2">
 <p>
 We also need to define the data sources that will be used for training and testing our decision model.
@@ -594,8 +599,8 @@ The <code>DSOHLCV</code> objects allow us to specify:
 </div>
 </div>
 
-<div id="outline-container-org6dfd939" class="outline-3">
-<h3 id="org6dfd939"><span class="section-number-3">8.3.</span> Bot Definition and Launch</h3>
+<div id="outline-container-org4a77b22" class="outline-3">
+<h3 id="org4a77b22"><span class="section-number-3">8.3.</span> Bot Definition and Launch</h3>
 <div class="outline-text-3" id="text-8-3">
 <p>
 We finalize the bot by assembling the previous elements into a <code>BotTrading</code> object:
@@ -619,11 +624,6 @@ The bot is then launched with the following command:
 </pre>
 </div>
 
-<pre class="example">
-None
-</pre>
-
-
 <p>
 At the end of the process, we can check the performance of our strategy using the <code>report</code> method of
 the <code>portfolio</code> attribute of the bot: 
@@ -634,7 +634,9 @@ the <code>portfolio</code> attribute of the bot:
 </div>
 
 <pre class="example">
-None
+BOT: b081bf1078e2396a308dc788770dca5b5e6c921b6f442fd8c601c616d953a827
+Date: 2023-09-15 23:59:59+02:00
+Performance: 1.002618386295843
 </pre>
 </div>
 </div>
