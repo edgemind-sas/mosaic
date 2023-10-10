@@ -1,0 +1,72 @@
+# Indicator definitions
+indics:
+  rsi_short: &rsi_short
+    cls: RSI
+    length: 15
+
+  mfi_short: &mfi_short
+    cls: MFI
+    length: 60
+
+  mfi_long: &mfi_long
+    cls: MFI
+    length: 120
+
+# Definition of return prediction model.
+# Here we define a Logit up/down prediction model.
+predict_models:
+  logit: &pm_logit
+    cls: PMLogit
+    returns_horizon: 60
+    features:
+      - *mfi_short
+      - *mfi_long
+
+# Bot specification
+bot:
+  name: "bot_dummy"
+  mode: "btfast"
+  bt_buy_on: high
+  bt_sell_on: low
+  
+  ds_trading: &ds_trading
+    symbol: "BTC/FDUSD"
+    timeframe: "1s"
+    dt_start: "2023-09-15 00:00:00"
+    dt_end: "2023-09-16 00:00:00"
+
+  ds_fit:
+    <<: *ds_trading
+    dt_start: "2023-09-12 00:00:00"
+    dt_end: "2023-09-15 00:00:00"
+
+  portfolio: 
+    quote_amount_init: 1
+    
+  decision_model:
+    cls: DM2ML
+    buy_threshold: 0
+    sell_threshold: 0
+    pm_buy:
+      <<: *pm_logit
+      direction: up
+
+    pm_sell:
+      <<: *pm_logit
+      direction: down
+
+  order_model:
+    cls: OrderMarket
+    
+  invest_model:
+    cls: InvestLongModel
+    nb_buy_allowed: 1
+    buy_quote_rate: 1
+    sell_base_rate: 1
+        
+  exchange :
+    cls: ExchangeCCXT
+    name: binance
+    fees_rates:
+      taker: 0
+      maker: 0

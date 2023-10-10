@@ -23,11 +23,11 @@ if 'ipdb' in installed_pkg:
 class DMBase(ObjMOSAIC):
 
     buy_threshold: float = \
-        pydantic.Field(None, description="If signal_score > buy_threshold => buy signal generated",
+        pydantic.Field(0, description="If signal_score > buy_threshold => buy signal generated",
                        ge=0)
                        
     sell_threshold: float = \
-        pydantic.Field(None, description="If signal_score < -sell_threshold => sell signal generated",
+        pydantic.Field(0, description="If signal_score < -sell_threshold => sell signal generated",
                        ge=0)
     
     params: HyperParams = \

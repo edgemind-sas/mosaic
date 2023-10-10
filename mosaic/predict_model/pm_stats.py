@@ -25,7 +25,7 @@ class PMOLS(PMReturns):
 
         features_df = sm.add_constant(self.compute_features(ohlcv_df))
 
-        return self.bkd.predict(features_df).fillna(0)
+        return self.bkd.predict(features_df)
 
 
 class PMLogit(PMReturnsUpDown):
@@ -43,4 +43,4 @@ class PMLogit(PMReturnsUpDown):
 
         features_df = sm.add_constant(self.compute_features(ohlcv_df))
 
-        return self.bkd.predict(features_df).fillna(0)
+        return self.bkd.predict(features_df)

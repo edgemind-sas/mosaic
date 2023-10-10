@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bot building step by step</title>
+<meta name="author" content="Roland Donat" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<link rel="stylesheet" type="text/css" href="https://edgemind-sas.github.io/visual-identity/official_docs/css/edgemind.css" />
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Bot building step by step</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table des matières</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#init-env">2. Technical prerequisites</a></li>
+<li><a href="#org445f93d">3. Retrieving OHLCV data</a></li>
+<li><a href="#org9cc36aa">4. Creating an RSI technical indicator</a></li>
+<li><a href="#orgc9bad82">5. Creating a predictive model for upward movement</a></li>
+<li><a href="#org04005d7">6. Creating a predictive model for downward movement</a></li>
+<li><a href="#org8058f00">7. Creating a decision model</a></li>
+<li><a href="#org88adce3">8. Building the Bot</a>
+<ul>
+<li><a href="#org4287504">8.1. Exchange Definition</a></li>
+<li><a href="#orgf0e709a">8.2. Learning and Testing Data Sources</a></li>
+<li><a href="#org6dfd939">8.3. Bot Definition and Launch</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+This tutorial explains the creation of a MOSAIC trading bot starting from the various key concepts
+of this library. 
+</p>
+</div>
+</div>
+
+<div id="outline-container-init-env" class="outline-2">
+<h2 id="init-env"><span class="section-number-2">2.</span> Technical prerequisites</h2>
+<div class="outline-text-2" id="text-init-env">
+<p>
+The MOSAIC library requires Python version &gt;= 3.10.
+</p>
+
+<p>
+To facilitate your development projects, it is recommended to use a Python virtual environment to
+perform this tutorial. So start by installing the <code>pew</code> manager if you haven't already done so: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install pew
+</pre>
+</div>
+
+<p>
+Then create a new virtual environment:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew new mosaic_step_by_step
+</pre>
+</div>
+
+<p>
+Now create a directory that will contain the files of this tutorial, e.g. <code>step_by_step</code>, and
+navigate to this directory: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">mkdir step_by_step
+<span style="color: #DCDCCC; font-weight: bold;">cd</span> step_by_step
+</pre>
+</div>
+
+<p>
+Note that you can save this directory as associated with the virtual environment you just created
+with the command: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew setproject
+</pre>
+</div>
+
+<p>
+Finally, install the MOSAIC library in your environment from GitHub:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install https://github.com/edgemind-sas/mosaic.git          
+</pre>
+</div>
+
+<p>
+If the installation was successful, you should be able to import the MOSAIC library in a Python
+session and display its version: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic
+
+<span style="color: #DCDCCC; font-weight: bold;">print</span>(mosaic.__version__)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org445f93d" class="outline-2">
+<h2 id="org445f93d"><span class="section-number-2">3.</span> Retrieving OHLCV data</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+First, download the <a href="ohlcv.csv">available OHLCV data here</a> to your working directory.
+</p>
+
+<p>
+Then import the data with Pandas:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> pandas <span style="color: #F0DFAF; font-weight: bold;">as</span> pd
+
+<span style="color: #DFAF8F;">ohlcv_df</span> = pd.read_csv(<span style="color: #CC9393;">"ohlcv.csv"</span>, index_col=<span style="color: #CC9393;">"datetime"</span>)
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org9cc36aa" class="outline-2">
+<h2 id="org9cc36aa"><span class="section-number-2">4.</span> Creating an RSI technical indicator</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The MOSAIC library allows you to build trading strategies based on technical indicators.
+</p>
+
+<p>
+For example, we can create an indicator to calculate the <a href="https://en.wikipedia.org/wiki/Relative_strength_index">RSI</a>:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.indicator <span style="color: #F0DFAF; font-weight: bold;">as</span> mid
+
+<span style="color: #DFAF8F;">indic_rsi</span> = mid.RSI(length=10)
+</pre>
+</div>
+
+<p>
+The above code defines an RSI indicator with a window of 10 time units. We can now use this
+indicator to calculate the RSI on our OHLCV data: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">indic_rsi.compute(ohlcv_df)
+</pre>
+</div>
+
+<pre class="example" id="orgec7a657">
+                              RSI_10
+datetime                            
+2023-09-12 00:00:00+02:00        NaN
+2023-09-12 00:00:01+02:00        NaN
+2023-09-12 00:00:02+02:00        NaN
+2023-09-12 00:00:03+02:00        NaN
+2023-09-12 00:00:04+02:00        NaN
+...                              ...
+2023-09-12 00:16:35+02:00  77.729095
+2023-09-12 00:16:36+02:00  78.303268
+2023-09-12 00:16:37+02:00  77.098601
+2023-09-12 00:16:38+02:00  82.768728
+2023-09-12 00:16:39+02:00  82.768728
+
+[1000 rows x 1 columns]
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgc9bad82" class="outline-2">
+<h2 id="orgc9bad82"><span class="section-number-2">5.</span> Creating a predictive model for upward movement</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+The RSI indicator we just created can be used to create a model for predicting future return
+increases. 
+</p>
+
+<p>
+To do this, we will use the following logistic regression model: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.predict_model <span style="color: #F0DFAF; font-weight: bold;">as</span> mpr
+
+<span style="color: #DFAF8F;">pm_up</span> = mpr.PMLogit(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   returns_horizon=5,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   direction=<span style="color: #CC9393;">"up"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   threshold=0.00001,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   features=[indic_rsi],
+)
+</pre>
+</div>
+
+<p>
+The arguments of the <code>PMLogit</code> class are:
+</p>
+<ul class="org-ul">
+<li><code>returns_horizon</code>: number of time units to consider for predicting future returns. The increase or
+decrease (depending on the <code>direction</code> argument) of future returns is the target variable of our
+model.</li>
+<li><code>direction</code>: indicates whether the model will predict an increase in future returns (<code>"up"</code>) or a
+decrease (<code>"down"</code>).</li>
+<li><code>threshold</code>: absolute variation threshold of returns indicating a future increase or decrease
+(depends on the <code>direction</code> parameter).</li>
+<li><code>features</code>: list of indicators to use as explanatory variables in the logistic regression.</li>
+</ul>
+
+<p>
+We can use the <code>compute_returns</code> method to understand how the discretization of future returns works
+in this case: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">pm_up.compute_returns(ohlcv_df)
+</pre>
+</div>
+
+<pre class="example" id="orga57322e">
+datetime
+2023-09-12 00:00:00+02:00    False
+2023-09-12 00:00:01+02:00    False
+2023-09-12 00:00:02+02:00    False
+2023-09-12 00:00:03+02:00     True
+2023-09-12 00:00:04+02:00     True
+                             ...  
+2023-09-12 00:16:35+02:00    False
+2023-09-12 00:16:36+02:00    False
+2023-09-12 00:16:37+02:00    False
+2023-09-12 00:16:38+02:00    False
+2023-09-12 00:16:39+02:00    False
+Name: ret_5_up, Length: 1000, dtype: bool
+</pre>
+
+<p>
+A value <code>True</code> at a given time \(t\) means in this case that the return between \(t\) and \(t+5\) is
+greater than <code>threshold</code>. A value <code>True</code> corresponds to an increase (because <code>direction = "up"</code>) and
+a <code>False</code> to an absence of increase, which does not mean a decrease. 
+</p>
+
+<p>
+Once the model is created, the parameters need to be adjusted through statistical learning. We use
+the <code>fit</code> method for that. 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">pm_up.fit(ohlcv_df)
+</pre>
+</div>
+
+<p>
+The <code>PMLogit</code> model from MOSAIC uses the <a href="https://www.statsmodels.org/stable/index.html"><code>statsmodels</code></a> library in the background. Therefore, we can
+consult the characteristics of the adjusted model with the command: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">pm_up.bkd.summary()
+</pre>
+</div>
+
+<pre class="example" id="org6e6b401">
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:               ret_5_up   No. Observations:                  989
+Model:                          Logit   Df Residuals:                      987
+Method:                           MLE   Df Model:                            1
+Date:                Tue, 10 Oct 2023   Pseudo R-squ.:                 0.07302
+Time:                        11:45:57   Log-Likelihood:                -579.84
+converged:                       True   LL-Null:                       -625.51
+Covariance Type:            nonrobust   LLR p-value:                 1.206e-21
+==============================================================================
+                 coef    std err          z      P&gt;|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          1.2367      0.222      5.563      0.000       0.801       1.672
+RSI_10        -0.0399      0.004     -8.911      0.000      -0.049      -0.031
+==============================================================================
+</pre>
+
+<p>
+Once the model is adjusted, it is possible to use it to predict the increase in returns at \(t+5\)
+using the <code>predict</code> method. 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">pm_up.predict(ohlcv_df)
+</pre>
+</div>
+
+<pre class="example" id="org3144641">
+datetime
+2023-09-12 00:00:00+02:00         NaN
+2023-09-12 00:00:01+02:00         NaN
+2023-09-12 00:00:02+02:00         NaN
+2023-09-12 00:00:03+02:00         NaN
+2023-09-12 00:00:04+02:00         NaN
+                               ...   
+2023-09-12 00:16:35+02:00    0.134275
+2023-09-12 00:16:36+02:00    0.131635
+2023-09-12 00:16:37+02:00    0.137226
+2023-09-12 00:16:38+02:00    0.112576
+2023-09-12 00:16:39+02:00    0.112576
+Length: 1000, dtype: float64
+</pre>
+
+<p>
+Remarks on the results of the <code>predict</code> method:
+</p>
+<ul class="org-ul">
+<li>The first 10 values are <code>NaN</code> because the RSI indicator with a 10-time unit window can only be calculated from the eleventh OHLCV data point.</li>
+<li>Starting from the eleventh element, for each time \(t\), we have the probability of an increase in
+returns at \(t+5\) estimated by our model.</li>
+</ul>
+</div>
+</div>
+
+
+<div id="outline-container-org04005d7" class="outline-2">
+<h2 id="org04005d7"><span class="section-number-2">6.</span> Creating a predictive model for downward movement</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+Now let's create a model to predict downward movements in returns based on some other indicators. We
+propose to use two <a href="https://en.wikipedia.org/wiki/Money_flow_index">MFI</a> indicators with different window lengths as follows: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">indic_mfi_5</span> = mid.MFI(length=5)
+indic_mfi_20 = mid.MFI(length=20)
+</pre>
+</div>
+
+<p>
+Then we create the downward model using the same configuration as the previous upward returns
+predictive model, except we set <code>direction</code> to "down" and <code>features</code> with the list of MFI
+indicators. The model is fitted with same data and we check statistical learning results :
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">pm_down</span> = mpr.PMLogit(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   returns_horizon=5,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   direction=<span style="color: #CC9393;">"down"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   threshold=0.00001,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   features=[indic_mfi_5, indic_mfi_20],
+)
+
+pm_down.fit(ohlcv_df)
+
+pm_down.bkd.summary()
+</pre>
+</div>
+
+<pre class="example" id="org729a3e6">
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:             ret_5_down   No. Observations:                  773
+Model:                          Logit   Df Residuals:                      770
+Method:                           MLE   Df Model:                            2
+Date:                Tue, 10 Oct 2023   Pseudo R-squ.:                 0.03813
+Time:                        11:45:58   Log-Likelihood:                -476.10
+converged:                       True   LL-Null:                       -494.97
+Covariance Type:            nonrobust   LLR p-value:                 6.374e-09
+==============================================================================
+                 coef    std err          z      P&gt;|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          0.4280      0.160      2.681      0.007       0.115       0.741
+MFI_5          0.0117      0.002      6.003      0.000       0.008       0.016
+MFI_20        -0.0064      0.003     -2.403      0.016      -0.012      -0.001
+==============================================================================
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org8058f00" class="outline-2">
+<h2 id="org8058f00"><span class="section-number-2">7.</span> Creating a decision model</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+As we use logistic regression to predict futur returns we need to use a decision model based on both
+buy and sell predictive models. In MOSAIC, it means we need to create a <code>DM2ML</code> class instance as
+follows:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.decision_model <span style="color: #F0DFAF; font-weight: bold;">as</span> mdm
+
+<span style="color: #DFAF8F;">dm</span> = mdm.DM2ML(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   pm_buy=pm_up,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   pm_sell=pm_down,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   buy_threshold=0.01,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   sell_threshold=0.01,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   )
+</pre>
+</div>
+<p>
+This decision model allows you to specify:
+</p>
+<ul class="org-ul">
+<li><code>pm_buy</code>: a model to predict buy signals, which is why we set our model to <code>pm_up</code>.</li>
+<li><code>pm_sell</code>: a model to predict sell signals, which is why we set our model to <code>pm_sell</code>.</li>
+<li><code>buy_threshold</code>: the absolute threshold above which a buy signal is generated by the decision model.</li>
+<li><code>sell_threshold</code>: the absolute threshold above which a sell signal is generated by the decision model.</li>
+</ul>
+
+<p>
+Please note that in this version of MOSAIC, the <code>DM2ML</code> class generates the buy/sell signal following this process:
+</p>
+<ol class="org-ol">
+<li>Compute the buy score from the <code>pm_buy</code> model. This score is often interpretable as the probability of having an upward movement of future returns.</li>
+<li>Compute the sell score from the <code>pm_sell</code> model. This score is often interpretable as the probability of having a downward movement of future returns.</li>
+<li>Subtract the sell score from the buy score to obtain the signal score.</li>
+<li>If the signal score &gt; buy_threshold, generate a buy signal.
+If the signal score &lt; -sell_threshold, generate a sell signal.
+Generate no signal otherwise.</li>
+</ol>
+
+<p>
+Since we have already fitted our predictive models <code>pm_up</code> and <code>pm_down</code>, there is no need to call
+the <code>fit</code> method of the decision model <code>dm</code>. We can directly use the <code>predict</code> method to generate
+buy/sell signals. The following call of <code>predict</code> shows the first 50 signals: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python">dm.predict(ohlcv_df).head(50)
+</pre>
+</div>
+
+<pre class="example" id="org7bb4ede">
+                          signal     score
+datetime                                  
+2023-09-12 00:00:00+02:00    NaN       NaN
+2023-09-12 00:00:01+02:00    NaN       NaN
+2023-09-12 00:00:02+02:00    NaN       NaN
+2023-09-12 00:00:03+02:00    NaN       NaN
+2023-09-12 00:00:04+02:00    NaN       NaN
+2023-09-12 00:00:05+02:00    NaN       NaN
+2023-09-12 00:00:06+02:00    NaN       NaN
+2023-09-12 00:00:07+02:00    NaN       NaN
+2023-09-12 00:00:08+02:00    NaN       NaN
+2023-09-12 00:00:09+02:00    NaN       NaN
+2023-09-12 00:00:10+02:00    NaN       NaN
+2023-09-12 00:00:11+02:00    NaN       NaN
+2023-09-12 00:00:12+02:00    NaN       NaN
+2023-09-12 00:00:13+02:00    NaN       NaN
+2023-09-12 00:00:14+02:00    NaN       NaN
+2023-09-12 00:00:15+02:00    NaN       NaN
+2023-09-12 00:00:16+02:00    NaN       NaN
+2023-09-12 00:00:17+02:00    NaN       NaN
+2023-09-12 00:00:18+02:00    NaN       NaN
+2023-09-12 00:00:19+02:00   sell -0.099640
+2023-09-12 00:00:20+02:00   sell -0.099640
+2023-09-12 00:00:21+02:00   sell -0.025865
+2023-09-12 00:00:22+02:00    buy  0.024589
+2023-09-12 00:00:23+02:00    buy  0.101476
+2023-09-12 00:00:24+02:00    buy  0.092911
+2023-09-12 00:00:25+02:00   sell -0.371704
+2023-09-12 00:00:26+02:00   sell -0.372106
+2023-09-12 00:00:27+02:00   sell -0.415979
+2023-09-12 00:00:28+02:00   sell -0.334356
+2023-09-12 00:00:29+02:00   sell -0.449536
+2023-09-12 00:00:30+02:00   sell -0.256497
+2023-09-12 00:00:31+02:00   sell -0.256088
+2023-09-12 00:00:32+02:00   sell -0.259802
+2023-09-12 00:00:33+02:00   sell -0.448271
+2023-09-12 00:00:34+02:00    NaN       NaN
+2023-09-12 00:00:35+02:00    NaN       NaN
+2023-09-12 00:00:36+02:00   sell -0.155090
+2023-09-12 00:00:37+02:00   sell -0.154680
+2023-09-12 00:00:38+02:00   sell -0.043622
+2023-09-12 00:00:39+02:00   sell -0.044706
+2023-09-12 00:00:40+02:00   sell -0.044706
+2023-09-12 00:00:41+02:00   sell -0.044663
+2023-09-12 00:00:42+02:00    NaN -0.007449
+2023-09-12 00:00:43+02:00   sell -0.193372
+2023-09-12 00:00:44+02:00   sell -0.327347
+2023-09-12 00:00:45+02:00   sell -0.417878
+2023-09-12 00:00:46+02:00   sell -0.417878
+2023-09-12 00:00:47+02:00   sell -0.417760
+2023-09-12 00:00:48+02:00    NaN       NaN
+2023-09-12 00:00:49+02:00    NaN       NaN
+</pre>
+
+<p>
+Remarks:
+</p>
+<ul class="org-ul">
+<li>The first 20 signals are <code>NaN</code> because the maximum length of data required to compute the first
+set of complete indicators value is 20 (due to the MFI indicator of length 20).</li>
+<li>Other <code>NaN</code> values correspond to cases when the absolute signal score is below both the buy
+threshold and the sell threshold.</li>
+<li>It is worth noting that some sell signals are generated when the signal score &lt; -sell_threshold.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org88adce3" class="outline-2">
+<h2 id="org88adce3"><span class="section-number-2">8.</span> Building the Bot</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+We now have a decision model that forms the core of a trading strategy. To build a bot, which is capable of automatically applying the defined strategy on a set of OHLCV data, we need to add a few more elements.
+</p>
+</div>
+
+<div id="outline-container-org4287504" class="outline-3">
+<h3 id="org4287504"><span class="section-number-3">8.1.</span> Exchange Definition</h3>
+<div class="outline-text-3" id="text-8-1">
+<p>
+The MOSAIC library allows us to instantiate an object representing the exchange from which we want
+to fetch data or even trade directly. 
+</p>
+
+<p>
+In this example, we will be using the Binance platform's exchange, with transaction fees set to 0 in
+this case. 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
+
+<span style="color: #DFAF8F;">exchange</span> = mtr.ExchangeCCXT(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   name=<span style="color: #CC9393;">"binance"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   fees_rates=<span style="color: #DCDCCC; font-weight: bold;">dict</span>(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   taker=0,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   maker=0,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   ))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf0e709a" class="outline-3">
+<h3 id="orgf0e709a"><span class="section-number-3">8.2.</span> Learning and Testing Data Sources</h3>
+<div class="outline-text-3" id="text-8-2">
+<p>
+We also need to define the data sources that will be used for training and testing our decision model.
+</p>
+
+<p>
+For this, we define a <code>DSOHLCV</code> object for training:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.utils <span style="color: #F0DFAF; font-weight: bold;">as</span> mut
+
+<span style="color: #DFAF8F;">ds_fit</span> = mut.DSOHLCV(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=<span style="color: #CC9393;">"BTC/FDUSD"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=<span style="color: #CC9393;">"1s"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_start=<span style="color: #CC9393;">"2023-09-14 00:00:00"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_end=<span style="color: #CC9393;">"2023-09-15 00:00:00"</span>,
+)
+</pre>
+</div>
+
+<p>
+Then, we define a <code>DSOHLCV</code> object for testing (or trading):
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">ds_trading</span> = mut.DSOHLCV(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=<span style="color: #CC9393;">"BTC/FDUSD"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=<span style="color: #CC9393;">"1s"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_start=<span style="color: #CC9393;">"2023-09-15 00:00:00"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_end=<span style="color: #CC9393;">"2023-09-16 00:00:00"</span>,
+)
+</pre>
+</div>
+
+<p>
+The <code>DSOHLCV</code> objects allow us to specify:
+</p>
+<ul class="org-ul">
+<li><code>symbol</code>: the trading symbol, in the case of cryptocurrencies it represents the base/quote pair. The base corresponds to the traded asset (e.g., BTC), and the quote corresponds to the quote currency (e.g., FDUSD).</li>
+<li><code>timeframe</code>: the sampling period of the OHLCV data, here we are at the second level.</li>
+<li><code>dt_start</code> and <code>dt_end</code>: the period of the OHLCV data to consider.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org6dfd939" class="outline-3">
+<h3 id="org6dfd939"><span class="section-number-3">8.3.</span> Bot Definition and Launch</h3>
+<div class="outline-text-3" id="text-8-3">
+<p>
+We finalize the bot by assembling the previous elements into a <code>BotTrading</code> object:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">bot</span> = mtr.BotTrading(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   name=<span style="color: #CC9393;">"test"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   ds_trading=ds_trading,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   ds_fit=ds_fit,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   decision_model=dm,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   exchange=exchange,
+)
+</pre>
+</div>
+
+<p>
+The bot is then launched with the following command:
+</p>
+<div class="org-src-container">
+<pre class="src src-python">bot.start(progress_mode=<span style="color: #BFEBBF;">True</span>)
+</pre>
+</div>
+
+<pre class="example">
+None
+</pre>
+
+
+<p>
+At the end of the process, we can check the performance of our strategy using the <code>report</code> method of
+the <code>portfolio</code> attribute of the bot: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DCDCCC; font-weight: bold;">print</span>(bot.portfolio.report())
+</pre>
+</div>
+
+<pre class="example">
+None
+</pre>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

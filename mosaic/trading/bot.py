@@ -26,7 +26,7 @@ from .exchange import ExchangeBase
 #from ..bot.bot_base import BotBase
 from ..db.db_base import DBBase
 from ..decision_model.dm_base import DMBase
-from ..invest_model.invest_model import InvestModelBase
+from ..invest_model.invest_model import InvestModelBase, InvestLongModel
 from ..utils.data_management import \
     DSOHLCV, \
     fmt_currency, \
@@ -161,7 +161,7 @@ class BotTrading(ObjMOSAIC):
         None, description="Status info (mostly when something goes wrong)")
 
     portfolio: Portfolio = pydantic.Field(
-        None, description="Bot current portfolio")
+        Portfolio(), description="Bot current portfolio")
 
     decision_model: DMBase = pydantic.Field(
         None, description="Decision model")
@@ -170,7 +170,7 @@ class BotTrading(ObjMOSAIC):
         OrderMarket(), description="Order model")
 
     invest_model: InvestModelBase = pydantic.Field(
-        None, description="Invest model")
+        InvestLongModel(), description="Invest model")
 
     diff_thresh_buy_sell_orders: int = pydantic.Field(
         0, description="#buy/#sell orders diff limit. 0 means we can buy only if there are as many buy orders as sell orders")
