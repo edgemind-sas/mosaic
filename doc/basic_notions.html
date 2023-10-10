@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Basic notions</title>
+<meta name="author" content="Roland Donat" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<link rel="stylesheet" type="text/css" href="https://edgemind-sas.github.io/visual-identity/official_docs/css/edgemind.css" />
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Basic notions</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table des matières</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#données-historiques-ohlcv">2. Historical OHLCV Data</a></li>
+<li><a href="#notations-mathématiques">3. Notations mathématiques</a>
+<ul>
+<li><a href="#notions-temporelles">3.1. Notions temporelles</a></li>
+<li><a href="#chandelier">3.2. Chandelier</a></li>
+<li><a href="#rendements">3.3. Rendements</a></li>
+</ul>
+</li>
+<li><a href="#extension-de-la-notion-de-rendements">4. Extension de la notion de rendements</a>
+<ul>
+<li><a href="#définitions">4.1. Définitions</a></li>
+<li><a href="#org604d503">4.2. Rendement de clôture</a></li>
+<li><a href="#org0f6bb06">4.3. Rendement du maximum et du minimum</a></li>
+</ul>
+</li>
+<li><a href="#org41f3e11">5. Environnement technique</a></li>
+<li><a href="#org2a6609a">6. Références</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+In the field of financial market analysis, technical analysis refers to a set of tools aimed at
+predicting the future returns of financial assets. These analyses rely on studying the historical
+market data available, primarily the price and volume of the considered assets. 
+</p>
+
+<p>
+The majority of the presented methodologies rely on the construction of specific indicators deemed
+relevant by their authors. However, the evaluation of these indicators is typically based on
+empirical backtesting on arbitrarily chosen and relatively short periods, especially in the case of
+intraday analysis. Like the authors of the article <a href="farias_nazario_literature_2017">farias_nazario_literature_2017</a>, we agree
+that assessing the performance of technical analysis requires mathematical consolidation. To address
+this, we propose to develop an innovative strategy for evaluating technical indicators based on the
+analysis of the conditional distribution of returns relative to observed indicators.  
+</p>
+
+<p>
+This document aims to present our approach to the development and evaluation of technical indicators
+for the technical analysis of crypto-assets. 
+</p>
+</div>
+</div>
+
+<div id="outline-container-données-historiques-ohlcv" class="outline-2">
+<h2 id="données-historiques-ohlcv"><span class="section-number-2">2.</span> Historical OHLCV Data</h2>
+<div class="outline-text-2" id="text-données-historiques-ohlcv">
+<p>
+The evolution of an asset's price over time is commonly presented in the form of data known as OHLCV (Open, High, Low, Close, Volume). This format allows for the representation of time series data in a specific way. The OHLC format represents the evolution of a measurement over successive regular time intervals, characterized by a sampling period denoted as \(\Delta t\) (e.g., one minute, five minutes, one hour, one day, etc).
+</p>
+
+<p>
+Typically, OHLCV data contains the following variables:
+</p>
+<ul class="org-ul">
+<li><code>timestamp</code>: a timestamp indicating the start \(t\) of the measurement interval (e.g., expressed in milliseconds or in ISO format). The end of the interval is equal to \(t + \Delta t\).</li>
+<li><code>open</code>: the asset's value at the beginning of the interval.</li>
+<li><code>high</code>: the maximum value of the asset reached during the interval.</li>
+<li><code>low</code>: the minimum value of the asset reached during the interval.</li>
+<li><code>close</code>: the asset's value at the end of the interval.</li>
+<li><code>volume</code>: the cumulative amount of asset sales and purchases during the interval.</li>
+</ul>
+
+<p>
+OHLC data is commonly visualized using candlestick charts. Based on the opening and closing values,
+candlesticks are classified as bullish or bearish, as shown in Figure <a href="#orgdafd552">1</a>. 
+</p>
+
+
+<div id="orgdafd552" class="figure">
+<p><img src="./fig/candle.jpg" alt="candle.jpg" />
+</p>
+<p><span class="figure-number">Figure&nbsp;1&nbsp;: </span>Représentation du symbole de chandelier.</p>
+</div>
+
+<p>
+In a candlestick chart, the OHLC data is accompanied by the concepts of:
+</p>
+<ul class="org-ul">
+<li>Body: representing the distance between the opening and closing prices of the asset over a time interval.</li>
+<li>Upper shadow: representing the distance between the top of the body and the highest price over a time interval.</li>
+<li>Lower shadow: representing the distance between the bottom of the body and the lowest price over a time interval.</li>
+</ul>
+
+<p>
+The following table provides an overview of the initial BTC price data relative to USDC in the year
+2021, with a sampling period of \(\Delta t = 5\) minutes. 
+</p>
+
+
+<p>
+For example, the first row of the table indicates that on 01/01/2021:
+</p>
+
+<ul class="org-ul">
+<li>At 01:00:00, the price of one BTC was 28964.54 USDC.</li>
+<li>Between 01:00:00 and 01:05:00, the price of one BTC was between 29018.17 USDC (closing of the current interval) and 28993.74 USDC (opening of the next interval).</li>
+<li>Between 00:00:00 and 00:05:00, the price of one BTC reached a minimum of 28958.66 USDC and a maximum of 29064.55 USDC.</li>
+</ul>
+
+<p>
+Since the BTC/USDC market is open 24/7, we should expect \(\text{close}(t-1)\) to be equal to
+\(\text{open}(t)\) for all \(t\). However, due to the delay in data collection, it is common to observe
+slight differences between the opening price of the current time interval and the closing price of
+the previous interval. 
+</p>
+</div>
+</div>
+
+<div id="outline-container-notations-mathématiques" class="outline-2">
+<h2 id="notations-mathématiques"><span class="section-number-2">3.</span> Notations mathématiques</h2>
+<div class="outline-text-2" id="text-notations-mathématiques">
+</div>
+
+<div id="outline-container-notions-temporelles" class="outline-3">
+<h3 id="notions-temporelles"><span class="section-number-3">3.1.</span> Notions temporelles</h3>
+<div class="outline-text-3" id="text-notions-temporelles">
+<p>
+Nous avons introduit précédemment la période d'échantillonnage des
+données \(\Delta t\). On note également \(t_{0}\) la première date
+d'échantillonnage. Dans l'exemple de données précédent, on rappelle que
+\(\Delta t = 5\) minutes et que \(t_{0} =\) 2021-01-01 01:00:00.
+</p>
+
+<p>
+Chaque intervalle de temps est alors repéré par l'instant qui marque le début de
+l'intervalle. L'intervalle \(t\) désigne donc l'intervalle de temps qui commence à l'instant \(t\) et se
+termine à l'instant \(t + \Delta t\) (cf. Figure <a href="#orgb6490ea">2</a>).
+</p>
+
+<p>
+Afin de se repérer relativement à un intervalle \(t\) donné dans le cas d'un échantillonnage de
+période \(Delta t\), on désigne par intervalle \(t + k\), où $k est un entier
+relatif, l'intervalle débutant à l'instant \(t + k \Delta t\) et s'achevant à l'instant \(t + (k + 1)
+\Delta t\) 
+</p>
+
+<p>
+En reprenant l'exemple précédent, on a :
+</p>
+<ul class="org-ul">
+<li>l'intervalle \(t_{0}\) entre 2021-01-01 01:00:00 et 2021-01-01 01:05:00 ;</li>
+<li>l'intervalle \(t_{0} + 4\) entre 2021-01-01 01:20:00 et 2021-01-01 01:25:00.</li>
+</ul>
+
+
+<div id="orgb6490ea" class="figure">
+<p><img src="./fig/ohlcv_interval.png" alt="ohlcv_interval.png" />
+</p>
+<p><span class="figure-number">Figure&nbsp;2&nbsp;: </span>Notion d'intervalle sur les données OHLCV.</p>
+</div>
+
+
+<p>
+Les données OHLCV sont notées dans la suite comme suit :
+</p>
+<ul class="org-ul">
+<li>\(\text{o}_{t}\) : cotation de l'actif à l'ouverture de l'intervalle \(t\) ;</li>
+<li>\(\text{c}_{t}\) : cotation de l'actif à la fermeture de l'intervalle \(t\), autrement dit cotation de
+l'actif à l'instant \(t + \Delta t\) ;</li>
+<li>\(\text{h}_{t}\) : cotation maximum de l'actif sur l'intervalle \(t\) ;</li>
+<li>\(\text{l}_{t}\) : cotation mimimum de l'actif sur l'intervalle \(t\) ;</li>
+<li>\(\text{v}_{t}\) : volume échangé de l'actif sut l'intervalle \(t\).</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-chandelier" class="outline-3">
+<h3 id="chandelier"><span class="section-number-3">3.2.</span> Chandelier</h3>
+<div class="outline-text-3" id="text-chandelier">
+<p>
+En plus des notations précédentes, nous pouvons introduire différentes
+grandeurs associées aux parties du diagramme en chandelier.
+</p>
+
+<p>
+En considérant, le chandelier représentant une donnée OHLC sur l'intervalle \(t\), nous avons :<br />
+</p>
+<ul class="org-ul">
+<li>Le corps \(\text{b}_{t} = \text{c}_{t} - \text{o}_{t}\).</li>
+<li>L'ombre inférieure \(\text{s}_{t}^{\ell} = \min\{\text{c}_{t}, \text{o}_{t}\} - \text{l}_{t}\).</li>
+<li>L'ombre supérieure \(\text{s}_{t}^{u} = \text{h}_{t} - \max\{\text{c}_{t}, \text{o}_{t}\}\).</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-rendements" class="outline-3">
+<h3 id="rendements"><span class="section-number-3">3.3.</span> Rendements</h3>
+<div class="outline-text-3" id="text-rendements">
+<p>
+On note enfin \(r_{t}\) la variation relative de la cotation d'un actif
+entre deux intervalles consécutif, on parle également de rendement (ou
+<i>returns</i> en anglais) sur l'intervalle \(t\). Nous avons donc pour tout
+\(t\) :
+</p>
+\begin{equation}
+\label{org8d767de}
+r_{t} = \frac{\text{c}_{t}}{\text{c}_{t - 1}} - 1.
+\end{equation}
+<p>
+La quantité \(r_{t}\) est donc positive si l'actif gagne de la valeur sur l'intervalle \(t\) et négative
+sinon. Le rendement 
+représente l'indicateur principal au coeur de toutes les analyses
+financières réalisées sur un actif donnée.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-extension-de-la-notion-de-rendements" class="outline-2">
+<h2 id="extension-de-la-notion-de-rendements"><span class="section-number-2">4.</span> Extension de la notion de rendements</h2>
+<div class="outline-text-2" id="text-extension-de-la-notion-de-rendements">
+</div>
+
+<div id="outline-container-définitions" class="outline-3">
+<h3 id="définitions"><span class="section-number-3">4.1.</span> Définitions</h3>
+<div class="outline-text-3" id="text-définitions">
+<p>
+Le calcul des rendements est une étape fondamentale dans l'analyse d'un
+actif au cours du temps. La définition d'un rendement proposée dans la
+section précédente se limite au rendement sur le cours de clôture et uniquement entre deux
+intervalles de temps successifs.
+</p>
+
+<p>
+En effet, nous allons étendre la définition des rendements :
+</p>
+<ul class="org-ul">
+<li>d'une part, aux cotations maximum et minimum ;</li>
+<li>et d'autre part, entre deux intervalles de temps \(t\) et \(t + k\) donnés.</li>
+</ul>
+
+<p>
+Dans les paragraphes suivants, nous illustrerons les différentes rendements sur l'extrait
+de cotation BTC/USDC suivant.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org604d503" class="outline-3">
+<h3 id="org604d503"><span class="section-number-3">4.2.</span> Rendement de clôture</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+Commençons donc par définir le rendement de clôture entre deux intervalles \(t\) et \(t+k\) (cf. Figure
+<a href="#org5b9c65f">3</a>) comme suit :
+</p>
+\begin{equation}
+\rho^{\text{c}}_{t + k} = 
+\begin{cases}
+\frac{\text{c}_{t + k}}{\text{c}_{t-1}} - 1 & \quad k \ge 0 \\
+\frac{\text{c}_{t }}{\text{c}_{t + k - 1}} - 1 & \quad k < 0.
+\end{cases}
+\end{equation}
+
+<p>
+À noter que \(k\) est un nombre entier permettant de définir le nombre
+d'intervalles futurs ou passés à prendre en compte pour le calcul du
+rendement.
+</p>
+
+
+<div id="org5b9c65f" class="figure">
+<p><img src="./fig/rho_c_t_k.png" alt="rho_c_t_k.png" />
+</p>
+<p><span class="figure-number">Figure&nbsp;3&nbsp;: </span>Illustration graphique du calcul d'un rendement de clôture.</p>
+</div>
+
+<p>
+<b>Exemples</b>
+</p>
+
+<p>
+Rendements de clôture calculés sur les données de l'exemple précédent et
+sur différents horizons :
+</p>
+
+
+<p>
+En prenant l'instant \(t\) = 2021-01-01T00:05:00 et un horizon \(k = 0\),
+le rendement de clôture \(\rho^{\text{c}}_{t} = r_{t}\) correspond au
+rapport entre la clôture de l'intervalle débutant à la date 2021-01-01T01:05:00 et la clôture
+de l'intervalle précédent (2021-01-01T01:00:00), soit :
+\[
+\rho^{\text{c}}_{t} = \frac{\text{c}_{t}}{\text{c}_{t-1}} = \frac{28914.30}{29018.17} - 1 \simeq -0.003579 \simeq -0.358 \%
+\]
+</p>
+
+<p>
+En prenant l'intervalle à \(t\) = 2021-01-01T00:10:00 et un horizon \(k = 2\),
+le rendement de clôture \(\rho^{\text{c}}_{t+2}\) correspond au rapport
+entre la clôture de l'intervalle 2021-01-01T01:20:00 et la clôture de l'intervalle 2021-01-01T01:05:00, soit :
+\[
+\rho^{\text{c}}_{t + 2} = \frac{\text{c}_{t+2}}{\text{c}_{t-1}} = \frac{28885.73}{28914.30} - 1 \simeq -0.000988 \simeq -0.099 \%
+\]
+</p>
+
+<p>
+En prenant l'intervalle \(t\) = 2021-01-01T01:20:00 et un horizon \(k = -3\),
+le rendement de clôture \(\rho^{\text{c}}_{t-3}\) correspond au rapport
+entre la clôture de l'intervalle 2021-01-01T01:20:00 et la clôture de l'intervalle 2021-01-01T01:00:00, soit :
+\[
+\rho^{\text{c}}_{t - 3} = \frac{\text{c}_{t}}{\text{c}_{t-4}} = \frac{28885.73}{29018.17} - 1 \simeq -0.00456 \simeq -0.456 \%
+\]
+</p>
+
+
+<p>
+<b>Propriété</b>
+</p>
+
+<p>
+Le rendement de clôture entre les intervalles \(t\) et \(t + k\), noté \(\rho^{\text{c}}_{t + k}\),
+s'exprime en fonction des rendements \(r_{t}, \ldots, r_{t+k}\) (cf. Équation \eqref{org8d767de})
+comme suit :
+</p>
+\begin{equation}
+\rho^{\text{c}}_{t + k} = \prod_{i = 1}^{k} (r_{t + i} + 1) - 1
+\end{equation}
+
+<p>
+Ce résultat classique s'obtient en remarquant que :
+</p>
+\begin{align}
+\rho^{\text{c}}_{t + k} + 1 & = \frac{\text{c}_{t + k}}{\text{c}_{t-1}} \\
+& = \frac{\text{c}_{t}}{\text{c}_{t - 1}} \frac{\text{c}_{t + 1}}{\text{c}_{t}} \ldots \frac{\text{c}_{t + k}}{\text{c}_{t + k - 1}} \\
+& = (r_{t} + 1) (r_{t+1} + 1) \ldots (r_{t+k} + 1)
+\end{align}
+</div>
+</div>
+
+
+<div id="outline-container-org0f6bb06" class="outline-3">
+<h3 id="org0f6bb06"><span class="section-number-3">4.3.</span> Rendement du maximum et du minimum</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+Le rendement du maximum entre deux intervalles \(t\) et \(t+k\) (cf. Figure <a href="#org8fad997">4</a>) est défini par :
+</p>
+\begin{equation}
+\rho^{\text{h}}_{t + k} = 
+\begin{cases}
+\frac{\max_{t \le i \le t + k}\text{h}_{i}}{\text{c}_{t-1}} - 1 & \quad k \ge 0 \\
+\frac{\max_{t - k \le i \le t}\text{h}_{i}}{\text{c}_{t + k - 1}} - 1 & \quad k < 0.
+\end{cases}
+\end{equation}
+
+
+<div id="org8fad997" class="figure">
+<p><img src="./fig/rho_h_t_k.png" alt="rho_h_t_k.png" />
+</p>
+<p><span class="figure-number">Figure&nbsp;4&nbsp;: </span>Illustration graphique du calcul d'un rendement du maximum.</p>
+</div>
+
+
+<p>
+Et par analogie, on définit le rendement du minimum entre deux intervalles \(t\) et \(t+k\) (cf. Figure
+<a href="#org0138256">5</a>) :
+</p>
+\begin{equation}
+\rho^{\text{l}}_{t + k} = 
+\begin{cases}
+\frac{\min_{t \le i \le t + k}\text{h}_{i}}{\text{c}_{t-1}} - 1 & \quad k \ge 0 \\
+\frac{\min_{t - k \le i \le t}\text{h}_{i}}{\text{c}_{t + k - 1}} - 1 & \quad k < 0.
+\end{cases}
+\end{equation}
+
+
+<div id="org0138256" class="figure">
+<p><img src="./fig/rho_l_t_k.png" alt="rho_l_t_k.png" />
+</p>
+<p><span class="figure-number">Figure&nbsp;5&nbsp;: </span>Illustration graphique du calcul d'un rendement du minimum.</p>
+</div>
+
+<p>
+<b>Exemples</b>
+</p>
+
+<p>
+Rendements du maximum calculés sur les données de l'exemple précédent et
+sur différents horizons :
+</p>
+
+
+<p>
+Rendements du minimum calculés sur les mêmes horizons :
+</p>
+
+
+
+<p>
+En prenant l'intervalle \(t\) = 2021-01-01T01:05:00 et un horizon \(k = 0\),
+le rendement du maximum \(\rho^{\text{h}}_{t} = r_{t}\) correspond au
+rapport entre la cotation maximum de l'intervalle 2021-01-01T01:05:00 et
+la clôture de l'intervalle 2021-01-01T01:00:00, soit :
+\[
+\rho^{\text{h}}_{t} = \frac{\text{h}_{t}}{\text{c}_{t-1}} = \frac{28996.04}{29018.17} - 1 \simeq -0.000762 \simeq -0.076 \%
+\]
+</p>
+
+<p>
+Le rendement du minimum correspondant est :
+\[
+\rho^{\text{l}}_{t} = \frac{\text{l}_{t}}{\text{c}_{t-1}} = \frac{28890.99}{29018.17} - 1 \simeq -0.00438 \simeq -0.44 \%
+\]
+</p>
+
+<p>
+En prenant l'intervalle \(t\) = 2021-01-01T01:10:00 et un horizon \(k = 2\),
+le rendement du maximum \(\rho^{\text{h}}_{t+2}\) correspond au rapport
+entre la cotation maximum entre les intervalle 2021-01-01T01:10:00 et
+2021-01-01T01:20:00, et la clôture de l'intervalle 2021-01-01T01:05:00,
+soit :
+\[
+\rho^{\text{h}}_{t + 2} = \frac{\max\{\text{h}_{t}, \text{h}_{t+1}, \text{h}_{t+2}\}}{\text{c}_{t-1}} = \frac{\text{h}_{t}}{\text{c}_{t-1}} = \frac{28908.49}{28914.30} - 1 \simeq -0.000201 \simeq -0.02 \%
+\]
+</p>
+
+<p>
+Le rendement du minimum correspondant est :
+\[
+\rho^{\text{l}}_{t + 2} = \frac{\max\{\text{l}_{t}, \text{l}_{t+1}, \text{l}_{t+2}\}}{\text{c}_{t-1}} = \frac{\text{l}_{t}}{\text{c}_{t-1}} = \frac{28741.86}{28914.30} - 1 \simeq -0.00596 \simeq -0.59 \%
+\]
+</p>
+
+<p>
+En prenant l'intervalle \(t\) = 2021-01-01T01:20:00 et un horizon \(k = -3\),
+le rendement du maximum \(\rho^{\text{h}}_{t-3}\) correspond au rapport
+entre la cotation maximum entre les intervalles 2021-01-01T01:05:00 et
+2021-01-01T01:20:00, et la clôture de l'intervalle 2021-01-01T01:00:00,
+soit :
+\[
+\rho^{\text{h}}_{t - 3} = \frac{\max\{\text{h}_{t-3}, \text{h}_{t-2}, \text{h}_{t-1}, \text{h}_{t}\}}{\text{c}_{t-4}} = \frac{\text{h}_{t-3}}{\text{c}_{t-4}} = \frac{28996.04}{29018.17} - 1 \simeq -0.000762 \simeq -0.076 \%
+\]
+</p>
+
+<p>
+Le rendement du minimum correspondant est :
+\[
+\rho^{\text{l}}_{t - 3} = \frac{\max\{\text{l}_{t-3}, \text{l}_{t-2}, \text{l}_{t-1}, \text{l}_{t}\}}{\text{c}_{t-4}} = \frac{\text{l}_{t-2}}{\text{c}_{t-4}} = \frac{28741.86}{29018.17} - 1 \simeq -0.00952 \simeq -0.95 \%
+\]
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org41f3e11" class="outline-2">
+<h2 id="org41f3e11"><span class="section-number-2">5.</span> Environnement technique</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+Les librairies <code>Python</code> utilisées dans les traitements présentés dans ce document sont :
+</p>
+<style type="text/css">
+</style>
+<table id="T_ce1cf">
+  <thead>
+    <tr>
+      <th id="T_ce1cf_level0_col0" class="col_heading level0 col0" >Library</th>
+      <th id="T_ce1cf_level0_col1" class="col_heading level0 col1" >Version</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td id="T_ce1cf_row0_col0" class="data row0 col0" >MOSAIC</td>
+      <td id="T_ce1cf_row0_col1" class="data row0 col1" >0.0.40</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+
+<div id="outline-container-org2a6609a" class="outline-2">
+<h2 id="org2a6609a"><span class="section-number-2">6.</span> Références</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+<a href="MOSAIC.bib">MOSAIC.bib</a>
+</p>
+</div>
+</div>
+</div>
+</body>
+</html>
