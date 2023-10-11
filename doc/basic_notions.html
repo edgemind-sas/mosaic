@@ -46,22 +46,22 @@
 <ul>
 <li><a href="#introduction">1. Introduction</a></li>
 <li><a href="#données-historiques-ohlcv">2. Historical OHLCV Data</a></li>
-<li><a href="#orgefca08d">3. Mathematical Notations</a>
+<li><a href="#org49917a6">3. Mathematical Notations</a>
 <ul>
-<li><a href="#org2d1fada">3.1. Temporal Notions</a></li>
-<li><a href="#orge53a7ce">3.2. Candlestick</a></li>
-<li><a href="#orga4744d7">3.3. Returns</a></li>
+<li><a href="#org824f1d2">3.1. Temporal Notions</a></li>
+<li><a href="#org8a18b1e">3.2. Candlestick</a></li>
+<li><a href="#orgf17dd86">3.3. Returns</a></li>
 </ul>
 </li>
 <li><a href="#extension-de-la-notion-de-rendements">4. Extension de la notion de rendements</a>
 <ul>
 <li><a href="#définitions">4.1. Definitions</a></li>
-<li><a href="#org6d36123">4.2. Closing returns</a></li>
-<li><a href="#orge10ed20">4.3. Maximum and minimum return</a></li>
+<li><a href="#org107e33e">4.2. Closing returns</a></li>
+<li><a href="#org0ddf9d9">4.3. Maximum and minimum return</a></li>
 </ul>
 </li>
-<li><a href="#orgd0d7209">5. Technical environment</a></li>
-<li><a href="#orgbe40eae">6. References</a></li>
+<li><a href="#org21e4508">5. Technical environment</a></li>
+<li><a href="#org6b36dd7">6. References</a></li>
 </ul>
 </div>
 </div>
@@ -87,7 +87,8 @@ analysis of the conditional distribution of returns relative to observed indicat
 
 <p>
 This document aims to present our approach to the development and evaluation of technical indicators
-for the technical analysis of crypto-assets. 
+for the technical analysis of crypto-assets. Additionally, we provide the Python source code used to
+obtain each of the results, giving a first glimpse of the functionalities of the MOSAIC library. 
 </p>
 </div>
 </div>
@@ -113,11 +114,11 @@ Typically, OHLCV data contains the following variables:
 
 <p>
 OHLC data is commonly visualized using candlestick charts. Based on the opening and closing values,
-candlesticks are classified as bullish or bearish, as shown in Figure <a href="#org4d246bb">1</a>. 
+candlesticks are classified as bullish or bearish, as shown in Figure <a href="#org7aa8d46">1</a>. 
 </p>
 
 
-<div id="org4d246bb" class="figure">
+<div id="org7aa8d46" class="figure">
 <p><img src="./fig/candle.jpg" alt="candle.jpg" />
 </p>
 <p><span class="figure-number">Figure&nbsp;1&nbsp;: </span>Représentation du symbole de chandelier.</p>
@@ -137,17 +138,64 @@ The following table provides an overview of the initial BTC price data relative 
 2021, with a sampling period of \(\Delta t = 5\) minutes. 
 </p>
 
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">This code retrieves historic OHLCV data for the "BTC/USDC" symbol from the "binance"</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">exchange and stores it in a DataFrame called `ohlcv_format_ex_df`. </span>
+
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Imports the necessary libraries, including `pandas`, `plotly`, and the MOSAIC library.</span>
+<span style="color: #F0DFAF; font-weight: bold;">import</span> pandas <span style="color: #F0DFAF; font-weight: bold;">as</span> pd
+<span style="color: #F0DFAF; font-weight: bold;">import</span> plotly.io <span style="color: #F0DFAF; font-weight: bold;">as</span> pio
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.utils <span style="color: #F0DFAF; font-weight: bold;">as</span> mut
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.indicator <span style="color: #F0DFAF; font-weight: bold;">as</span> mid
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
+
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Creates an instance of the `mtr.ExchangeCCXT` class, representing the "binance"</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">exchange, and establishes a connection to it.</span>
+<span style="color: #DFAF8F;">exchange</span> = mtr.ExchangeCCXT(name=<span style="color: #CC9393;">"binance"</span>)
+exchange.connect()
+
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Initializes a `mut.DSOHLCV` (Data Source OHLCV object),</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">specifying the symbol ("BTC/USDC"), timeframe ("5m"), and a date range for the data.</span>
+ds_ex = mut.DSOHLCV(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=<span style="color: #CC9393;">"BTC/USDC"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=<span style="color: #CC9393;">"5m"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_start=<span style="color: #CC9393;">'2021-01-01 01:00:00'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   dt_end=<span style="color: #CC9393;">'2021-01-02 01:00:00'</span>,
+)
+
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Uses the `exchange.get_historic_ohlcv()` method to retrieve the</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">historic OHLCV (Open, High, Low, Close, Volume) data for the</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">specified symbol and timeframe from the "binance" exchange.</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">The data is stored in a DataFrame called `ohlcv_format_ex_df`.</span>
+ohlcv_format_ex_df = \
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   exchange.get_historic_ohlcv(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_start=ds_ex.dt_s,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_end=ds_ex.dt_e,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=ds_ex.symbol,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=ds_ex.timeframe,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   index=<span style="color: #CC9393;">"datetime"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   data_dir=<span style="color: #CC9393;">"."</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   force_reload=<span style="color: #BFEBBF;">False</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   progress_mode=<span style="color: #BFEBBF;">True</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   ).drop(<span style="color: #CC9393;">"timestamp"</span>, axis=1)
+
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Take a sample of 5 time intervals for the examples in the document</span>
+data_ohlcv_ex_5 = ohlcv_format_ex_df.head()
+</pre>
+</div>
+
 <style type="text/css">
 </style>
-<table id="T_b01ee">
+<table id="T_ed10e">
   <thead>
     <tr>
       <th class="blank level0" >&nbsp;</th>
-      <th id="T_b01ee_level0_col0" class="col_heading level0 col0" >open</th>
-      <th id="T_b01ee_level0_col1" class="col_heading level0 col1" >high</th>
-      <th id="T_b01ee_level0_col2" class="col_heading level0 col2" >low</th>
-      <th id="T_b01ee_level0_col3" class="col_heading level0 col3" >close</th>
-      <th id="T_b01ee_level0_col4" class="col_heading level0 col4" >volume</th>
+      <th id="T_ed10e_level0_col0" class="col_heading level0 col0" >open</th>
+      <th id="T_ed10e_level0_col1" class="col_heading level0 col1" >high</th>
+      <th id="T_ed10e_level0_col2" class="col_heading level0 col2" >low</th>
+      <th id="T_ed10e_level0_col3" class="col_heading level0 col3" >close</th>
+      <th id="T_ed10e_level0_col4" class="col_heading level0 col4" >volume</th>
     </tr>
     <tr>
       <th class="index_name level0" >datetime</th>
@@ -160,44 +208,44 @@ The following table provides an overview of the initial BTC price data relative 
   </thead>
   <tbody>
     <tr>
-      <th id="T_b01ee_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
-      <td id="T_b01ee_row0_col0" class="data row0 col0" >28 964.54</td>
-      <td id="T_b01ee_row0_col1" class="data row0 col1" >29 064.55</td>
-      <td id="T_b01ee_row0_col2" class="data row0 col2" >28 958.66</td>
-      <td id="T_b01ee_row0_col3" class="data row0 col3" >29 018.17</td>
-      <td id="T_b01ee_row0_col4" class="data row0 col4" >8.77</td>
+      <th id="T_ed10e_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_ed10e_row0_col0" class="data row0 col0" >28 964.54</td>
+      <td id="T_ed10e_row0_col1" class="data row0 col1" >29 064.55</td>
+      <td id="T_ed10e_row0_col2" class="data row0 col2" >28 958.66</td>
+      <td id="T_ed10e_row0_col3" class="data row0 col3" >29 018.17</td>
+      <td id="T_ed10e_row0_col4" class="data row0 col4" >8.77</td>
     </tr>
     <tr>
-      <th id="T_b01ee_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
-      <td id="T_b01ee_row1_col0" class="data row1 col0" >28 993.74</td>
-      <td id="T_b01ee_row1_col1" class="data row1 col1" >28 996.04</td>
-      <td id="T_b01ee_row1_col2" class="data row1 col2" >28 890.99</td>
-      <td id="T_b01ee_row1_col3" class="data row1 col3" >28 914.30</td>
-      <td id="T_b01ee_row1_col4" class="data row1 col4" >11.15</td>
+      <th id="T_ed10e_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_ed10e_row1_col0" class="data row1 col0" >28 993.74</td>
+      <td id="T_ed10e_row1_col1" class="data row1 col1" >28 996.04</td>
+      <td id="T_ed10e_row1_col2" class="data row1 col2" >28 890.99</td>
+      <td id="T_ed10e_row1_col3" class="data row1 col3" >28 914.30</td>
+      <td id="T_ed10e_row1_col4" class="data row1 col4" >11.15</td>
     </tr>
     <tr>
-      <th id="T_b01ee_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
-      <td id="T_b01ee_row2_col0" class="data row2 col0" >28 902.53</td>
-      <td id="T_b01ee_row2_col1" class="data row2 col1" >28 908.49</td>
-      <td id="T_b01ee_row2_col2" class="data row2 col2" >28 741.86</td>
-      <td id="T_b01ee_row2_col3" class="data row2 col3" >28 790.00</td>
-      <td id="T_b01ee_row2_col4" class="data row2 col4" >4.58</td>
+      <th id="T_ed10e_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_ed10e_row2_col0" class="data row2 col0" >28 902.53</td>
+      <td id="T_ed10e_row2_col1" class="data row2 col1" >28 908.49</td>
+      <td id="T_ed10e_row2_col2" class="data row2 col2" >28 741.86</td>
+      <td id="T_ed10e_row2_col3" class="data row2 col3" >28 790.00</td>
+      <td id="T_ed10e_row2_col4" class="data row2 col4" >4.58</td>
     </tr>
     <tr>
-      <th id="T_b01ee_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
-      <td id="T_b01ee_row3_col0" class="data row3 col0" >28 798.99</td>
-      <td id="T_b01ee_row3_col1" class="data row3 col1" >28 891.63</td>
-      <td id="T_b01ee_row3_col2" class="data row3 col2" >28 798.29</td>
-      <td id="T_b01ee_row3_col3" class="data row3 col3" >28 884.38</td>
-      <td id="T_b01ee_row3_col4" class="data row3 col4" >4.31</td>
+      <th id="T_ed10e_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_ed10e_row3_col0" class="data row3 col0" >28 798.99</td>
+      <td id="T_ed10e_row3_col1" class="data row3 col1" >28 891.63</td>
+      <td id="T_ed10e_row3_col2" class="data row3 col2" >28 798.29</td>
+      <td id="T_ed10e_row3_col3" class="data row3 col3" >28 884.38</td>
+      <td id="T_ed10e_row3_col4" class="data row3 col4" >4.31</td>
     </tr>
     <tr>
-      <th id="T_b01ee_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
-      <td id="T_b01ee_row4_col0" class="data row4 col0" >28 845.04</td>
-      <td id="T_b01ee_row4_col1" class="data row4 col1" >28 886.67</td>
-      <td id="T_b01ee_row4_col2" class="data row4 col2" >28 789.15</td>
-      <td id="T_b01ee_row4_col3" class="data row4 col3" >28 885.73</td>
-      <td id="T_b01ee_row4_col4" class="data row4 col4" >13.21</td>
+      <th id="T_ed10e_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_ed10e_row4_col0" class="data row4 col0" >28 845.04</td>
+      <td id="T_ed10e_row4_col1" class="data row4 col1" >28 886.67</td>
+      <td id="T_ed10e_row4_col2" class="data row4 col2" >28 789.15</td>
+      <td id="T_ed10e_row4_col3" class="data row4 col3" >28 885.73</td>
+      <td id="T_ed10e_row4_col4" class="data row4 col4" >13.21</td>
     </tr>
   </tbody>
 </table>
@@ -221,19 +269,19 @@ the previous interval.
 </div>
 </div>
 
-<div id="outline-container-orgefca08d" class="outline-2">
-<h2 id="orgefca08d"><span class="section-number-2">3.</span> Mathematical Notations</h2>
+<div id="outline-container-org49917a6" class="outline-2">
+<h2 id="org49917a6"><span class="section-number-2">3.</span> Mathematical Notations</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org2d1fada" class="outline-3">
-<h3 id="org2d1fada"><span class="section-number-3">3.1.</span> Temporal Notions</h3>
+<div id="outline-container-org824f1d2" class="outline-3">
+<h3 id="org824f1d2"><span class="section-number-3">3.1.</span> Temporal Notions</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 We previously introduced the sampling period of the data, \(\Delta t\). We also denote \(t_{0}\) as the first sampling date. In the previous data example, we recall that \(\Delta t = 5\) minutes and \(t_{0} =\) 2021-01-01 01:00:00.
 </p>
 
 <p>
-Each time interval is identified by the moment at which it starts. Thus, interval \(t\) refers to the time interval that begins at time \(t\) and ends at time \(t + \Delta t\) (see Figure <a href="#orgafd5e00">2</a>).
+Each time interval is identified by the moment at which it starts. Thus, interval \(t\) refers to the time interval that begins at time \(t\) and ends at time \(t + \Delta t\) (see Figure <a href="#orgce1c981">2</a>).
 </p>
 
 <p>
@@ -249,7 +297,7 @@ Using the previous example, we have:
 </ul>
 
 
-<div id="orgafd5e00" class="figure">
+<div id="orgce1c981" class="figure">
 <p><img src="./fig/ohlcv_interval.png" alt="ohlcv_interval.png" />
 </p>
 <p><span class="figure-number">Figure&nbsp;2&nbsp;: </span>Concept of an interval in OHLCV data.</p>
@@ -268,8 +316,8 @@ The OHLCV data is denoted as follows:
 </div>
 </div>
 
-<div id="outline-container-orge53a7ce" class="outline-3">
-<h3 id="orge53a7ce"><span class="section-number-3">3.2.</span> Candlestick</h3>
+<div id="outline-container-org8a18b1e" class="outline-3">
+<h3 id="org8a18b1e"><span class="section-number-3">3.2.</span> Candlestick</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In addition to the previous notations, we can introduce various measures associated with different parts of the candlestick chart.
@@ -286,15 +334,15 @@ Considering the candlestick representing the OHLC data for interval \(t\), we ha
 </div>
 </div>
 
-<div id="outline-container-orga4744d7" class="outline-3">
-<h3 id="orga4744d7"><span class="section-number-3">3.3.</span> Returns</h3>
+<div id="outline-container-orgf17dd86" class="outline-3">
+<h3 id="orgf17dd86"><span class="section-number-3">3.3.</span> Returns</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
 Finally, we denote \(r_{t}\) as the relative change in an asset's price between two consecutive
 intervals, also known as the return for interval \(t\). For all \(t\), we have:
 </p>
 \begin{equation}
-\label{org531fe37}
+\label{org00b318c}
 r_{t} = \frac{\text{c}_{t}}{\text{c}_{t - 1}} - 1.
 \end{equation}
 <p>
@@ -330,17 +378,27 @@ We will now extend the definition of returns:
 In the following paragraphs, we will illustrate the different returns using the excerpt of BTC/USDC
 price data. 
 </p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">fig</span> = mut.plotly_ohlcv(data_ohlcv_ex_5,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>  layout=<span style="color: #DCDCCC; font-weight: bold;">dict</span>(title=<span style="color: #CC9393;">"Example of OHLC data on BTC/USDC pair"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>  yaxis_title=<span style="color: #CC9393;">"USDC"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>  xaxis_title=<span style="color: #CC9393;">"Time"</span>))
+
+fig
+</pre>
+</div>
+
 <div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script src="https://cdn.plot.ly/plotly-2.18.0.min.js"></script>                <div id="cafb014d-4e97-430b-9f48-a2fef3f685bb" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("cafb014d-4e97-430b-9f48-a2fef3f685bb")) {                    Plotly.newPlot(                        "cafb014d-4e97-430b-9f48-a2fef3f685bb",                        [{"close":[29018.17,28914.3,28790.0,28884.38,28885.73],"high":[29064.55,28996.04,28908.49,28891.63,28886.67],"low":[28958.66,28890.99,28741.86,28798.29,28789.15],"name":"OHLC","open":[28964.54,28993.74,28902.53,28798.99,28845.04],"x":["2021-01-01T01:00:00+01:00","2021-01-01T01:05:00+01:00","2021-01-01T01:10:00+01:00","2021-01-01T01:15:00+01:00","2021-01-01T01:20:00+01:00"],"type":"candlestick"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"text":"Example of OHLC data on BTC/USDC pair"},"yaxis":{"title":{"text":"USDC"}},"xaxis":{"title":{"text":"Time"}}},                        {"displayModeBar": false, "responsive": true}                    )                };                            </script>        </div>
+        <script src="https://cdn.plot.ly/plotly-2.18.0.min.js"></script>                <div id="dfb9fc0c-8606-4621-822e-bdf0e57c6aa6" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("dfb9fc0c-8606-4621-822e-bdf0e57c6aa6")) {                    Plotly.newPlot(                        "dfb9fc0c-8606-4621-822e-bdf0e57c6aa6",                        [{"close":[29018.17,28914.3,28790.0,28884.38,28885.73],"high":[29064.55,28996.04,28908.49,28891.63,28886.67],"low":[28958.66,28890.99,28741.86,28798.29,28789.15],"name":"OHLC","open":[28964.54,28993.74,28902.53,28798.99,28845.04],"x":["2021-01-01T01:00:00+01:00","2021-01-01T01:05:00+01:00","2021-01-01T01:10:00+01:00","2021-01-01T01:15:00+01:00","2021-01-01T01:20:00+01:00"],"type":"candlestick"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"text":"Example of OHLC data on BTC/USDC pair"},"yaxis":{"title":{"text":"USDC"}},"xaxis":{"title":{"text":"Time"}}},                        {"displayModeBar": false, "responsive": true}                    )                };                            </script>        </div>
 </div>
 </div>
 
-<div id="outline-container-org6d36123" class="outline-3">
-<h3 id="org6d36123"><span class="section-number-3">4.2.</span> Closing returns</h3>
+<div id="outline-container-org107e33e" class="outline-3">
+<h3 id="org107e33e"><span class="section-number-3">4.2.</span> Closing returns</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 Let's start by defining the closing return between two intervals \(t\) and \(t+k\) as follows (cf. Figure
-<a href="#orge7b0ab9">3</a>) :
+<a href="#org8b0ae20">3</a>) :
 </p>
 \begin{equation}
 \rho^{\text{c}}_{t + k} = 
@@ -355,7 +413,7 @@ Note that \(k\) is an integer that represents the number of future or past inter
 </p>
 
 
-<div id="orge7b0ab9" class="figure">
+<div id="org8b0ae20" class="figure">
 <p><img src="./fig/rho_c_t_k.png" alt="rho_c_t_k.png" />
 </p>
 <p><span class="figure-number">Figure&nbsp;3&nbsp;: </span>Graphical illustration of closing returns.</p>
@@ -369,19 +427,29 @@ Note that \(k\) is an integer that represents the number of future or past inter
 Closing returns calculated on the data from the previous example and different horizons:
 </p>
 
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">The code concatenates the returns calculated at different horizons (-3, -2, -1, 0, 1, 2, 3)</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">into a single DataFrame. </span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Each return at a specific horizon is calculated using the MOSAIC `mid.Returns()` class with</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">the specified horizon value. The `.compute` method computes the returns from the `data_ohlcv_ex_5` data. </span>
+<span style="color: #DFAF8F;">ref_df</span> = pd.concat([
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   mid.Returns(horizon=h).compute(data_ohlcv_ex_5)\
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #F0DFAF; font-weight: bold;">for</span> h <span style="color: #F0DFAF; font-weight: bold;">in</span> [-3,-2,-1,0,1,2,3]], axis=1)
+</pre>
+</div>
 <style type="text/css">
 </style>
-<table id="T_1b8f4">
+<table id="T_bec00">
   <thead>
     <tr>
       <th class="blank level0" >&nbsp;</th>
-      <th id="T_1b8f4_level0_col0" class="col_heading level0 col0" >ret_close_-3</th>
-      <th id="T_1b8f4_level0_col1" class="col_heading level0 col1" >ret_close_-2</th>
-      <th id="T_1b8f4_level0_col2" class="col_heading level0 col2" >ret_close_-1</th>
-      <th id="T_1b8f4_level0_col3" class="col_heading level0 col3" >ret_close_0</th>
-      <th id="T_1b8f4_level0_col4" class="col_heading level0 col4" >ret_close_1</th>
-      <th id="T_1b8f4_level0_col5" class="col_heading level0 col5" >ret_close_2</th>
-      <th id="T_1b8f4_level0_col6" class="col_heading level0 col6" >ret_close_3</th>
+      <th id="T_bec00_level0_col0" class="col_heading level0 col0" >ret_close_-3</th>
+      <th id="T_bec00_level0_col1" class="col_heading level0 col1" >ret_close_-2</th>
+      <th id="T_bec00_level0_col2" class="col_heading level0 col2" >ret_close_-1</th>
+      <th id="T_bec00_level0_col3" class="col_heading level0 col3" >ret_close_0</th>
+      <th id="T_bec00_level0_col4" class="col_heading level0 col4" >ret_close_1</th>
+      <th id="T_bec00_level0_col5" class="col_heading level0 col5" >ret_close_2</th>
+      <th id="T_bec00_level0_col6" class="col_heading level0 col6" >ret_close_3</th>
     </tr>
     <tr>
       <th class="index_name level0" >datetime</th>
@@ -396,54 +464,54 @@ Closing returns calculated on the data from the previous example and different h
   </thead>
   <tbody>
     <tr>
-      <th id="T_1b8f4_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
-      <td id="T_1b8f4_row0_col0" class="data row0 col0" ></td>
-      <td id="T_1b8f4_row0_col1" class="data row0 col1" ></td>
-      <td id="T_1b8f4_row0_col2" class="data row0 col2" ></td>
-      <td id="T_1b8f4_row0_col3" class="data row0 col3" ></td>
-      <td id="T_1b8f4_row0_col4" class="data row0 col4" ></td>
-      <td id="T_1b8f4_row0_col5" class="data row0 col5" ></td>
-      <td id="T_1b8f4_row0_col6" class="data row0 col6" ></td>
+      <th id="T_bec00_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_bec00_row0_col0" class="data row0 col0" ></td>
+      <td id="T_bec00_row0_col1" class="data row0 col1" ></td>
+      <td id="T_bec00_row0_col2" class="data row0 col2" ></td>
+      <td id="T_bec00_row0_col3" class="data row0 col3" ></td>
+      <td id="T_bec00_row0_col4" class="data row0 col4" ></td>
+      <td id="T_bec00_row0_col5" class="data row0 col5" ></td>
+      <td id="T_bec00_row0_col6" class="data row0 col6" ></td>
     </tr>
     <tr>
-      <th id="T_1b8f4_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
-      <td id="T_1b8f4_row1_col0" class="data row1 col0" ></td>
-      <td id="T_1b8f4_row1_col1" class="data row1 col1" ></td>
-      <td id="T_1b8f4_row1_col2" class="data row1 col2" ></td>
-      <td id="T_1b8f4_row1_col3" class="data row1 col3" >-0.358%</td>
-      <td id="T_1b8f4_row1_col4" class="data row1 col4" >-0.786%</td>
-      <td id="T_1b8f4_row1_col5" class="data row1 col5" >-0.461%</td>
-      <td id="T_1b8f4_row1_col6" class="data row1 col6" >-0.456%</td>
+      <th id="T_bec00_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_bec00_row1_col0" class="data row1 col0" ></td>
+      <td id="T_bec00_row1_col1" class="data row1 col1" ></td>
+      <td id="T_bec00_row1_col2" class="data row1 col2" ></td>
+      <td id="T_bec00_row1_col3" class="data row1 col3" >-0.358%</td>
+      <td id="T_bec00_row1_col4" class="data row1 col4" >-0.786%</td>
+      <td id="T_bec00_row1_col5" class="data row1 col5" >-0.461%</td>
+      <td id="T_bec00_row1_col6" class="data row1 col6" >-0.456%</td>
     </tr>
     <tr>
-      <th id="T_1b8f4_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
-      <td id="T_1b8f4_row2_col0" class="data row2 col0" ></td>
-      <td id="T_1b8f4_row2_col1" class="data row2 col1" ></td>
-      <td id="T_1b8f4_row2_col2" class="data row2 col2" >-0.786%</td>
-      <td id="T_1b8f4_row2_col3" class="data row2 col3" >-0.430%</td>
-      <td id="T_1b8f4_row2_col4" class="data row2 col4" >-0.103%</td>
-      <td id="T_1b8f4_row2_col5" class="data row2 col5" >-0.099%</td>
-      <td id="T_1b8f4_row2_col6" class="data row2 col6" ></td>
+      <th id="T_bec00_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_bec00_row2_col0" class="data row2 col0" ></td>
+      <td id="T_bec00_row2_col1" class="data row2 col1" ></td>
+      <td id="T_bec00_row2_col2" class="data row2 col2" >-0.786%</td>
+      <td id="T_bec00_row2_col3" class="data row2 col3" >-0.430%</td>
+      <td id="T_bec00_row2_col4" class="data row2 col4" >-0.103%</td>
+      <td id="T_bec00_row2_col5" class="data row2 col5" >-0.099%</td>
+      <td id="T_bec00_row2_col6" class="data row2 col6" ></td>
     </tr>
     <tr>
-      <th id="T_1b8f4_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
-      <td id="T_1b8f4_row3_col0" class="data row3 col0" ></td>
-      <td id="T_1b8f4_row3_col1" class="data row3 col1" >-0.461%</td>
-      <td id="T_1b8f4_row3_col2" class="data row3 col2" >-0.103%</td>
-      <td id="T_1b8f4_row3_col3" class="data row3 col3" >0.328%</td>
-      <td id="T_1b8f4_row3_col4" class="data row3 col4" >0.333%</td>
-      <td id="T_1b8f4_row3_col5" class="data row3 col5" ></td>
-      <td id="T_1b8f4_row3_col6" class="data row3 col6" ></td>
+      <th id="T_bec00_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_bec00_row3_col0" class="data row3 col0" ></td>
+      <td id="T_bec00_row3_col1" class="data row3 col1" >-0.461%</td>
+      <td id="T_bec00_row3_col2" class="data row3 col2" >-0.103%</td>
+      <td id="T_bec00_row3_col3" class="data row3 col3" >0.328%</td>
+      <td id="T_bec00_row3_col4" class="data row3 col4" >0.333%</td>
+      <td id="T_bec00_row3_col5" class="data row3 col5" ></td>
+      <td id="T_bec00_row3_col6" class="data row3 col6" ></td>
     </tr>
     <tr>
-      <th id="T_1b8f4_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
-      <td id="T_1b8f4_row4_col0" class="data row4 col0" >-0.456%</td>
-      <td id="T_1b8f4_row4_col1" class="data row4 col1" >-0.099%</td>
-      <td id="T_1b8f4_row4_col2" class="data row4 col2" >0.333%</td>
-      <td id="T_1b8f4_row4_col3" class="data row4 col3" >0.005%</td>
-      <td id="T_1b8f4_row4_col4" class="data row4 col4" ></td>
-      <td id="T_1b8f4_row4_col5" class="data row4 col5" ></td>
-      <td id="T_1b8f4_row4_col6" class="data row4 col6" ></td>
+      <th id="T_bec00_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_bec00_row4_col0" class="data row4 col0" >-0.456%</td>
+      <td id="T_bec00_row4_col1" class="data row4 col1" >-0.099%</td>
+      <td id="T_bec00_row4_col2" class="data row4 col2" >0.333%</td>
+      <td id="T_bec00_row4_col3" class="data row4 col3" >0.005%</td>
+      <td id="T_bec00_row4_col4" class="data row4 col4" ></td>
+      <td id="T_bec00_row4_col5" class="data row4 col5" ></td>
+      <td id="T_bec00_row4_col6" class="data row4 col6" ></td>
     </tr>
   </tbody>
 </table>
@@ -484,7 +552,7 @@ is approximately:
 
 <p>
 The closing return between the intervals \(t\) and \(t + k\), denoted \(\rho^{\text{c}}_{t + k}\),
-can be expressed in terms of the returns \(r_{t}, \ldots, r_{t+k}\) (cf. Equation \eqref{org531fe37}) as follows: 
+can be expressed in terms of the returns \(r_{t}, \ldots, r_{t+k}\) (cf. Equation \eqref{org00b318c}) as follows: 
 </p>
 \begin{equation}
 \rho^{\text{c}}_{t + k} = \prod_{i = 1}^{k} (r_{t + i} + 1) - 1
@@ -502,11 +570,11 @@ This classical result can be obtained by noting that:
 </div>
 
 
-<div id="outline-container-orge10ed20" class="outline-3">
-<h3 id="orge10ed20"><span class="section-number-3">4.3.</span> Maximum and minimum return</h3>
+<div id="outline-container-org0ddf9d9" class="outline-3">
+<h3 id="org0ddf9d9"><span class="section-number-3">4.3.</span> Maximum and minimum return</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
-The maximum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org3d68c2d">4</a>) is defined as:
+The maximum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org7e0780e">4</a>) is defined as:
 </p>
 \begin{equation}
 \rho^{\text{h}}_{t + k} = 
@@ -517,7 +585,7 @@ The maximum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="
 \end{equation}
 
 
-<div id="org3d68c2d" class="figure">
+<div id="org7e0780e" class="figure">
 <p><img src="./fig/rho_h_t_k.png" alt="rho_h_t_k.png" />
 </p>
 <p><span class="figure-number">Figure&nbsp;4&nbsp;: </span>Graphical illustration of the calculation of a maximum return.</p>
@@ -525,7 +593,7 @@ The maximum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="
 
 
 <p>
-And by analogy, we define the minimum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org719ae65">5</a>):
+And by analogy, we define the minimum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org04ac6ac">5</a>):
 </p>
 \begin{equation}
 \rho^{\text{l}}_{t + k} = 
@@ -536,7 +604,7 @@ And by analogy, we define the minimum return between two intervals \(t\) and \(t
 \end{equation}
 
 
-<div id="org719ae65" class="figure">
+<div id="org04ac6ac" class="figure">
 <p><img src="./fig/rho_l_t_k.png" alt="rho_l_t_k.png" />
 </p>
 <p><span class="figure-number">Figure&nbsp;5&nbsp;: </span>Graphical illustration of the calculation of a minimum return.</p>
@@ -549,16 +617,27 @@ And by analogy, we define the minimum return between two intervals \(t\) and \(t
 <p>
 Maximum returns calculated on the data from the previous example and different horizons:
 </p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">The code creates a DataFrame `ret_df` by concatenating the rolling maximum returns calculated</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">at different horizons (-3, 0, 1, 2) along the columns.</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Each rolling maximum return at a specific horizon is calculated using the MOSAIC `mid.ReturnsRolling()` class.</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">The `fun="max"` parameter specifies that the maximum value should be calculated, and the `var="high"` parameter indicates that the calculation should be based on the "high" variable.</span>
+<span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">The `.compute` method computes the rolling maximum returns using the `data_ohlcv_ex_5` data. </span>
+<span style="color: #DFAF8F;">ret_high_df</span> = pd.concat([
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   mid.ReturnsRolling(fun=<span style="color: #CC9393;">"max"</span>, var=<span style="color: #CC9393;">"high"</span>, horizon=h).compute(data_ohlcv_ex_5)\
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #F0DFAF; font-weight: bold;">for</span> h <span style="color: #F0DFAF; font-weight: bold;">in</span> [-3,0,1,2]], axis=1)
+</pre>
+</div>
 <style type="text/css">
 </style>
-<table id="T_2079e">
+<table id="T_be9d1">
   <thead>
     <tr>
       <th class="blank level0" >&nbsp;</th>
-      <th id="T_2079e_level0_col0" class="col_heading level0 col0" >ret_max_close_high_-3</th>
-      <th id="T_2079e_level0_col1" class="col_heading level0 col1" >ret_max_close_high_0</th>
-      <th id="T_2079e_level0_col2" class="col_heading level0 col2" >ret_max_close_high_1</th>
-      <th id="T_2079e_level0_col3" class="col_heading level0 col3" >ret_max_close_high_2</th>
+      <th id="T_be9d1_level0_col0" class="col_heading level0 col0" >ret_max_close_high_-3</th>
+      <th id="T_be9d1_level0_col1" class="col_heading level0 col1" >ret_max_close_high_0</th>
+      <th id="T_be9d1_level0_col2" class="col_heading level0 col2" >ret_max_close_high_1</th>
+      <th id="T_be9d1_level0_col3" class="col_heading level0 col3" >ret_max_close_high_2</th>
     </tr>
     <tr>
       <th class="index_name level0" >datetime</th>
@@ -570,39 +649,39 @@ Maximum returns calculated on the data from the previous example and different h
   </thead>
   <tbody>
     <tr>
-      <th id="T_2079e_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
-      <td id="T_2079e_row0_col0" class="data row0 col0" ></td>
-      <td id="T_2079e_row0_col1" class="data row0 col1" ></td>
-      <td id="T_2079e_row0_col2" class="data row0 col2" ></td>
-      <td id="T_2079e_row0_col3" class="data row0 col3" ></td>
+      <th id="T_be9d1_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_be9d1_row0_col0" class="data row0 col0" ></td>
+      <td id="T_be9d1_row0_col1" class="data row0 col1" ></td>
+      <td id="T_be9d1_row0_col2" class="data row0 col2" ></td>
+      <td id="T_be9d1_row0_col3" class="data row0 col3" ></td>
     </tr>
     <tr>
-      <th id="T_2079e_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
-      <td id="T_2079e_row1_col0" class="data row1 col0" ></td>
-      <td id="T_2079e_row1_col1" class="data row1 col1" >-0.076%</td>
-      <td id="T_2079e_row1_col2" class="data row1 col2" >-0.076%</td>
-      <td id="T_2079e_row1_col3" class="data row1 col3" >-0.076%</td>
+      <th id="T_be9d1_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_be9d1_row1_col0" class="data row1 col0" ></td>
+      <td id="T_be9d1_row1_col1" class="data row1 col1" >-0.076%</td>
+      <td id="T_be9d1_row1_col2" class="data row1 col2" >-0.076%</td>
+      <td id="T_be9d1_row1_col3" class="data row1 col3" >-0.076%</td>
     </tr>
     <tr>
-      <th id="T_2079e_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
-      <td id="T_2079e_row2_col0" class="data row2 col0" ></td>
-      <td id="T_2079e_row2_col1" class="data row2 col1" >-0.020%</td>
-      <td id="T_2079e_row2_col2" class="data row2 col2" >-0.020%</td>
-      <td id="T_2079e_row2_col3" class="data row2 col3" >-0.020%</td>
+      <th id="T_be9d1_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_be9d1_row2_col0" class="data row2 col0" ></td>
+      <td id="T_be9d1_row2_col1" class="data row2 col1" >-0.020%</td>
+      <td id="T_be9d1_row2_col2" class="data row2 col2" >-0.020%</td>
+      <td id="T_be9d1_row2_col3" class="data row2 col3" >-0.020%</td>
     </tr>
     <tr>
-      <th id="T_2079e_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
-      <td id="T_2079e_row3_col0" class="data row3 col0" ></td>
-      <td id="T_2079e_row3_col1" class="data row3 col1" >0.353%</td>
-      <td id="T_2079e_row3_col2" class="data row3 col2" >0.353%</td>
-      <td id="T_2079e_row3_col3" class="data row3 col3" ></td>
+      <th id="T_be9d1_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_be9d1_row3_col0" class="data row3 col0" ></td>
+      <td id="T_be9d1_row3_col1" class="data row3 col1" >0.353%</td>
+      <td id="T_be9d1_row3_col2" class="data row3 col2" >0.353%</td>
+      <td id="T_be9d1_row3_col3" class="data row3 col3" ></td>
     </tr>
     <tr>
-      <th id="T_2079e_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
-      <td id="T_2079e_row4_col0" class="data row4 col0" >-0.076%</td>
-      <td id="T_2079e_row4_col1" class="data row4 col1" >0.008%</td>
-      <td id="T_2079e_row4_col2" class="data row4 col2" ></td>
-      <td id="T_2079e_row4_col3" class="data row4 col3" ></td>
+      <th id="T_be9d1_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_be9d1_row4_col0" class="data row4 col0" >-0.076%</td>
+      <td id="T_be9d1_row4_col1" class="data row4 col1" >0.008%</td>
+      <td id="T_be9d1_row4_col2" class="data row4 col2" ></td>
+      <td id="T_be9d1_row4_col3" class="data row4 col3" ></td>
     </tr>
   </tbody>
 </table>
@@ -610,16 +689,23 @@ Maximum returns calculated on the data from the previous example and different h
 <p>
 Minimum returns calculated for the same horizons:
 </p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Identical approach but this time to compute rolling low returns</span>
+<span style="color: #DFAF8F;">ret_low_df</span> = pd.concat([
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   mid.ReturnsRolling(fun=<span style="color: #CC9393;">"min"</span>, var=<span style="color: #CC9393;">"low"</span>, horizon=h).compute(data_ohlcv_ex_5)\
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #F0DFAF; font-weight: bold;">for</span> h <span style="color: #F0DFAF; font-weight: bold;">in</span> [-3,0,1,2]], axis=1)
+</pre>
+</div>
 <style type="text/css">
 </style>
-<table id="T_69c4d">
+<table id="T_61faf">
   <thead>
     <tr>
       <th class="blank level0" >&nbsp;</th>
-      <th id="T_69c4d_level0_col0" class="col_heading level0 col0" >ret_min_close_low_-3</th>
-      <th id="T_69c4d_level0_col1" class="col_heading level0 col1" >ret_min_close_low_0</th>
-      <th id="T_69c4d_level0_col2" class="col_heading level0 col2" >ret_min_close_low_1</th>
-      <th id="T_69c4d_level0_col3" class="col_heading level0 col3" >ret_min_close_low_2</th>
+      <th id="T_61faf_level0_col0" class="col_heading level0 col0" >ret_min_close_low_-3</th>
+      <th id="T_61faf_level0_col1" class="col_heading level0 col1" >ret_min_close_low_0</th>
+      <th id="T_61faf_level0_col2" class="col_heading level0 col2" >ret_min_close_low_1</th>
+      <th id="T_61faf_level0_col3" class="col_heading level0 col3" >ret_min_close_low_2</th>
     </tr>
     <tr>
       <th class="index_name level0" >datetime</th>
@@ -631,39 +717,39 @@ Minimum returns calculated for the same horizons:
   </thead>
   <tbody>
     <tr>
-      <th id="T_69c4d_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
-      <td id="T_69c4d_row0_col0" class="data row0 col0" ></td>
-      <td id="T_69c4d_row0_col1" class="data row0 col1" ></td>
-      <td id="T_69c4d_row0_col2" class="data row0 col2" ></td>
-      <td id="T_69c4d_row0_col3" class="data row0 col3" ></td>
+      <th id="T_61faf_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_61faf_row0_col0" class="data row0 col0" ></td>
+      <td id="T_61faf_row0_col1" class="data row0 col1" ></td>
+      <td id="T_61faf_row0_col2" class="data row0 col2" ></td>
+      <td id="T_61faf_row0_col3" class="data row0 col3" ></td>
     </tr>
     <tr>
-      <th id="T_69c4d_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
-      <td id="T_69c4d_row1_col0" class="data row1 col0" ></td>
-      <td id="T_69c4d_row1_col1" class="data row1 col1" >-0.438%</td>
-      <td id="T_69c4d_row1_col2" class="data row1 col2" >-0.952%</td>
-      <td id="T_69c4d_row1_col3" class="data row1 col3" >-0.952%</td>
+      <th id="T_61faf_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_61faf_row1_col0" class="data row1 col0" ></td>
+      <td id="T_61faf_row1_col1" class="data row1 col1" >-0.438%</td>
+      <td id="T_61faf_row1_col2" class="data row1 col2" >-0.952%</td>
+      <td id="T_61faf_row1_col3" class="data row1 col3" >-0.952%</td>
     </tr>
     <tr>
-      <th id="T_69c4d_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
-      <td id="T_69c4d_row2_col0" class="data row2 col0" ></td>
-      <td id="T_69c4d_row2_col1" class="data row2 col1" >-0.596%</td>
-      <td id="T_69c4d_row2_col2" class="data row2 col2" >-0.596%</td>
-      <td id="T_69c4d_row2_col3" class="data row2 col3" >-0.596%</td>
+      <th id="T_61faf_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_61faf_row2_col0" class="data row2 col0" ></td>
+      <td id="T_61faf_row2_col1" class="data row2 col1" >-0.596%</td>
+      <td id="T_61faf_row2_col2" class="data row2 col2" >-0.596%</td>
+      <td id="T_61faf_row2_col3" class="data row2 col3" >-0.596%</td>
     </tr>
     <tr>
-      <th id="T_69c4d_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
-      <td id="T_69c4d_row3_col0" class="data row3 col0" ></td>
-      <td id="T_69c4d_row3_col1" class="data row3 col1" >0.029%</td>
-      <td id="T_69c4d_row3_col2" class="data row3 col2" >-0.003%</td>
-      <td id="T_69c4d_row3_col3" class="data row3 col3" ></td>
+      <th id="T_61faf_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_61faf_row3_col0" class="data row3 col0" ></td>
+      <td id="T_61faf_row3_col1" class="data row3 col1" >0.029%</td>
+      <td id="T_61faf_row3_col2" class="data row3 col2" >-0.003%</td>
+      <td id="T_61faf_row3_col3" class="data row3 col3" ></td>
     </tr>
     <tr>
-      <th id="T_69c4d_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
-      <td id="T_69c4d_row4_col0" class="data row4 col0" >-0.952%</td>
-      <td id="T_69c4d_row4_col1" class="data row4 col1" >-0.330%</td>
-      <td id="T_69c4d_row4_col2" class="data row4 col2" ></td>
-      <td id="T_69c4d_row4_col3" class="data row4 col3" ></td>
+      <th id="T_61faf_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_61faf_row4_col0" class="data row4 col0" >-0.952%</td>
+      <td id="T_61faf_row4_col1" class="data row4 col1" >-0.330%</td>
+      <td id="T_61faf_row4_col2" class="data row4 col2" ></td>
+      <td id="T_61faf_row4_col3" class="data row4 col3" ></td>
     </tr>
   </tbody>
 </table>
@@ -724,25 +810,25 @@ The corresponding minimum return is:
 </div>
 
 
-<div id="outline-container-orgd0d7209" class="outline-2">
-<h2 id="orgd0d7209"><span class="section-number-2">5.</span> Technical environment</h2>
+<div id="outline-container-org21e4508" class="outline-2">
+<h2 id="org21e4508"><span class="section-number-2">5.</span> Technical environment</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 The <code>Python</code> libraries used in the processes presented in this document are:
 </p>
 <style type="text/css">
 </style>
-<table id="T_3c845">
+<table id="T_6e710">
   <thead>
     <tr>
-      <th id="T_3c845_level0_col0" class="col_heading level0 col0" >Library</th>
-      <th id="T_3c845_level0_col1" class="col_heading level0 col1" >Version</th>
+      <th id="T_6e710_level0_col0" class="col_heading level0 col0" >Library</th>
+      <th id="T_6e710_level0_col1" class="col_heading level0 col1" >Version</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td id="T_3c845_row0_col0" class="data row0 col0" >MOSAIC</td>
-      <td id="T_3c845_row0_col1" class="data row0 col1" >0.0.40</td>
+      <td id="T_6e710_row0_col0" class="data row0 col0" >MOSAIC</td>
+      <td id="T_6e710_row0_col1" class="data row0 col1" >0.0.40</td>
     </tr>
   </tbody>
 </table>
@@ -750,8 +836,8 @@ The <code>Python</code> libraries used in the processes presented in this docume
 </div>
 
 
-<div id="outline-container-orgbe40eae" class="outline-2">
-<h2 id="orgbe40eae"><span class="section-number-2">6.</span> References</h2>
+<div id="outline-container-org6b36dd7" class="outline-2">
+<h2 id="org6b36dd7"><span class="section-number-2">6.</span> References</h2>
 <div class="outline-text-2" id="text-6">
 </div>
 </div>
