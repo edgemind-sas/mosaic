@@ -23,27 +23,28 @@
 <h2>Table des matières</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgeda99b6">1. Context</a></li>
-<li><a href="#orgc60ede4">2. Objectives</a></li>
-<li><a href="#org8e7e523">3. Tutorials</a>
+<li><a href="#org8366443">1. Context</a></li>
+<li><a href="#org215493b">2. Objectives</a></li>
+<li><a href="#org1b8fc55">3. Tutorials</a>
 <ul>
-<li><a href="#orgab92485">3.1. <span class="todo TODO">TODO</span> Indicators</a></li>
-<li><a href="#orgb14f59a">3.2. Building bots</a></li>
+<li><a href="#org29eff0b">3.1. <span class="todo TODO">TODO</span> Indicators</a></li>
+<li><a href="#orga53fedc">3.2. Building bots</a></li>
+<li><a href="#orgcae9353">3.3. Data backends</a></li>
 </ul>
 </li>
-<li><a href="#org4fa118c">4. Research Axes</a>
+<li><a href="#org779fcbf">4. Research Axes</a>
 <ul>
-<li><a href="#orgeca678e">4.1. Formalization and Probabilistic Modeling</a></li>
+<li><a href="#orgbce6cd1">4.1. Formalization and Probabilistic Modeling</a></li>
 </ul>
 </li>
-<li><a href="#org9bdb4c6">5. Technical Analysis</a></li>
-<li><a href="#org53b4e69">6. References</a></li>
+<li><a href="#org2a28998">5. Technical Analysis</a></li>
+<li><a href="#orgecc955f">6. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orgeda99b6" class="outline-2">
-<h2 id="orgeda99b6"><span class="section-number-2">1.</span> Context</h2>
+<div id="outline-container-org8366443" class="outline-2">
+<h2 id="org8366443"><span class="section-number-2">1.</span> Context</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A cryptocurrency is a virtual currency that operates independently of banks and governments. The
@@ -93,8 +94,8 @@ numerous scientific and technical challenges.
 
 
 
-<div id="outline-container-orgc60ede4" class="outline-2">
-<h2 id="orgc60ede4"><span class="section-number-2">2.</span> Objectives</h2>
+<div id="outline-container-org215493b" class="outline-2">
+<h2 id="org215493b"><span class="section-number-2">2.</span> Objectives</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 The general objective of this project is the development of an autonomous AI capable of:
@@ -112,8 +113,8 @@ source.
 </div>
 </div>
 
-<div id="outline-container-org8e7e523" class="outline-2">
-<h2 id="org8e7e523"><span class="section-number-2">3.</span> Tutorials</h2>
+<div id="outline-container-org1b8fc55" class="outline-2">
+<h2 id="org1b8fc55"><span class="section-number-2">3.</span> Tutorials</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Cette section présente une liste de tutoriels permettant de prendre en main les principales
@@ -123,16 +124,16 @@ fonctionnalités de la librairie MOSAIC.
 <p>
 This section presents a list of tutorials to help you get started with the main functionalities of the MOSAIC library.
 </p>
+</div>
 
+<div id="outline-container-org29eff0b" class="outline-3">
+<h3 id="org29eff0b"><span class="section-number-3">3.1.</span> <span class="todo TODO">TODO</span> Indicators</h3>
+<div class="outline-text-3" id="text-3-1">
 <p>
 For your convenience, we provide a refresher on certain fundamental concepts in finance,
 particularly regarding return calculations, which you can find at <a href="./doc/basic_notions.html">this page</a>.
 </p>
-</div>
 
-<div id="outline-container-orgab92485" class="outline-3">
-<h3 id="orgab92485"><span class="section-number-3">3.1.</span> <span class="todo TODO">TODO</span> Indicators</h3>
-<div class="outline-text-3" id="text-3-1">
 <ul class="org-ul">
 <li><a href="indic/indic_gh.html">Marteau généralisé</a> (to be updated)</li>
 <li><a href="indic/indic_mvl.html">Niveau de volume mobile</a> (to be updated)</li>
@@ -142,12 +143,21 @@ particularly regarding return calculations, which you can find at <a href="./doc
 </div>
 </div>
 
-<div id="outline-container-orgb14f59a" class="outline-3">
-<h3 id="orgb14f59a"><span class="section-number-3">3.2.</span> Building bots</h3>
+<div id="outline-container-orga53fedc" class="outline-3">
+<h3 id="orga53fedc"><span class="section-number-3">3.2.</span> Building bots</h3>
 <div class="outline-text-3" id="text-3-2">
 <ul class="org-ul">
 <li><a href="examples/bot/step_by_step/tuto.html">Building a bot : from indicators to decision model</a></li>
-<li><a href="examples/bot/bot_dummy/tuto.html">Bot configuration with YAML</a></li>
+<li><a href="examples/bot/bot_dummy/tuto.html">Bot configuration with YAML</a> (to be updated)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgcae9353" class="outline-3">
+<h3 id="orgcae9353"><span class="section-number-3">3.3.</span> Data backends</h3>
+<div class="outline-text-3" id="text-3-3">
+<ul class="org-ul">
+<li><a href="examples/db/mongo/tuto.html">Using MongoDB with MOSAIC DB classes</a></li>
 </ul>
 </div>
 </div>
@@ -155,16 +165,16 @@ particularly regarding return calculations, which you can find at <a href="./doc
 
 
 
-<div id="outline-container-org4fa118c" class="outline-2">
-<h2 id="org4fa118c"><span class="section-number-2">4.</span> Research Axes</h2>
+<div id="outline-container-org779fcbf" class="outline-2">
+<h2 id="org779fcbf"><span class="section-number-2">4.</span> Research Axes</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The research axes of the MOSAIC project are succinctly presented in the following paragraphs.
 </p>
 </div>
 
-<div id="outline-container-orgeca678e" class="outline-3">
-<h3 id="orgeca678e"><span class="section-number-3">4.1.</span> Formalization and Probabilistic Modeling</h3>
+<div id="outline-container-orgbce6cd1" class="outline-3">
+<h3 id="orgbce6cd1"><span class="section-number-3">4.1.</span> Formalization and Probabilistic Modeling</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 Whether it is predicting the evolution of traditional assets <a href="#citeproc_bib_item_3">[3]</a> <a href="#citeproc_bib_item_4">[4]</a>, or cryptocurrencies
@@ -182,8 +192,8 @@ probabilistic modeling techniques (e.g. Bayesian techniques) to address the prob
 </div>
 </div>
 
-<div id="outline-container-org9bdb4c6" class="outline-2">
-<h2 id="org9bdb4c6"><span class="section-number-2">5.</span> Technical Analysis</h2>
+<div id="outline-container-org2a28998" class="outline-2">
+<h2 id="org2a28998"><span class="section-number-2">5.</span> Technical Analysis</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 In the field of financial market analysis, technical analysis refers to a set of tools aimed at
@@ -216,8 +226,8 @@ the conditional distribution of returns relative to observed indicators.</li>
 </div>
 </div>
 
-<div id="outline-container-org53b4e69" class="outline-2">
-<h2 id="org53b4e69"><span class="section-number-2">6.</span> References</h2>
+<div id="outline-container-orgecc955f" class="outline-2">
+<h2 id="orgecc955f"><span class="section-number-2">6.</span> References</h2>
 <div class="outline-text-2" id="text-6">
 <style>.csl-left-margin{float: left; padding-right: 0em;}
  .csl-right-inline{margin: 0 0 0 2em;}</style><div class="csl-bib-body">
