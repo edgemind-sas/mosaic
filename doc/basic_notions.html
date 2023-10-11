@@ -46,22 +46,22 @@
 <ul>
 <li><a href="#introduction">1. Introduction</a></li>
 <li><a href="#données-historiques-ohlcv">2. Historical OHLCV Data</a></li>
-<li><a href="#notations-mathématiques">3. Notations mathématiques</a>
+<li><a href="#orgefca08d">3. Mathematical Notations</a>
 <ul>
-<li><a href="#notions-temporelles">3.1. Notions temporelles</a></li>
-<li><a href="#chandelier">3.2. Chandelier</a></li>
-<li><a href="#rendements">3.3. Rendements</a></li>
+<li><a href="#org2d1fada">3.1. Temporal Notions</a></li>
+<li><a href="#orge53a7ce">3.2. Candlestick</a></li>
+<li><a href="#orga4744d7">3.3. Returns</a></li>
 </ul>
 </li>
 <li><a href="#extension-de-la-notion-de-rendements">4. Extension de la notion de rendements</a>
 <ul>
-<li><a href="#définitions">4.1. Définitions</a></li>
-<li><a href="#org604d503">4.2. Rendement de clôture</a></li>
-<li><a href="#org0f6bb06">4.3. Rendement du maximum et du minimum</a></li>
+<li><a href="#définitions">4.1. Definitions</a></li>
+<li><a href="#org6d36123">4.2. Closing returns</a></li>
+<li><a href="#orge10ed20">4.3. Maximum and minimum return</a></li>
 </ul>
 </li>
-<li><a href="#org41f3e11">5. Environnement technique</a></li>
-<li><a href="#org2a6609a">6. Références</a></li>
+<li><a href="#orgd0d7209">5. Technical environment</a></li>
+<li><a href="#orgbe40eae">6. References</a></li>
 </ul>
 </div>
 </div>
@@ -113,11 +113,11 @@ Typically, OHLCV data contains the following variables:
 
 <p>
 OHLC data is commonly visualized using candlestick charts. Based on the opening and closing values,
-candlesticks are classified as bullish or bearish, as shown in Figure <a href="#orgdafd552">1</a>. 
+candlesticks are classified as bullish or bearish, as shown in Figure <a href="#org4d246bb">1</a>. 
 </p>
 
 
-<div id="orgdafd552" class="figure">
+<div id="org4d246bb" class="figure">
 <p><img src="./fig/candle.jpg" alt="candle.jpg" />
 </p>
 <p><span class="figure-number">Figure&nbsp;1&nbsp;: </span>Représentation du symbole de chandelier.</p>
@@ -137,6 +137,70 @@ The following table provides an overview of the initial BTC price data relative 
 2021, with a sampling period of \(\Delta t = 5\) minutes. 
 </p>
 
+<style type="text/css">
+</style>
+<table id="T_b01ee">
+  <thead>
+    <tr>
+      <th class="blank level0" >&nbsp;</th>
+      <th id="T_b01ee_level0_col0" class="col_heading level0 col0" >open</th>
+      <th id="T_b01ee_level0_col1" class="col_heading level0 col1" >high</th>
+      <th id="T_b01ee_level0_col2" class="col_heading level0 col2" >low</th>
+      <th id="T_b01ee_level0_col3" class="col_heading level0 col3" >close</th>
+      <th id="T_b01ee_level0_col4" class="col_heading level0 col4" >volume</th>
+    </tr>
+    <tr>
+      <th class="index_name level0" >datetime</th>
+      <th class="blank col0" >&nbsp;</th>
+      <th class="blank col1" >&nbsp;</th>
+      <th class="blank col2" >&nbsp;</th>
+      <th class="blank col3" >&nbsp;</th>
+      <th class="blank col4" >&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="T_b01ee_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_b01ee_row0_col0" class="data row0 col0" >28 964.54</td>
+      <td id="T_b01ee_row0_col1" class="data row0 col1" >29 064.55</td>
+      <td id="T_b01ee_row0_col2" class="data row0 col2" >28 958.66</td>
+      <td id="T_b01ee_row0_col3" class="data row0 col3" >29 018.17</td>
+      <td id="T_b01ee_row0_col4" class="data row0 col4" >8.77</td>
+    </tr>
+    <tr>
+      <th id="T_b01ee_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_b01ee_row1_col0" class="data row1 col0" >28 993.74</td>
+      <td id="T_b01ee_row1_col1" class="data row1 col1" >28 996.04</td>
+      <td id="T_b01ee_row1_col2" class="data row1 col2" >28 890.99</td>
+      <td id="T_b01ee_row1_col3" class="data row1 col3" >28 914.30</td>
+      <td id="T_b01ee_row1_col4" class="data row1 col4" >11.15</td>
+    </tr>
+    <tr>
+      <th id="T_b01ee_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_b01ee_row2_col0" class="data row2 col0" >28 902.53</td>
+      <td id="T_b01ee_row2_col1" class="data row2 col1" >28 908.49</td>
+      <td id="T_b01ee_row2_col2" class="data row2 col2" >28 741.86</td>
+      <td id="T_b01ee_row2_col3" class="data row2 col3" >28 790.00</td>
+      <td id="T_b01ee_row2_col4" class="data row2 col4" >4.58</td>
+    </tr>
+    <tr>
+      <th id="T_b01ee_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_b01ee_row3_col0" class="data row3 col0" >28 798.99</td>
+      <td id="T_b01ee_row3_col1" class="data row3 col1" >28 891.63</td>
+      <td id="T_b01ee_row3_col2" class="data row3 col2" >28 798.29</td>
+      <td id="T_b01ee_row3_col3" class="data row3 col3" >28 884.38</td>
+      <td id="T_b01ee_row3_col4" class="data row3 col4" >4.31</td>
+    </tr>
+    <tr>
+      <th id="T_b01ee_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_b01ee_row4_col0" class="data row4 col0" >28 845.04</td>
+      <td id="T_b01ee_row4_col1" class="data row4 col1" >28 886.67</td>
+      <td id="T_b01ee_row4_col2" class="data row4 col2" >28 789.15</td>
+      <td id="T_b01ee_row4_col3" class="data row4 col3" >28 885.73</td>
+      <td id="T_b01ee_row4_col4" class="data row4 col4" >13.21</td>
+    </tr>
+  </tbody>
+</table>
 
 <p>
 For example, the first row of the table indicates that on 01/01/2021:
@@ -145,7 +209,7 @@ For example, the first row of the table indicates that on 01/01/2021:
 <ul class="org-ul">
 <li>At 01:00:00, the price of one BTC was 28964.54 USDC.</li>
 <li>Between 01:00:00 and 01:05:00, the price of one BTC was between 29018.17 USDC (closing of the current interval) and 28993.74 USDC (opening of the next interval).</li>
-<li>Between 00:00:00 and 00:05:00, the price of one BTC reached a minimum of 28958.66 USDC and a maximum of 29064.55 USDC.</li>
+<li>Between 01:00:00 and 01:05:00, the price of one BTC reached a minimum of 28958.66 USDC and a maximum of 29064.55 USDC.</li>
 </ul>
 
 <p>
@@ -157,101 +221,84 @@ the previous interval.
 </div>
 </div>
 
-<div id="outline-container-notations-mathématiques" class="outline-2">
-<h2 id="notations-mathématiques"><span class="section-number-2">3.</span> Notations mathématiques</h2>
-<div class="outline-text-2" id="text-notations-mathématiques">
+<div id="outline-container-orgefca08d" class="outline-2">
+<h2 id="orgefca08d"><span class="section-number-2">3.</span> Mathematical Notations</h2>
+<div class="outline-text-2" id="text-3">
 </div>
-
-<div id="outline-container-notions-temporelles" class="outline-3">
-<h3 id="notions-temporelles"><span class="section-number-3">3.1.</span> Notions temporelles</h3>
-<div class="outline-text-3" id="text-notions-temporelles">
+<div id="outline-container-org2d1fada" class="outline-3">
+<h3 id="org2d1fada"><span class="section-number-3">3.1.</span> Temporal Notions</h3>
+<div class="outline-text-3" id="text-3-1">
 <p>
-Nous avons introduit précédemment la période d'échantillonnage des
-données \(\Delta t\). On note également \(t_{0}\) la première date
-d'échantillonnage. Dans l'exemple de données précédent, on rappelle que
-\(\Delta t = 5\) minutes et que \(t_{0} =\) 2021-01-01 01:00:00.
+We previously introduced the sampling period of the data, \(\Delta t\). We also denote \(t_{0}\) as the first sampling date. In the previous data example, we recall that \(\Delta t = 5\) minutes and \(t_{0} =\) 2021-01-01 01:00:00.
 </p>
 
 <p>
-Chaque intervalle de temps est alors repéré par l'instant qui marque le début de
-l'intervalle. L'intervalle \(t\) désigne donc l'intervalle de temps qui commence à l'instant \(t\) et se
-termine à l'instant \(t + \Delta t\) (cf. Figure <a href="#orgb6490ea">2</a>).
+Each time interval is identified by the moment at which it starts. Thus, interval \(t\) refers to the time interval that begins at time \(t\) and ends at time \(t + \Delta t\) (see Figure <a href="#orgafd5e00">2</a>).
 </p>
 
 <p>
-Afin de se repérer relativement à un intervalle \(t\) donné dans le cas d'un échantillonnage de
-période \(Delta t\), on désigne par intervalle \(t + k\), où $k est un entier
-relatif, l'intervalle débutant à l'instant \(t + k \Delta t\) et s'achevant à l'instant \(t + (k + 1)
-\Delta t\) 
+To orient ourselves relative to a given interval \(t\) in the case of a sampling period \(\Delta t\), we denote the interval \(t + k\), where \(k\) is an integer, as the interval that starts at time \(t + k \Delta t\) and ends at time \(t + (k + 1) \Delta t\).
 </p>
 
 <p>
-En reprenant l'exemple précédent, on a :
+Using the previous example, we have:
 </p>
 <ul class="org-ul">
-<li>l'intervalle \(t_{0}\) entre 2021-01-01 01:00:00 et 2021-01-01 01:05:00 ;</li>
-<li>l'intervalle \(t_{0} + 4\) entre 2021-01-01 01:20:00 et 2021-01-01 01:25:00.</li>
+<li>Interval \(t_{0}\) between 2021-01-01 01:00:00 and 2021-01-01 01:05:00.</li>
+<li>Interval \(t_{0} + 4\) between 2021-01-01 01:20:00 and 2021-01-01 01:25:00.</li>
 </ul>
 
 
-<div id="orgb6490ea" class="figure">
+<div id="orgafd5e00" class="figure">
 <p><img src="./fig/ohlcv_interval.png" alt="ohlcv_interval.png" />
 </p>
-<p><span class="figure-number">Figure&nbsp;2&nbsp;: </span>Notion d'intervalle sur les données OHLCV.</p>
+<p><span class="figure-number">Figure&nbsp;2&nbsp;: </span>Concept of an interval in OHLCV data.</p>
 </div>
 
-
 <p>
-Les données OHLCV sont notées dans la suite comme suit :
+The OHLCV data is denoted as follows:
 </p>
 <ul class="org-ul">
-<li>\(\text{o}_{t}\) : cotation de l'actif à l'ouverture de l'intervalle \(t\) ;</li>
-<li>\(\text{c}_{t}\) : cotation de l'actif à la fermeture de l'intervalle \(t\), autrement dit cotation de
-l'actif à l'instant \(t + \Delta t\) ;</li>
-<li>\(\text{h}_{t}\) : cotation maximum de l'actif sur l'intervalle \(t\) ;</li>
-<li>\(\text{l}_{t}\) : cotation mimimum de l'actif sur l'intervalle \(t\) ;</li>
-<li>\(\text{v}_{t}\) : volume échangé de l'actif sut l'intervalle \(t\).</li>
+<li>\(\text{o}_{t}\): the asset's price at the opening of interval \(t\).</li>
+<li>\(\text{c}_{t}\): the asset's price at the closing of interval \(t\), i.e., the price at time \(t + \Delta t\).</li>
+<li>\(\text{h}_{t}\): the maximum price of the asset during interval \(t\).</li>
+<li>\(\text{l}_{t}\): the minimum price of the asset during interval \(t\).</li>
+<li>\(\text{v}_{t}\): the volume traded for the asset during interval \(t\).</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-chandelier" class="outline-3">
-<h3 id="chandelier"><span class="section-number-3">3.2.</span> Chandelier</h3>
-<div class="outline-text-3" id="text-chandelier">
+<div id="outline-container-orge53a7ce" class="outline-3">
+<h3 id="orge53a7ce"><span class="section-number-3">3.2.</span> Candlestick</h3>
+<div class="outline-text-3" id="text-3-2">
 <p>
-En plus des notations précédentes, nous pouvons introduire différentes
-grandeurs associées aux parties du diagramme en chandelier.
+In addition to the previous notations, we can introduce various measures associated with different parts of the candlestick chart.
 </p>
 
 <p>
-En considérant, le chandelier représentant une donnée OHLC sur l'intervalle \(t\), nous avons :<br />
+Considering the candlestick representing the OHLC data for interval \(t\), we have:
 </p>
 <ul class="org-ul">
-<li>Le corps \(\text{b}_{t} = \text{c}_{t} - \text{o}_{t}\).</li>
-<li>L'ombre inférieure \(\text{s}_{t}^{\ell} = \min\{\text{c}_{t}, \text{o}_{t}\} - \text{l}_{t}\).</li>
-<li>L'ombre supérieure \(\text{s}_{t}^{u} = \text{h}_{t} - \max\{\text{c}_{t}, \text{o}_{t}\}\).</li>
+<li>The body \(\text{b}_{t} = \text{c}_{t} - \text{o}_{t}\).</li>
+<li>The lower shadow \(\text{s}_{t}^{\ell} = \min\{\text{c}_{t}, \text{o}_{t}\} - \text{l}_{t}\).</li>
+<li>The upper shadow \(\text{s}_{t}^{u} = \text{h}_{t} - \max\{\text{c}_{t}, \text{o}_{t}\}\).</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-rendements" class="outline-3">
-<h3 id="rendements"><span class="section-number-3">3.3.</span> Rendements</h3>
-<div class="outline-text-3" id="text-rendements">
+<div id="outline-container-orga4744d7" class="outline-3">
+<h3 id="orga4744d7"><span class="section-number-3">3.3.</span> Returns</h3>
+<div class="outline-text-3" id="text-3-3">
 <p>
-On note enfin \(r_{t}\) la variation relative de la cotation d'un actif
-entre deux intervalles consécutif, on parle également de rendement (ou
-<i>returns</i> en anglais) sur l'intervalle \(t\). Nous avons donc pour tout
-\(t\) :
+Finally, we denote \(r_{t}\) as the relative change in an asset's price between two consecutive
+intervals, also known as the return for interval \(t\). For all \(t\), we have:
 </p>
 \begin{equation}
-\label{org8d767de}
+\label{org531fe37}
 r_{t} = \frac{\text{c}_{t}}{\text{c}_{t - 1}} - 1.
 \end{equation}
 <p>
-La quantité \(r_{t}\) est donc positive si l'actif gagne de la valeur sur l'intervalle \(t\) et négative
-sinon. Le rendement 
-représente l'indicateur principal au coeur de toutes les analyses
-financières réalisées sur un actif donnée.
+The quantity \(r_{t}\) is positive if the asset gains value in interval \(t\) and negative otherwise. The return is the primary indicator used in all financial analyses conducted on a given asset.
 </p>
 </div>
 </div>
@@ -263,36 +310,37 @@ financières réalisées sur un actif donnée.
 </div>
 
 <div id="outline-container-définitions" class="outline-3">
-<h3 id="définitions"><span class="section-number-3">4.1.</span> Définitions</h3>
+<h3 id="définitions"><span class="section-number-3">4.1.</span> Definitions</h3>
 <div class="outline-text-3" id="text-définitions">
 <p>
-Le calcul des rendements est une étape fondamentale dans l'analyse d'un
-actif au cours du temps. La définition d'un rendement proposée dans la
-section précédente se limite au rendement sur le cours de clôture et uniquement entre deux
-intervalles de temps successifs.
+Calculating returns is a fundamental step in analyzing the behavior of an asset over time. The
+definition of returns provided in the previous section is limited to the return on the closing price
+between two consecutive time intervals. 
 </p>
 
 <p>
-En effet, nous allons étendre la définition des rendements :
+We will now extend the definition of returns:
 </p>
 <ul class="org-ul">
-<li>d'une part, aux cotations maximum et minimum ;</li>
-<li>et d'autre part, entre deux intervalles de temps \(t\) et \(t + k\) donnés.</li>
+<li>On one hand, to include returns on the maximum and minimum prices.</li>
+<li>On the other hand, to encompass returns between two given time intervals, \(t\) and \(t + k\).</li>
 </ul>
 
 <p>
-Dans les paragraphes suivants, nous illustrerons les différentes rendements sur l'extrait
-de cotation BTC/USDC suivant.
+In the following paragraphs, we will illustrate the different returns using the excerpt of BTC/USDC
+price data. 
 </p>
+<div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script src="https://cdn.plot.ly/plotly-2.18.0.min.js"></script>                <div id="cafb014d-4e97-430b-9f48-a2fef3f685bb" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("cafb014d-4e97-430b-9f48-a2fef3f685bb")) {                    Plotly.newPlot(                        "cafb014d-4e97-430b-9f48-a2fef3f685bb",                        [{"close":[29018.17,28914.3,28790.0,28884.38,28885.73],"high":[29064.55,28996.04,28908.49,28891.63,28886.67],"low":[28958.66,28890.99,28741.86,28798.29,28789.15],"name":"OHLC","open":[28964.54,28993.74,28902.53,28798.99,28845.04],"x":["2021-01-01T01:00:00+01:00","2021-01-01T01:05:00+01:00","2021-01-01T01:10:00+01:00","2021-01-01T01:15:00+01:00","2021-01-01T01:20:00+01:00"],"type":"candlestick"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"text":"Example of OHLC data on BTC/USDC pair"},"yaxis":{"title":{"text":"USDC"}},"xaxis":{"title":{"text":"Time"}}},                        {"displayModeBar": false, "responsive": true}                    )                };                            </script>        </div>
 </div>
 </div>
 
-<div id="outline-container-org604d503" class="outline-3">
-<h3 id="org604d503"><span class="section-number-3">4.2.</span> Rendement de clôture</h3>
+<div id="outline-container-org6d36123" class="outline-3">
+<h3 id="org6d36123"><span class="section-number-3">4.2.</span> Closing returns</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
-Commençons donc par définir le rendement de clôture entre deux intervalles \(t\) et \(t+k\) (cf. Figure
-<a href="#org5b9c65f">3</a>) comme suit :
+Let's start by defining the closing return between two intervals \(t\) and \(t+k\) as follows (cf. Figure
+<a href="#orge7b0ab9">3</a>) :
 </p>
 \begin{equation}
 \rho^{\text{c}}_{t + k} = 
@@ -303,51 +351,127 @@ Commençons donc par définir le rendement de clôture entre deux intervalles \(
 \end{equation}
 
 <p>
-À noter que \(k\) est un nombre entier permettant de définir le nombre
-d'intervalles futurs ou passés à prendre en compte pour le calcul du
-rendement.
+Note that \(k\) is an integer that represents the number of future or past intervals to consider for the calculation of the return.
 </p>
 
 
-<div id="org5b9c65f" class="figure">
+<div id="orge7b0ab9" class="figure">
 <p><img src="./fig/rho_c_t_k.png" alt="rho_c_t_k.png" />
 </p>
-<p><span class="figure-number">Figure&nbsp;3&nbsp;: </span>Illustration graphique du calcul d'un rendement de clôture.</p>
+<p><span class="figure-number">Figure&nbsp;3&nbsp;: </span>Graphical illustration of closing returns.</p>
 </div>
 
 <p>
-<b>Exemples</b>
+<b>Examples</b>
 </p>
 
 <p>
-Rendements de clôture calculés sur les données de l'exemple précédent et
-sur différents horizons :
+Closing returns calculated on the data from the previous example and different horizons:
 </p>
 
+<style type="text/css">
+</style>
+<table id="T_1b8f4">
+  <thead>
+    <tr>
+      <th class="blank level0" >&nbsp;</th>
+      <th id="T_1b8f4_level0_col0" class="col_heading level0 col0" >ret_close_-3</th>
+      <th id="T_1b8f4_level0_col1" class="col_heading level0 col1" >ret_close_-2</th>
+      <th id="T_1b8f4_level0_col2" class="col_heading level0 col2" >ret_close_-1</th>
+      <th id="T_1b8f4_level0_col3" class="col_heading level0 col3" >ret_close_0</th>
+      <th id="T_1b8f4_level0_col4" class="col_heading level0 col4" >ret_close_1</th>
+      <th id="T_1b8f4_level0_col5" class="col_heading level0 col5" >ret_close_2</th>
+      <th id="T_1b8f4_level0_col6" class="col_heading level0 col6" >ret_close_3</th>
+    </tr>
+    <tr>
+      <th class="index_name level0" >datetime</th>
+      <th class="blank col0" >&nbsp;</th>
+      <th class="blank col1" >&nbsp;</th>
+      <th class="blank col2" >&nbsp;</th>
+      <th class="blank col3" >&nbsp;</th>
+      <th class="blank col4" >&nbsp;</th>
+      <th class="blank col5" >&nbsp;</th>
+      <th class="blank col6" >&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="T_1b8f4_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_1b8f4_row0_col0" class="data row0 col0" ></td>
+      <td id="T_1b8f4_row0_col1" class="data row0 col1" ></td>
+      <td id="T_1b8f4_row0_col2" class="data row0 col2" ></td>
+      <td id="T_1b8f4_row0_col3" class="data row0 col3" ></td>
+      <td id="T_1b8f4_row0_col4" class="data row0 col4" ></td>
+      <td id="T_1b8f4_row0_col5" class="data row0 col5" ></td>
+      <td id="T_1b8f4_row0_col6" class="data row0 col6" ></td>
+    </tr>
+    <tr>
+      <th id="T_1b8f4_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_1b8f4_row1_col0" class="data row1 col0" ></td>
+      <td id="T_1b8f4_row1_col1" class="data row1 col1" ></td>
+      <td id="T_1b8f4_row1_col2" class="data row1 col2" ></td>
+      <td id="T_1b8f4_row1_col3" class="data row1 col3" >-0.358%</td>
+      <td id="T_1b8f4_row1_col4" class="data row1 col4" >-0.786%</td>
+      <td id="T_1b8f4_row1_col5" class="data row1 col5" >-0.461%</td>
+      <td id="T_1b8f4_row1_col6" class="data row1 col6" >-0.456%</td>
+    </tr>
+    <tr>
+      <th id="T_1b8f4_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_1b8f4_row2_col0" class="data row2 col0" ></td>
+      <td id="T_1b8f4_row2_col1" class="data row2 col1" ></td>
+      <td id="T_1b8f4_row2_col2" class="data row2 col2" >-0.786%</td>
+      <td id="T_1b8f4_row2_col3" class="data row2 col3" >-0.430%</td>
+      <td id="T_1b8f4_row2_col4" class="data row2 col4" >-0.103%</td>
+      <td id="T_1b8f4_row2_col5" class="data row2 col5" >-0.099%</td>
+      <td id="T_1b8f4_row2_col6" class="data row2 col6" ></td>
+    </tr>
+    <tr>
+      <th id="T_1b8f4_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_1b8f4_row3_col0" class="data row3 col0" ></td>
+      <td id="T_1b8f4_row3_col1" class="data row3 col1" >-0.461%</td>
+      <td id="T_1b8f4_row3_col2" class="data row3 col2" >-0.103%</td>
+      <td id="T_1b8f4_row3_col3" class="data row3 col3" >0.328%</td>
+      <td id="T_1b8f4_row3_col4" class="data row3 col4" >0.333%</td>
+      <td id="T_1b8f4_row3_col5" class="data row3 col5" ></td>
+      <td id="T_1b8f4_row3_col6" class="data row3 col6" ></td>
+    </tr>
+    <tr>
+      <th id="T_1b8f4_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_1b8f4_row4_col0" class="data row4 col0" >-0.456%</td>
+      <td id="T_1b8f4_row4_col1" class="data row4 col1" >-0.099%</td>
+      <td id="T_1b8f4_row4_col2" class="data row4 col2" >0.333%</td>
+      <td id="T_1b8f4_row4_col3" class="data row4 col3" >0.005%</td>
+      <td id="T_1b8f4_row4_col4" class="data row4 col4" ></td>
+      <td id="T_1b8f4_row4_col5" class="data row4 col5" ></td>
+      <td id="T_1b8f4_row4_col6" class="data row4 col6" ></td>
+    </tr>
+  </tbody>
+</table>
 
 <p>
-En prenant l'instant \(t\) = 2021-01-01T00:05:00 et un horizon \(k = 0\),
-le rendement de clôture \(\rho^{\text{c}}_{t} = r_{t}\) correspond au
-rapport entre la clôture de l'intervalle débutant à la date 2021-01-01T01:05:00 et la clôture
-de l'intervalle précédent (2021-01-01T01:00:00), soit :
+When considering the time \(t =\) 2021-01-01 01:05:00 and an horizon \(k = 0\), 
+the closing return \(\rho^{\text{c}}_{t} = r_{t}\) corresponds to the ratio between the closing price
+of the interval starting at 2021-01-01 01:05:00 and the closing price of the previous interval 2021-01-01 01:00:00, which is approximately:
 \[
 \rho^{\text{c}}_{t} = \frac{\text{c}_{t}}{\text{c}_{t-1}} = \frac{28914.30}{29018.17} - 1 \simeq -0.003579 \simeq -0.358 \%
 \]
 </p>
 
 <p>
-En prenant l'intervalle à \(t\) = 2021-01-01T00:10:00 et un horizon \(k = 2\),
-le rendement de clôture \(\rho^{\text{c}}_{t+2}\) correspond au rapport
-entre la clôture de l'intervalle 2021-01-01T01:20:00 et la clôture de l'intervalle 2021-01-01T01:05:00, soit :
+When considering the interval at \(t =\) 2021-01-01 01:10:00 and an horizon \(k = 2\), 
+the closing return \(\rho^{\text{c}}_{t+2}\) corresponds to the ratio between the closing price of the 
+interval at 2021-01-01 01:20:00 and the closing price of the interval at 2021-01-01 01:05:00, which 
+is approximately:
 \[
 \rho^{\text{c}}_{t + 2} = \frac{\text{c}_{t+2}}{\text{c}_{t-1}} = \frac{28885.73}{28914.30} - 1 \simeq -0.000988 \simeq -0.099 \%
 \]
 </p>
 
 <p>
-En prenant l'intervalle \(t\) = 2021-01-01T01:20:00 et un horizon \(k = -3\),
-le rendement de clôture \(\rho^{\text{c}}_{t-3}\) correspond au rapport
-entre la clôture de l'intervalle 2021-01-01T01:20:00 et la clôture de l'intervalle 2021-01-01T01:00:00, soit :
+When considering the interval at \(t =\) 2021-01-01 01:20:00 and an horizon \(k = -3\), 
+the closing return \(\rho^{\text{c}}_{t-3}\) corresponds to the ratio between the closing price of the
+interval at 2021-01-01 01:20:00 and the closing price of the interval at 2021-01-01 01:00:00, which
+is approximately: 
 \[
 \rho^{\text{c}}_{t - 3} = \frac{\text{c}_{t}}{\text{c}_{t-4}} = \frac{28885.73}{29018.17} - 1 \simeq -0.00456 \simeq -0.456 \%
 \]
@@ -355,20 +479,19 @@ entre la clôture de l'intervalle 2021-01-01T01:20:00 et la clôture de l'interv
 
 
 <p>
-<b>Propriété</b>
+<b>Property</b>
 </p>
 
 <p>
-Le rendement de clôture entre les intervalles \(t\) et \(t + k\), noté \(\rho^{\text{c}}_{t + k}\),
-s'exprime en fonction des rendements \(r_{t}, \ldots, r_{t+k}\) (cf. Équation \eqref{org8d767de})
-comme suit :
+The closing return between the intervals \(t\) and \(t + k\), denoted \(\rho^{\text{c}}_{t + k}\),
+can be expressed in terms of the returns \(r_{t}, \ldots, r_{t+k}\) (cf. Equation \eqref{org531fe37}) as follows: 
 </p>
 \begin{equation}
 \rho^{\text{c}}_{t + k} = \prod_{i = 1}^{k} (r_{t + i} + 1) - 1
 \end{equation}
 
 <p>
-Ce résultat classique s'obtient en remarquant que :
+This classical result can be obtained by noting that:
 </p>
 \begin{align}
 \rho^{\text{c}}_{t + k} + 1 & = \frac{\text{c}_{t + k}}{\text{c}_{t-1}} \\
@@ -379,11 +502,11 @@ Ce résultat classique s'obtient en remarquant que :
 </div>
 
 
-<div id="outline-container-org0f6bb06" class="outline-3">
-<h3 id="org0f6bb06"><span class="section-number-3">4.3.</span> Rendement du maximum et du minimum</h3>
+<div id="outline-container-orge10ed20" class="outline-3">
+<h3 id="orge10ed20"><span class="section-number-3">4.3.</span> Maximum and minimum return</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
-Le rendement du maximum entre deux intervalles \(t\) et \(t+k\) (cf. Figure <a href="#org8fad997">4</a>) est défini par :
+The maximum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org3d68c2d">4</a>) is defined as:
 </p>
 \begin{equation}
 \rho^{\text{h}}_{t + k} = 
@@ -394,16 +517,15 @@ Le rendement du maximum entre deux intervalles \(t\) et \(t+k\) (cf. Figure <a h
 \end{equation}
 
 
-<div id="org8fad997" class="figure">
+<div id="org3d68c2d" class="figure">
 <p><img src="./fig/rho_h_t_k.png" alt="rho_h_t_k.png" />
 </p>
-<p><span class="figure-number">Figure&nbsp;4&nbsp;: </span>Illustration graphique du calcul d'un rendement du maximum.</p>
+<p><span class="figure-number">Figure&nbsp;4&nbsp;: </span>Graphical illustration of the calculation of a maximum return.</p>
 </div>
 
 
 <p>
-Et par analogie, on définit le rendement du minimum entre deux intervalles \(t\) et \(t+k\) (cf. Figure
-<a href="#org0138256">5</a>) :
+And by analogy, we define the minimum return between two intervals \(t\) and \(t+k\) (cf. Figure <a href="#org719ae65">5</a>):
 </p>
 \begin{equation}
 \rho^{\text{l}}_{t + k} = 
@@ -414,76 +536,185 @@ Et par analogie, on définit le rendement du minimum entre deux intervalles \(t\
 \end{equation}
 
 
-<div id="org0138256" class="figure">
+<div id="org719ae65" class="figure">
 <p><img src="./fig/rho_l_t_k.png" alt="rho_l_t_k.png" />
 </p>
-<p><span class="figure-number">Figure&nbsp;5&nbsp;: </span>Illustration graphique du calcul d'un rendement du minimum.</p>
+<p><span class="figure-number">Figure&nbsp;5&nbsp;: </span>Graphical illustration of the calculation of a minimum return.</p>
 </div>
 
 <p>
-<b>Exemples</b>
+<b>Examples</b>
 </p>
 
 <p>
-Rendements du maximum calculés sur les données de l'exemple précédent et
-sur différents horizons :
+Maximum returns calculated on the data from the previous example and different horizons:
 </p>
-
+<style type="text/css">
+</style>
+<table id="T_2079e">
+  <thead>
+    <tr>
+      <th class="blank level0" >&nbsp;</th>
+      <th id="T_2079e_level0_col0" class="col_heading level0 col0" >ret_max_close_high_-3</th>
+      <th id="T_2079e_level0_col1" class="col_heading level0 col1" >ret_max_close_high_0</th>
+      <th id="T_2079e_level0_col2" class="col_heading level0 col2" >ret_max_close_high_1</th>
+      <th id="T_2079e_level0_col3" class="col_heading level0 col3" >ret_max_close_high_2</th>
+    </tr>
+    <tr>
+      <th class="index_name level0" >datetime</th>
+      <th class="blank col0" >&nbsp;</th>
+      <th class="blank col1" >&nbsp;</th>
+      <th class="blank col2" >&nbsp;</th>
+      <th class="blank col3" >&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="T_2079e_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_2079e_row0_col0" class="data row0 col0" ></td>
+      <td id="T_2079e_row0_col1" class="data row0 col1" ></td>
+      <td id="T_2079e_row0_col2" class="data row0 col2" ></td>
+      <td id="T_2079e_row0_col3" class="data row0 col3" ></td>
+    </tr>
+    <tr>
+      <th id="T_2079e_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_2079e_row1_col0" class="data row1 col0" ></td>
+      <td id="T_2079e_row1_col1" class="data row1 col1" >-0.076%</td>
+      <td id="T_2079e_row1_col2" class="data row1 col2" >-0.076%</td>
+      <td id="T_2079e_row1_col3" class="data row1 col3" >-0.076%</td>
+    </tr>
+    <tr>
+      <th id="T_2079e_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_2079e_row2_col0" class="data row2 col0" ></td>
+      <td id="T_2079e_row2_col1" class="data row2 col1" >-0.020%</td>
+      <td id="T_2079e_row2_col2" class="data row2 col2" >-0.020%</td>
+      <td id="T_2079e_row2_col3" class="data row2 col3" >-0.020%</td>
+    </tr>
+    <tr>
+      <th id="T_2079e_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_2079e_row3_col0" class="data row3 col0" ></td>
+      <td id="T_2079e_row3_col1" class="data row3 col1" >0.353%</td>
+      <td id="T_2079e_row3_col2" class="data row3 col2" >0.353%</td>
+      <td id="T_2079e_row3_col3" class="data row3 col3" ></td>
+    </tr>
+    <tr>
+      <th id="T_2079e_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_2079e_row4_col0" class="data row4 col0" >-0.076%</td>
+      <td id="T_2079e_row4_col1" class="data row4 col1" >0.008%</td>
+      <td id="T_2079e_row4_col2" class="data row4 col2" ></td>
+      <td id="T_2079e_row4_col3" class="data row4 col3" ></td>
+    </tr>
+  </tbody>
+</table>
 
 <p>
-Rendements du minimum calculés sur les mêmes horizons :
+Minimum returns calculated for the same horizons:
 </p>
-
-
+<style type="text/css">
+</style>
+<table id="T_69c4d">
+  <thead>
+    <tr>
+      <th class="blank level0" >&nbsp;</th>
+      <th id="T_69c4d_level0_col0" class="col_heading level0 col0" >ret_min_close_low_-3</th>
+      <th id="T_69c4d_level0_col1" class="col_heading level0 col1" >ret_min_close_low_0</th>
+      <th id="T_69c4d_level0_col2" class="col_heading level0 col2" >ret_min_close_low_1</th>
+      <th id="T_69c4d_level0_col3" class="col_heading level0 col3" >ret_min_close_low_2</th>
+    </tr>
+    <tr>
+      <th class="index_name level0" >datetime</th>
+      <th class="blank col0" >&nbsp;</th>
+      <th class="blank col1" >&nbsp;</th>
+      <th class="blank col2" >&nbsp;</th>
+      <th class="blank col3" >&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="T_69c4d_level0_row0" class="row_heading level0 row0" >2021-01-01 01:00:00+01:00</th>
+      <td id="T_69c4d_row0_col0" class="data row0 col0" ></td>
+      <td id="T_69c4d_row0_col1" class="data row0 col1" ></td>
+      <td id="T_69c4d_row0_col2" class="data row0 col2" ></td>
+      <td id="T_69c4d_row0_col3" class="data row0 col3" ></td>
+    </tr>
+    <tr>
+      <th id="T_69c4d_level0_row1" class="row_heading level0 row1" >2021-01-01 01:05:00+01:00</th>
+      <td id="T_69c4d_row1_col0" class="data row1 col0" ></td>
+      <td id="T_69c4d_row1_col1" class="data row1 col1" >-0.438%</td>
+      <td id="T_69c4d_row1_col2" class="data row1 col2" >-0.952%</td>
+      <td id="T_69c4d_row1_col3" class="data row1 col3" >-0.952%</td>
+    </tr>
+    <tr>
+      <th id="T_69c4d_level0_row2" class="row_heading level0 row2" >2021-01-01 01:10:00+01:00</th>
+      <td id="T_69c4d_row2_col0" class="data row2 col0" ></td>
+      <td id="T_69c4d_row2_col1" class="data row2 col1" >-0.596%</td>
+      <td id="T_69c4d_row2_col2" class="data row2 col2" >-0.596%</td>
+      <td id="T_69c4d_row2_col3" class="data row2 col3" >-0.596%</td>
+    </tr>
+    <tr>
+      <th id="T_69c4d_level0_row3" class="row_heading level0 row3" >2021-01-01 01:15:00+01:00</th>
+      <td id="T_69c4d_row3_col0" class="data row3 col0" ></td>
+      <td id="T_69c4d_row3_col1" class="data row3 col1" >0.029%</td>
+      <td id="T_69c4d_row3_col2" class="data row3 col2" >-0.003%</td>
+      <td id="T_69c4d_row3_col3" class="data row3 col3" ></td>
+    </tr>
+    <tr>
+      <th id="T_69c4d_level0_row4" class="row_heading level0 row4" >2021-01-01 01:20:00+01:00</th>
+      <td id="T_69c4d_row4_col0" class="data row4 col0" >-0.952%</td>
+      <td id="T_69c4d_row4_col1" class="data row4 col1" >-0.330%</td>
+      <td id="T_69c4d_row4_col2" class="data row4 col2" ></td>
+      <td id="T_69c4d_row4_col3" class="data row4 col3" ></td>
+    </tr>
+  </tbody>
+</table>
 
 <p>
-En prenant l'intervalle \(t\) = 2021-01-01T01:05:00 et un horizon \(k = 0\),
-le rendement du maximum \(\rho^{\text{h}}_{t} = r_{t}\) correspond au
-rapport entre la cotation maximum de l'intervalle 2021-01-01T01:05:00 et
-la clôture de l'intervalle 2021-01-01T01:00:00, soit :
+Taking the interval \(t =\) 2021-01-01 01:05:00 and an horizon \(k = 0\),
+the maximum return \(\rho^{\text{h}}_{t} = r_{t}\) corresponds to the
+ratio between the maximum price of the interval 2021-01-01 01:05:00 and
+the closing price of the interval 2021-01-01 01:00:00, which is:
 \[
 \rho^{\text{h}}_{t} = \frac{\text{h}_{t}}{\text{c}_{t-1}} = \frac{28996.04}{29018.17} - 1 \simeq -0.000762 \simeq -0.076 \%
 \]
 </p>
 
 <p>
-Le rendement du minimum correspondant est :
+The corresponding minimum return is:
 \[
 \rho^{\text{l}}_{t} = \frac{\text{l}_{t}}{\text{c}_{t-1}} = \frac{28890.99}{29018.17} - 1 \simeq -0.00438 \simeq -0.44 \%
 \]
 </p>
 
+
 <p>
-En prenant l'intervalle \(t\) = 2021-01-01T01:10:00 et un horizon \(k = 2\),
-le rendement du maximum \(\rho^{\text{h}}_{t+2}\) correspond au rapport
-entre la cotation maximum entre les intervalle 2021-01-01T01:10:00 et
-2021-01-01T01:20:00, et la clôture de l'intervalle 2021-01-01T01:05:00,
-soit :
+Taking the interval \(t =\) 2021-01-01 01:10:00 and an horizon \(k = 2\),
+the maximum return \(\rho^{\text{h}}_{t+2}\) corresponds to the ratio
+between the maximum price between the intervals 2021-01-01 01:10:00 and
+2021-01-01 01:20:00, and the closing price of the interval 2021-01-01 01:05:00, which is: 
 \[
 \rho^{\text{h}}_{t + 2} = \frac{\max\{\text{h}_{t}, \text{h}_{t+1}, \text{h}_{t+2}\}}{\text{c}_{t-1}} = \frac{\text{h}_{t}}{\text{c}_{t-1}} = \frac{28908.49}{28914.30} - 1 \simeq -0.000201 \simeq -0.02 \%
 \]
 </p>
 
 <p>
-Le rendement du minimum correspondant est :
+The corresponding minimum return is:
 \[
 \rho^{\text{l}}_{t + 2} = \frac{\max\{\text{l}_{t}, \text{l}_{t+1}, \text{l}_{t+2}\}}{\text{c}_{t-1}} = \frac{\text{l}_{t}}{\text{c}_{t-1}} = \frac{28741.86}{28914.30} - 1 \simeq -0.00596 \simeq -0.59 \%
 \]
 </p>
 
 <p>
-En prenant l'intervalle \(t\) = 2021-01-01T01:20:00 et un horizon \(k = -3\),
-le rendement du maximum \(\rho^{\text{h}}_{t-3}\) correspond au rapport
-entre la cotation maximum entre les intervalles 2021-01-01T01:05:00 et
-2021-01-01T01:20:00, et la clôture de l'intervalle 2021-01-01T01:00:00,
-soit :
+Taking the interval \(t =\) 2021-01-01 01:20:00 and an horizon \(k = -3\),
+the maximum return \(\rho^{\text{h}}_{t-3}\) corresponds to the ratio
+between the maximum price between the intervals 2021-01-01 01:05:00 and
+2021-01-01 01:20:00, and the closing price of the interval 2021-01-01 01:00:00, which is:
 \[
 \rho^{\text{h}}_{t - 3} = \frac{\max\{\text{h}_{t-3}, \text{h}_{t-2}, \text{h}_{t-1}, \text{h}_{t}\}}{\text{c}_{t-4}} = \frac{\text{h}_{t-3}}{\text{c}_{t-4}} = \frac{28996.04}{29018.17} - 1 \simeq -0.000762 \simeq -0.076 \%
 \]
 </p>
 
 <p>
-Le rendement du minimum correspondant est :
+The corresponding minimum return is:
 \[
 \rho^{\text{l}}_{t - 3} = \frac{\max\{\text{l}_{t-3}, \text{l}_{t-2}, \text{l}_{t-1}, \text{l}_{t}\}}{\text{c}_{t-4}} = \frac{\text{l}_{t-2}}{\text{c}_{t-4}} = \frac{28741.86}{29018.17} - 1 \simeq -0.00952 \simeq -0.95 \%
 \]
@@ -493,25 +724,25 @@ Le rendement du minimum correspondant est :
 </div>
 
 
-<div id="outline-container-org41f3e11" class="outline-2">
-<h2 id="org41f3e11"><span class="section-number-2">5.</span> Environnement technique</h2>
+<div id="outline-container-orgd0d7209" class="outline-2">
+<h2 id="orgd0d7209"><span class="section-number-2">5.</span> Technical environment</h2>
 <div class="outline-text-2" id="text-5">
 <p>
-Les librairies <code>Python</code> utilisées dans les traitements présentés dans ce document sont :
+The <code>Python</code> libraries used in the processes presented in this document are:
 </p>
 <style type="text/css">
 </style>
-<table id="T_ce1cf">
+<table id="T_3c845">
   <thead>
     <tr>
-      <th id="T_ce1cf_level0_col0" class="col_heading level0 col0" >Library</th>
-      <th id="T_ce1cf_level0_col1" class="col_heading level0 col1" >Version</th>
+      <th id="T_3c845_level0_col0" class="col_heading level0 col0" >Library</th>
+      <th id="T_3c845_level0_col1" class="col_heading level0 col1" >Version</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td id="T_ce1cf_row0_col0" class="data row0 col0" >MOSAIC</td>
-      <td id="T_ce1cf_row0_col1" class="data row0 col1" >0.0.40</td>
+      <td id="T_3c845_row0_col0" class="data row0 col0" >MOSAIC</td>
+      <td id="T_3c845_row0_col1" class="data row0 col1" >0.0.40</td>
     </tr>
   </tbody>
 </table>
@@ -519,12 +750,9 @@ Les librairies <code>Python</code> utilisées dans les traitements présentés d
 </div>
 
 
-<div id="outline-container-org2a6609a" class="outline-2">
-<h2 id="org2a6609a"><span class="section-number-2">6.</span> Références</h2>
+<div id="outline-container-orgbe40eae" class="outline-2">
+<h2 id="orgbe40eae"><span class="section-number-2">6.</span> References</h2>
 <div class="outline-text-2" id="text-6">
-<p>
-<a href="MOSAIC.bib">MOSAIC.bib</a>
-</p>
 </div>
 </div>
 </div>
