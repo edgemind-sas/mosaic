@@ -10,8 +10,21 @@ installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
 
-
 class DBMongo(DBBase):
+    """
+    The class `DBMongo` provides methods for interacting with a MongoDB database. Here's a summary of what each method does:
+
+    - `connect`: Establishes a connection to the MongoDB server using the configuration provided.
+    - `prepare_and_get_coll`: Prepares a collection in the database based on the given endpoint (e.g., database and collection names). Creates indexes if specified.
+    - `size`: Returns the number of documents in a collection that match the given filter.
+    - `get`: Retrieves documents from a collection that match the given filter and projection criteria.
+    - `replace`: Replaces documents in a collection that match the given index with the provided data. If the documents don't exist, inserts them.
+    - `update`: Updates documents in a collection that match the given index with the provided data. If the documents don't exist, inserts them.
+    - `put`: Inserts documents into a collection. If the documents already exist, they are not inserted.
+    - `reset`: Deletes all collections in the specified database.
+    - `delete`: Deletes documents from a collection that match the given filter.
+    - `log_db_ops`: Logs information about the performed database operations.
+    """
 
     config: SGBDConfigBase = \
         pydantic.Field(default=SGBDConfigBase(),

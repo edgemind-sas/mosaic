@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Using MongoDB with MOSAIC DB classes</title>
+<meta name="author" content="Roland Donat" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<link rel="stylesheet" type="text/css" href="https://edgemind-sas.github.io/visual-identity/official_docs/css/edgemind.css" />
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Using MongoDB with MOSAIC DB classes</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table des matières</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#init-env">2. Preparing the environment</a>
+<ul>
+<li><a href="#orga2c40ad">2.1. Python virtual environment</a></li>
+<li><a href="#org339ea49">2.2. Installer une base <code>MongoDB</code></a></li>
+<li><a href="#org395664e">2.3. Installing <code>MongoDB</code> database</a></li>
+</ul>
+</li>
+<li><a href="#org7fae7da">3. Instantiating a MongoDB connector in MOSAIC</a></li>
+<li><a href="#orgea07db0">4. Inserting data</a></li>
+<li><a href="#org63a129e">5. Getting data</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+This tutorial aims to present the basic database manipulation features offered by the MOSAIC
+library. The library provides connectors for various data sources or databases. This tutorial
+focuses on the specific case of the MongoDB connector.
+</p>
+</div>
+</div>
+
+<div id="outline-container-init-env" class="outline-2">
+<h2 id="init-env"><span class="section-number-2">2.</span> Preparing the environment</h2>
+<div class="outline-text-2" id="text-init-env">
+</div>
+
+<div id="outline-container-orga2c40ad" class="outline-3">
+<h3 id="orga2c40ad"><span class="section-number-3">2.1.</span> Python virtual environment</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+The MOSAIC library requires Python version &gt;= 3.10.
+</p>
+
+<p>
+To facilitate your development projects, it is recommended to use a Python virtual environment to
+perform this tutorial. So start by installing the <code>pew</code> manager if you haven't already done so: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install pew
+</pre>
+</div>
+
+<p>
+Then create a new virtual environment:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew new mosaic_db_mongo
+</pre>
+</div>
+
+<p>
+Now create a directory that will contain the files of this tutorial, e.g. <code>mosaic_mongo</code>, and
+navigate to this directory: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">mkdir mosaic_mongo
+<span style="color: #DCDCCC; font-weight: bold;">cd</span> mosaic_mongo
+</pre>
+</div>
+
+<p>
+Note that you can save this directory as associated with the virtual environment you just created
+with the command: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew setproject
+</pre>
+</div>
+
+<p>
+Finally, install the MOSAIC library in your environment from GitHub:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install https://github.com/edgemind-sas/mosaic.git          
+</pre>
+</div>
+
+<p>
+If the installation was successful, you should be able to import the MOSAIC library in a Python
+session and display its version: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic
+
+<span style="color: #DCDCCC; font-weight: bold;">print</span>(mosaic.__version__)
+</pre>
+</div>
+
+<pre class="example">
+0.0.40
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org339ea49" class="outline-3">
+<h3 id="org339ea49"><span class="section-number-3">2.2.</span> Installer une base <code>MongoDB</code></h3>
+</div>
+
+<div id="outline-container-org395664e" class="outline-3">
+<h3 id="org395664e"><span class="section-number-3">2.3.</span> Installing <code>MongoDB</code> database</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+If you already have an active <code>MongoDB</code> container on your system, you can skip this step. Just take
+note of the connection parameters such as the connection port and credentials that you'll need
+later. 
+</p>
+
+<p>
+Otherwise, before you begin, make sure you have a functional installation of <code>Docker</code> with the
+ability to launch a container without <code>sudo</code>. Also, ensure that <code>Docker-compose</code> is installed. 
+</p>
+
+<p>
+Create the <code>docker-compose.yml</code> file with the following content:
+</p>
+<div class="org-src-container">
+<pre class="src src-yaml"><span style="color: #DFAF8F;">version</span>: <span style="color: #CC9393;">'3.1'</span>
+
+<span style="color: #DFAF8F;">services</span>:
+  <span style="color: #DFAF8F;">db</span>:
+    <span style="color: #DFAF8F;">image</span>: mongo
+    <span style="color: #DFAF8F;">container_name</span>: mongo_mosaic_trading
+    <span style="color: #DFAF8F;">ports</span>:
+      - 27017:27017
+    <span style="color: #DFAF8F;">networks</span>: 
+      - mongo-compose-network
+    <span style="color: #DFAF8F;">environment</span>:
+      <span style="color: #DFAF8F;">MONGO_INITDB_ROOT_USERNAME</span>: root
+      <span style="color: #DFAF8F;">MONGO_INITDB_ROOT_PASSWORD</span>: example
+
+<span style="color: #DFAF8F;">networks</span>:
+  <span style="color: #DFAF8F;">mongo-compose-network</span>:
+    <span style="color: #DFAF8F;">driver</span>: bridge
+</pre>
+</div>
+
+<p>
+Launch <code>MongoDB</code> with <code>Docker-compose</code> as follows:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">docker-compose up -d
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org7fae7da" class="outline-2">
+<h2 id="org7fae7da"><span class="section-number-2">3.</span> Instantiating a MongoDB connector in MOSAIC</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+The MOSAIC library has the <code>db</code> package, which contains connection classes for various databases.
+</p>
+
+<p>
+The package includes the <code>DBMongo</code> class, which allows data manipulation with a MongoDB database.
+</p>
+
+<p>
+The following code connects to the MongoDB database created in the previous section:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.db <span style="color: #F0DFAF; font-weight: bold;">as</span> mdb        
+
+<span style="color: #DFAF8F;">db_mongo</span> = mdb.DBMongo(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   name=<span style="color: #CC9393;">"mosaic_trading"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   config={
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #CC9393;">"host"</span>: <span style="color: #CC9393;">"mongodb://localhost"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #CC9393;">"port"</span>: <span style="color: #CC9393;">"27017"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #CC9393;">"username"</span>: <span style="color: #CC9393;">"root"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #CC9393;">"password"</span>: <span style="color: #CC9393;">"example"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   })
+
+success = db_mongo.connect()
+<span style="color: #F0DFAF; font-weight: bold;">if</span> success:
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; font-weight: bold;">print</span>(<span style="color: #CC9393;">"Connection established"</span>)
+<span style="color: #F0DFAF; font-weight: bold;">else</span>:
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; font-weight: bold;">print</span>(<span style="color: #CC9393;">"Connection failed"</span>)
+</pre>
+</div>
+<p>
+This code creates an instance of the <code>DBMongo</code> class with the following parameters:
+</p>
+<ul class="org-ul">
+<li><code>"name"</code> is set to "mosaic_trading", specifying the name of the MongoDB database.</li>
+<li><code>"config"</code> is a dictionary containing connection configuration details, including the host, port,
+username, and password for the MongoDB database.</li>
+</ul>
+
+<p>
+This code then attempts to connect to the MongoDB database by calling the <code>connect</code> method on the
+<code>db_mongo</code> object. The return value of the <code>connect</code> method is stored in the <code>success</code>
+variable. If the connection is successful, the code prints <code>"Connection established"</code>. Otherwise, it
+prints <code>"Connection failed"</code>. 
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-orgea07db0" class="outline-2">
+<h2 id="orgea07db0"><span class="section-number-2">4.</span> Inserting data</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Now that our connector is ready, we can insert data into the database. To do this, we need to specify the data storage endpoint. It is important to note that the concept of an endpoint is generic. In the case of a MongoDB connector, the endpoint is actually a collection.
+</p>
+
+<p>
+To begin, download the OHLCV data file (<a href="ohlcv.csv">ohlcv.csv</a>) into your working directory and load it using
+Pandas:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> pandas <span style="color: #F0DFAF; font-weight: bold;">as</span> pd
+
+<span style="color: #DFAF8F;">ohlcv_df</span> = pd.read_csv(<span style="color: #CC9393;">"ohlcv.csv"</span>, index_col=<span style="color: #CC9393;">"datetime"</span>)
+</pre>
+</div>
+
+<p>
+Now we will save this data in the database.
+</p>
+<div class="org-src-container">
+<pre class="src src-python">db_mongo.put(endpoint=<span style="color: #CC9393;">"ohlcv_test"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>data=ohlcv_df.reset_index().to_dict(<span style="color: #CC9393;">"records"</span>),
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>index=[<span style="color: #CC9393;">"datetime"</span>])
+</pre>
+</div>
+<p>
+This code saves the data from the <code>ohlcv_df</code> DataFrame into the MongoDB database using the <code>put</code> method of the <code>db_mongo</code> object.
+</p>
+
+<p>
+The <code>put</code> method takes the following parameters:
+</p>
+<ul class="org-ul">
+<li><code>endpoint</code>: Specifies the storage endpoint in the database, here we can talk about collection in
+the MongoDB vocabulary. In this case, it is set to <code>"ohlcv_test"</code>.</li>
+<li><code>data</code>: The data to be inserted into the database. It should be in the form of a list of dictionaries, where each dictionary represents a document to be inserted. This code converts the <code>ohlcv_df</code> DataFrame to a list of dictionaries using the <code>.to_dict("records")</code> method.</li>
+<li><code>index</code>: Specifies the field to use as the index for the inserted documents. In this case, the
+field <code>"datetime"</code> is used as the index.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org63a129e" class="outline-2">
+<h2 id="org63a129e"><span class="section-number-2">5.</span> Getting data</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+In the same way, we can now retrieve the OHLCV data from the database:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">ohlcv_list_d</span> = db_mongo.get(endpoint=<span style="color: #CC9393;">"ohlcv_test"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; font-weight: bold;">filter</span>={<span style="color: #CC9393;">"volume"</span>: {<span style="color: #CC9393;">"$gte"</span>: 1.0}},
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   projection=[<span style="color: #CC9393;">"datetime"</span>, <span style="color: #CC9393;">"close"</span>, <span style="color: #CC9393;">"volume"</span>],
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   )
+ohlcv_bis_df = pd.DataFrame(ohlcv_list_d)
+</pre>
+</div>
+<p>
+This code retrieves data from the MongoDB database using the <code>get</code> method of the <code>db_mongo</code>
+object. It retrieves documents from the <code>"ohlcv_test"</code> collection where the <code>"volume"</code> attribute is
+greater than or equal to 1.0. It also specifies the fields to include in the result using the
+<code>projection</code> parameter, which in this case includes <code>"datetime"</code>, <code>"close"</code>, and <code>"volume"</code>. 
+</p>
+
+<p>
+The retrieved data is then stored in the variable <code>ohlcv_list_d</code>.
+</p>
+
+<p>
+Next, the code creates a Pandas DataFrame called <code>ohlcv_bis_df</code> using the <code>pd.DataFrame</code>
+constructor, passing the <code>ohlcv_list_d</code> as the input data. This DataFrame will contain the retrieved
+data from the MongoDB collection.
+</p>
+
+<p>
+Note that it is possible to retrieve all the data from an endpoint by omitting the <code>filter</code> and
+<code>projection</code> parameters, as follows:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">ohlcv_all_list_d</span> = db_mongo.get(endpoint=<span style="color: #CC9393;">"ohlcv_test"</span>)
+ohlcv_all_bis_df = pd.DataFrame(ohlcv_all_list_d)
+</pre>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
