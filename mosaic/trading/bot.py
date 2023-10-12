@@ -148,13 +148,19 @@ class BotTrading(ObjMOSAIC):
         None, description="Current asset quotation")
 
     bt_buy_on: str = pydantic.Field(
-        "open", description="Backtest buy price hypothesis")
+        "open", description="Backtest buy price hypothesis",
+        user_input=["open", "high", "low", "close"],
+    )
 
     bt_sell_on: str = pydantic.Field(
-        "open", description="Backtest sell price hypothesis")
-    
+        "open", description="Backtest sell price hypothesis",
+        user_input=["open", "high", "low", "close"],
+    )
+
     mode: str = pydantic.Field(
-        'btfast', description="Bot mode: 'btfast', 'btclassic', 'livetest', 'live'")
+        'btfast', description="Bot mode: 'btfast', 'btclassic', 'livetest', 'live'",
+        user_input=['btfast', 'btclassic', 'livetest', 'live'],
+    )
 
     status: str = pydantic.Field(
         "waiting", description="Current bot status")
