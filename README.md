@@ -1,20 +1,20 @@
 
 # Table des matières
 
-1.  [Context](#org2063217)
-2.  [Objectives](#org11d52e7)
-3.  [Tutorials](#org9a7f577)
-    1.  [Indicators](#org6352a5e)
-    2.  [Building bots](#org33da19e)
-    3.  [Data backends](#orgae1877f)
-4.  [Research Axes](#org7f8336d)
-    1.  [Formalization and Probabilistic Modeling](#org425c110)
-5.  [Technical Analysis](#orgafafaca)
-6.  [References](#orgb7710aa)
+1.  [Context](#org2ea6bd5)
+2.  [Objectives](#orgc71f936)
+3.  [Tutorials](#orga50edad)
+    1.  [Indicators](#orge015cfd)
+    2.  [Building bots](#orgd7db151)
+    3.  [Data backends](#org01f4989)
+4.  [Research Axes](#org9266f54)
+    1.  [Formalization and Probabilistic Modeling](#orgfab04d6)
+5.  [Technical Analysis](#org9ea123a)
+6.  [References](#org7f5ceed)
 
 
 
-<a id="org2063217"></a>
+<a id="org2ea6bd5"></a>
 
 # Context
 
@@ -53,7 +53,7 @@ development of near-real-time self-learning decision support algorithms but at t
 numerous scientific and technical challenges.
 
 
-<a id="org11d52e7"></a>
+<a id="orgc71f936"></a>
 
 # Objectives
 
@@ -67,7 +67,7 @@ All these developments are capitalized in the MOSAIC library, which we freely di
 source.
 
 
-<a id="org9a7f577"></a>
+<a id="orga50edad"></a>
 
 # Tutorials
 
@@ -77,20 +77,17 @@ fonctionnalités de la librairie MOSAIC.
 This section presents a list of tutorials to help you get started with the main functionalities of the MOSAIC library.
 
 
-<a id="org6352a5e"></a>
+<a id="orge015cfd"></a>
 
-## TODO Indicators
+## Indicators
 
 For your convenience, we provide a refresher on certain fundamental concepts in finance,
 particularly regarding return calculations, which you can find at [this page](./doc/basic_notions.md).
 
--   [Marteau généralisé](indic/indic_gh.md) (to be updated)
--   [Niveau de volume mobile](indic/indic_mvl.md) (to be updated)
--   [RSI](indic/indic_rsi.md) (to be updated)
--   [*Support Range Index*](indic/indic_sri.md) (to be updated)
+-   [*Support Range Index*](examples/indicators/sri.md) (to be updated)
 
 
-<a id="org33da19e"></a>
+<a id="orgd7db151"></a>
 
 ## Building bots
 
@@ -98,21 +95,21 @@ particularly regarding return calculations, which you can find at [this page](./
 -   [Bot configuration with YAML](examples/bot/bot_dummy/tuto.md) (to be updated)
 
 
-<a id="orgae1877f"></a>
+<a id="org01f4989"></a>
 
 ## Data backends
 
 -   [Using MongoDB with MOSAIC DB classes](examples/db/mongo/tuto.md)
 
 
-<a id="org7f8336d"></a>
+<a id="org9266f54"></a>
 
 # Research Axes
 
 The research axes of the MOSAIC project are succinctly presented in the following paragraphs.
 
 
-<a id="org425c110"></a>
+<a id="orgfab04d6"></a>
 
 ## Formalization and Probabilistic Modeling
 
@@ -126,7 +123,7 @@ in the context of crypto-assets and has the advantage of being compatible with r
 probabilistic modeling techniques (e.g. Bayesian techniques) to address the problem. 
 
 
-<a id="orgafafaca"></a>
+<a id="org9ea123a"></a>
 
 # Technical Analysis
 
@@ -151,7 +148,7 @@ Contributions:
     the conditional distribution of returns relative to observed indicators.
 
 
-<a id="orgb7710aa"></a>
+<a id="org7f5ceed"></a>
 
 # References
 
