@@ -120,7 +120,7 @@ class BotTrading(ObjMOSAIC):
     
     name: str = pydantic.Field(
         None, description="Descriptive name of the bot",
-        json_schema_extra={"user_input": True},
+        user_input=True,
     )
 
     ds_trading: DSOHLCV = pydantic.Field(
