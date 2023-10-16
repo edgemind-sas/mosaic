@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,31 +20,32 @@
 <div id="content" class="content">
 <h1 class="title">Stochastic Modeling and Optimization of Crypto-assets (MOSAIC in French)</h1>
 <div id="table-of-contents" role="doc-toc">
-<h2>Table des matières</h2>
+<h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org8366443">1. Context</a></li>
-<li><a href="#org215493b">2. Objectives</a></li>
-<li><a href="#org1b8fc55">3. Tutorials</a>
+<li><a href="#org3a53ff0">1. Context</a></li>
+<li><a href="#org52ee9dc">2. Objectives</a></li>
+<li><a href="#orge94df03">3. Tutorials</a>
 <ul>
-<li><a href="#org29eff0b">3.1. <span class="todo TODO">TODO</span> Indicators</a></li>
-<li><a href="#orga53fedc">3.2. Building bots</a></li>
-<li><a href="#orgcae9353">3.3. Data backends</a></li>
+<li><a href="#org220ff90">3.1. Indicators</a></li>
+<li><a href="#org2a39a50">3.2. Decision models</a></li>
+<li><a href="#org67f66d9">3.3. Building bots</a></li>
+<li><a href="#org5a42fa6">3.4. Data backends</a></li>
 </ul>
 </li>
-<li><a href="#org779fcbf">4. Research Axes</a>
+<li><a href="#org066ab70">4. Research Axes</a>
 <ul>
-<li><a href="#orgbce6cd1">4.1. Formalization and Probabilistic Modeling</a></li>
+<li><a href="#orgf4c1edd">4.1. Formalization and Probabilistic Modeling</a></li>
 </ul>
 </li>
-<li><a href="#org2a28998">5. Technical Analysis</a></li>
-<li><a href="#orgecc955f">6. References</a></li>
+<li><a href="#orgcff991b">5. Technical Analysis</a></li>
+<li><a href="#orgdc6d426">6. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org8366443" class="outline-2">
-<h2 id="org8366443"><span class="section-number-2">1.</span> Context</h2>
+<div id="outline-container-org3a53ff0" class="outline-2">
+<h2 id="org3a53ff0"><span class="section-number-2">1.</span> Context</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A cryptocurrency is a virtual currency that operates independently of banks and governments. The
@@ -52,7 +53,7 @@ unique feature of cryptocurrency markets is their decentralization. This means t
 are not issued by a central authority (such as a state) but through algorithms executed on a
 computer network that ensures their coherence and transaction security. These markets evolve based
 on supply and demand, but being decentralized markets, they are often better protected from economic
-and political changes that generally impact traditional currencies <a href="#citeproc_bib_item_1">[1]</a>. 
+and political changes that generally impact traditional currencies <a href="stachtchenko_manuel_2022">stachtchenko_manuel_2022</a>. 
 </p>
 
 <p>
@@ -78,7 +79,7 @@ management are similar, namely predicting the future evolution of the considered
 determining a set of actions to optimize its performance over time. For example, predictive
 maintenance is a way to leverage operational data to optimize the availability of an industrial
 asset system. In finance, trading algorithms do the same to optimize a portfolio of assets
-<a href="#citeproc_bib_item_2">[2]</a>. Therefore, in this project, we aim to experiment with a portion of the
+<a href="park_practical_2021">park_practical_2021</a>. Therefore, in this project, we aim to experiment with a portion of the
 predictive analysis methods developed for industrial risk management in the field of financial
 risks. 
 </p>
@@ -94,8 +95,8 @@ numerous scientific and technical challenges.
 
 
 
-<div id="outline-container-org215493b" class="outline-2">
-<h2 id="org215493b"><span class="section-number-2">2.</span> Objectives</h2>
+<div id="outline-container-org52ee9dc" class="outline-2">
+<h2 id="org52ee9dc"><span class="section-number-2">2.</span> Objectives</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 The general objective of this project is the development of an autonomous AI capable of:
@@ -113,8 +114,8 @@ source.
 </div>
 </div>
 
-<div id="outline-container-org1b8fc55" class="outline-2">
-<h2 id="org1b8fc55"><span class="section-number-2">3.</span> Tutorials</h2>
+<div id="outline-container-orge94df03" class="outline-2">
+<h2 id="orge94df03"><span class="section-number-2">3.</span> Tutorials</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Cette section présente une liste de tutoriels permettant de prendre en main les principales
@@ -126,8 +127,8 @@ This section presents a list of tutorials to help you get started with the main 
 </p>
 </div>
 
-<div id="outline-container-org29eff0b" class="outline-3">
-<h3 id="org29eff0b"><span class="section-number-3">3.1.</span> <span class="todo TODO">TODO</span> Indicators</h3>
+<div id="outline-container-org220ff90" class="outline-3">
+<h3 id="org220ff90"><span class="section-number-3">3.1.</span> Indicators</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 For your convenience, we provide a refresher on certain fundamental concepts in finance,
@@ -135,17 +136,23 @@ particularly regarding return calculations, which you can find at <a href="./doc
 </p>
 
 <ul class="org-ul">
-<li><a href="indic/indic_gh.html">Marteau généralisé</a> (to be updated)</li>
-<li><a href="indic/indic_mvl.html">Niveau de volume mobile</a> (to be updated)</li>
-<li><a href="indic/indic_rsi.html">RSI</a> (to be updated)</li>
-<li><a href="indic/indic_sri.html"><i>Support Range Index</i></a> (to be updated)</li>
+<li><a href="examples/indicators/sri.html"><i>Support Range Index</i></a> (to be updated)</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orga53fedc" class="outline-3">
-<h3 id="orga53fedc"><span class="section-number-3">3.2.</span> Building bots</h3>
+<div id="outline-container-org2a39a50" class="outline-3">
+<h3 id="org2a39a50"><span class="section-number-3">3.2.</span> Decision models</h3>
 <div class="outline-text-3" id="text-3-2">
+<ul class="org-ul">
+<li><a href="examples/dm/dm2ml_tuto_01.html">A gentle introduction to `DM2ML` decision models</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org67f66d9" class="outline-3">
+<h3 id="org67f66d9"><span class="section-number-3">3.3.</span> Building bots</h3>
+<div class="outline-text-3" id="text-3-3">
 <ul class="org-ul">
 <li><a href="examples/bot/step_by_step/tuto.html">Building a bot : from indicators to decision model</a></li>
 <li><a href="examples/bot/bot_dummy/tuto.html">Bot configuration with YAML</a> (to be updated)</li>
@@ -153,9 +160,9 @@ particularly regarding return calculations, which you can find at <a href="./doc
 </div>
 </div>
 
-<div id="outline-container-orgcae9353" class="outline-3">
-<h3 id="orgcae9353"><span class="section-number-3">3.3.</span> Data backends</h3>
-<div class="outline-text-3" id="text-3-3">
+<div id="outline-container-org5a42fa6" class="outline-3">
+<h3 id="org5a42fa6"><span class="section-number-3">3.4.</span> Data backends</h3>
+<div class="outline-text-3" id="text-3-4">
 <ul class="org-ul">
 <li><a href="examples/db/mongo/tuto.html">Using MongoDB with MOSAIC DB classes</a></li>
 </ul>
@@ -165,21 +172,21 @@ particularly regarding return calculations, which you can find at <a href="./doc
 
 
 
-<div id="outline-container-org779fcbf" class="outline-2">
-<h2 id="org779fcbf"><span class="section-number-2">4.</span> Research Axes</h2>
+<div id="outline-container-org066ab70" class="outline-2">
+<h2 id="org066ab70"><span class="section-number-2">4.</span> Research Axes</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The research axes of the MOSAIC project are succinctly presented in the following paragraphs.
 </p>
 </div>
 
-<div id="outline-container-orgbce6cd1" class="outline-3">
-<h3 id="orgbce6cd1"><span class="section-number-3">4.1.</span> Formalization and Probabilistic Modeling</h3>
+<div id="outline-container-orgf4c1edd" class="outline-3">
+<h3 id="orgf4c1edd"><span class="section-number-3">4.1.</span> Formalization and Probabilistic Modeling</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
-Whether it is predicting the evolution of traditional assets <a href="#citeproc_bib_item_3">[3]</a> <a href="#citeproc_bib_item_4">[4]</a>, or cryptocurrencies
-<a href="#citeproc_bib_item_5">[5]</a> <a href="#citeproc_bib_item_6">[6]</a> <a href="#citeproc_bib_item_7">[7]</a>, scientists working on the development of probabilistic models primarily focus on parametric approaches. This is mainly due to the simplicity and relative interpretability of these models. However, parametric approaches struggle to accurately represent the extreme behaviors of volatile assets. Recent articles have shown the interest of non-parametric methods in predicting the evolution of Bitcoin <a href="#citeproc_bib_item_8">[8]</a>
-<a href="#citeproc_bib_item_9">[9]</a>. These more complex models appear to be incompatible with considering exogenous variables that explain the behavior of the considered assets.
+Whether it is predicting the evolution of traditional assets <a href="shen_stochastic_2020">shen_stochastic_2020</a> <a href="snow_machine_2020">snow_machine_2020</a>, or cryptocurrencies
+<a href="bouri_trading_2019">bouri_trading_2019</a> <a href="crone_exploration_2021">crone_exploration_2021</a> <a href="hansen_periodicity_2021">hansen_periodicity_2021</a>, scientists working on the development of probabilistic models primarily focus on parametric approaches. This is mainly due to the simplicity and relative interpretability of these models. However, parametric approaches struggle to accurately represent the extreme behaviors of volatile assets. Recent articles have shown the interest of non-parametric methods in predicting the evolution of Bitcoin <a href="balcilar_can_2017">balcilar_can_2017</a>
+<a href="jimenez_semi-nonparametric_2022">jimenez_semi-nonparametric_2022</a>. These more complex models appear to be incompatible with considering exogenous variables that explain the behavior of the considered assets.
 </p>
 
 <p>
@@ -192,27 +199,27 @@ probabilistic modeling techniques (e.g. Bayesian techniques) to address the prob
 </div>
 </div>
 
-<div id="outline-container-org2a28998" class="outline-2">
-<h2 id="org2a28998"><span class="section-number-2">5.</span> Technical Analysis</h2>
+<div id="outline-container-orgcff991b" class="outline-2">
+<h2 id="orgcff991b"><span class="section-number-2">5.</span> Technical Analysis</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 In the field of financial market analysis, technical analysis refers to a set of tools aimed at
 predicting the future returns of financial assets by studying the historical market data available,
-primarily the price and volume of the considered assets <a href="#citeproc_bib_item_10">[10]</a>. In the
-literature review article on technical analysis <a href="#citeproc_bib_item_11">[11]</a>, the authors
+primarily the price and volume of the considered assets <a href="yamamoto_intraday_2012">yamamoto_intraday_2012</a>. In the
+literature review article on technical analysis <a href="farias_nazario_literature_2017">farias_nazario_literature_2017</a>, the authors
 list the main analysis methodologies implemented over the past fifty years.  
 </p>
 
 <p>
 The majority of the presented methodologies rely on the construction of specific indicators deemed
-relevant by their authors (e.g. <a href="#citeproc_bib_item_12">[12]</a>,
-<a href="#citeproc_bib_item_13">[13]</a>). However, the evaluation of these indicators is only based on empirical
+relevant by their authors (e.g. <a href="hassanniakalager_trading_2021">hassanniakalager_trading_2021</a>,
+<a href="bao_intelligent_2008">bao_intelligent_2008</a>). However, the evaluation of these indicators is only based on empirical
 backtesting on arbitrarily chosen and relatively short periods, especially in the case of intraday
 analysis. 
 </p>
 
 <p>
-Like the authors of the article <a href="#citeproc_bib_item_11">[11]</a>, we agree that assessing the
+Like the authors of the article <a href="farias_nazario_literature_2017">farias_nazario_literature_2017</a>, we agree that assessing the
 performance of technical analysis requires mathematical consolidation. 
 </p>
 
@@ -226,51 +233,12 @@ the conditional distribution of returns relative to observed indicators.</li>
 </div>
 </div>
 
-<div id="outline-container-orgecc955f" class="outline-2">
-<h2 id="orgecc955f"><span class="section-number-2">6.</span> References</h2>
+<div id="outline-container-orgdc6d426" class="outline-2">
+<h2 id="orgdc6d426"><span class="section-number-2">6.</span> References</h2>
 <div class="outline-text-2" id="text-6">
-<style>.csl-left-margin{float: left; padding-right: 0em;}
- .csl-right-inline{margin: 0 0 0 2em;}</style><div class="csl-bib-body">
-  <div class="csl-entry"><a id="citeproc_bib_item_1"></a>
-    <div class="csl-left-margin">[1]</div><div class="csl-right-inline">A. Stachtchenko, “Manuel de survie dans la jungle des poncifs anti-Bitcoin (version longue),” <i>Medium</i>. Jan. 2022. Accessed: Feb. 08, 2022. [Online]. Available: <a href="https://medium.com/@AlexStach/manuel-de-survie-dans-la-jungle-des-poncifs-anti-bitcoin-version-longue-523e381745ff">https://medium.com/@AlexStach/manuel-de-survie-dans-la-jungle-des-poncifs-anti-bitcoin-version-longue-523e381745ff</a></div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_2"></a>
-    <div class="csl-left-margin">[2]</div><div class="csl-right-inline">D.-Y. Park and K.-H. Lee, “Practical Algorithmic Trading Using State Representation Learning and Imitative Reinforcement Learning,” <i>Ieee access</i>, vol. PP, p. 1, Nov. 2021, doi: <a href="https://doi.org/10.1109/ACCESS.2021.3127209">10.1109/ACCESS.2021.3127209</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_3"></a>
-    <div class="csl-left-margin">[3]</div><div class="csl-right-inline">J. Shen, <i>A Stochastic LQR Model for Child Order Placement in Algorithmic Trading</i>. 2020.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_4"></a>
-    <div class="csl-left-margin">[4]</div><div class="csl-right-inline">D. Snow, “Machine Learning in Asset Management - Part 1 : Portfolio Construction - Trading Strategies,” <i>The journal of financial data science</i>, vol. 2, no. 1, pp. 10–23, Jan. 2020, doi: <a href="https://doi.org/10.3905/jfds.2019.1.021">10.3905/jfds.2019.1.021</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_5"></a>
-    <div class="csl-left-margin">[5]</div><div class="csl-right-inline">E. Bouri, C. K. M. Lau, B. Lucey, and D. Roubaud, “Trading volume and the predictability of return and volatility in the cryptocurrency market,” <i>Finance research letters</i>, vol. 29, pp. 340–346, Jun. 2019, doi: <a href="https://doi.org/10.1016/j.frl.2018.08.015">10.1016/j.frl.2018.08.015</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_6"></a>
-    <div class="csl-left-margin">[6]</div><div class="csl-right-inline">N. Crone, E. Brophy, and T. Ward, <i>Exploration of Algorithmic Trading Strategies for the Bitcoin Market</i>. 2021.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_7"></a>
-    <div class="csl-left-margin">[7]</div><div class="csl-right-inline">P. Hansen, C. Kim, and W. Kimbrough, <i>Periodicity in Cryptocurrency Volatility and Liquidity</i>. 2021.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_8"></a>
-    <div class="csl-left-margin">[8]</div><div class="csl-right-inline">M. Balcilar, E. Bouri, R. Gupta, and D. Roubaud, “Can volume predict Bitcoin returns and volatility? A quantiles-based approach,” <i>Economic modelling</i>, vol. 64, pp. 74–81, Aug. 2017, doi: <a href="https://doi.org/10.1016/j.econmod.2017.03.019">10.1016/j.econmod.2017.03.019</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_9"></a>
-    <div class="csl-left-margin">[9]</div><div class="csl-right-inline">I. Jiménez, A. Mora-Valencia, and J. Perote, “Semi-nonparametric risk assessment with cryptocurrencies,” <i>Research in international business and finance</i>, vol. 59, p. 101567, Jan. 2022, doi: <a href="https://doi.org/10.1016/j.ribaf.2021.101567">10.1016/j.ribaf.2021.101567</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_10"></a>
-    <div class="csl-left-margin">[10]</div><div class="csl-right-inline">R. Yamamoto, “Intraday technical analysis of individual stocks on the Tokyo Stock Exchange,” <i>Journal of banking &#38; finance</i>, vol. 36, no. 11, pp. 3033–3047, Nov. 2012, doi: <a href="https://doi.org/10.1016/j.jbankfin.2012.07.006">10.1016/j.jbankfin.2012.07.006</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_11"></a>
-    <div class="csl-left-margin">[11]</div><div class="csl-right-inline">R. T. Farias Nazário, J. L. e Silva, V. A. Sobreiro, and H. Kimura, “A literature review of technical analysis on stock markets,” <i>The quarterly review of economics and finance</i>, vol. 66, pp. 115–126, Nov. 2017, doi: <a href="https://doi.org/10.1016/j.qref.2017.01.014">10.1016/j.qref.2017.01.014</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_12"></a>
-    <div class="csl-left-margin">[12]</div><div class="csl-right-inline">A. Hassanniakalager, G. Sermpinis, and C. Stasinakis, “Trading the foreign exchange market with technical analysis and Bayesian Statistics,” <i>Journal of empirical finance</i>, vol. 63, pp. 230–251, Sep. 2021, doi: <a href="https://doi.org/10.1016/j.jempfin.2021.07.006">10.1016/j.jempfin.2021.07.006</a>.</div>
-  </div>
-  <div class="csl-entry"><a id="citeproc_bib_item_13"></a>
-    <div class="csl-left-margin">[13]</div><div class="csl-right-inline">D. Bao and Z. Yang, “Intelligent stock trading system by turning point confirming and probabilistic reasoning,” <i>Expert systems with applications</i>, vol. 34, no. 1, pp. 620–627, Jan. 2008, doi: <a href="https://doi.org/10.1016/j.eswa.2006.09.043">10.1016/j.eswa.2006.09.043</a>.</div>
-  </div>
-</div>
+<p>
+<a href="MOSAIC.bib">MOSAIC.bib</a>
+</p>
 </div>
 </div>
 </div>

@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A gentle introduction to DM2ML decision models</title>
+<meta name="author" content="Roland Donat" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<link rel="stylesheet" type="text/css" href="https://edgemind-sas.github.io/visual-identity/official_docs/css/edgemind.css" />
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">A gentle introduction to DM2ML decision models</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table des matières</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#init-env">2. Technical prerequisites</a></li>
+<li><a href="#org9083493">3. Step 1: choosing indicators</a></li>
+<li><a href="#org3d14b09">4. Step 2: creating predictive models</a>
+<ul>
+<li><a href="#org7e18024">4.1. Upward movement</a></li>
+<li><a href="#orga7bc227">4.2. Downward movement</a></li>
+</ul>
+</li>
+<li><a href="#org63e88c3">5. Step 3: Creating a decision model</a></li>
+<li><a href="#org53509a2">6. Step 4: Fitting the decision model with OHLCV data</a></li>
+<li><a href="#org35cd7f0">7. Step 5: Predicting buy and sell decisions</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+This tutorial provides a brief introduction to the MOSAIC `DM2ML` class. DM2ML stands for "Decision
+Model with 2 Machine Learning models". The `DM2ML` class represents decision models that consist of
+two return prediction models: a buy prediction model and a sell decision model. The objective of
+both prediction models is to predict the occurrence of an upward movement of future returns
+(typically for the buy model) or a downward movement of future returns (typically for the sell
+model).
+</p>
+</div>
+</div>
+
+<div id="outline-container-init-env" class="outline-2">
+<h2 id="init-env"><span class="section-number-2">2.</span> Technical prerequisites</h2>
+<div class="outline-text-2" id="text-init-env">
+<p>
+The MOSAIC library requires Python version &gt;= 3.10.
+</p>
+
+<p>
+It is recommended to use a Python virtual environment to perform this tutorial. Do not hesitate to
+use the <code>pew</code> manager.
+</p>
+
+<p>
+First, install the MOSAIC library in your environment from GitHub:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install https://github.com/edgemind-sas/mosaic.git          
+</pre>
+</div>
+
+<p>
+If the installation was successful, you should be able to import the MOSAIC library in a Python
+session and display its version: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic
+
+<span style="color: #DCDCCC; font-weight: bold;">print</span>(mosaic.__version__)
+</pre>
+</div>
+
+<pre class="example">
+0.0.40
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org9083493" class="outline-2">
+<h2 id="org9083493"><span class="section-number-2">3.</span> Step 1: choosing indicators</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+As explained in the introduction, a DM2ML decision model relies on two predictive models, which in
+turn rely on indicators to predict future returns movements. 
+</p>
+
+<p>
+In this tutorial, we will use the both the <a href="../indicators/sri.html">SRI</a> and <a href="../indicators/sri.html">MFI</a> indicators as feature variables for
+our predictive models :
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.indicator <span style="color: #F0DFAF; font-weight: bold;">as</span> mid
+
+<span style="color: #DFAF8F;">indic_1</span> = mid.SRI(length=5)
+indic_2 = mid.MFI(length=5)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3d14b09" class="outline-2">
+<h2 id="org3d14b09"><span class="section-number-2">4.</span> Step 2: creating predictive models</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+We will now define both the predictive models for upward and downward future returns. To do this, we
+use the logistic regression model implemented in the `PMLogit` class. 
+</p>
+</div>
+
+<div id="outline-container-org7e18024" class="outline-3">
+<h3 id="org7e18024"><span class="section-number-3">4.1.</span> Upward movement</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+In this example, we configure our predictive model to predict upward future returns on a temporal horizon
+of 15 time units forward:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.predict_model <span style="color: #F0DFAF; font-weight: bold;">as</span> mpr
+
+<span style="color: #DFAF8F;">pm_up</span> = mpr.PMLogit(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   returns_horizon=15,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   direction=<span style="color: #CC9393;">"up"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   threshold=0.00001,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   features=[indic_1, indic_2],
+)
+</pre>
+</div>
+
+<p>
+The arguments of the <code>PMLogit</code> class are:
+</p>
+<ul class="org-ul">
+<li><code>returns_horizon</code>: number of time units to consider for predicting future returns. The increase or
+decrease (depending on the <code>direction</code> argument) of future returns is the target variable of our
+model.</li>
+<li><code>direction</code>: indicates whether the model will predict an increase in future returns (<code>"up"</code>) or a
+decrease (<code>"down"</code>).</li>
+<li><code>threshold</code>: absolute variation threshold of returns indicating a future increase or decrease
+(depends on the <code>direction</code> parameter).</li>
+<li><code>features</code>: list of indicators to use as explanatory variables in the logistic regression.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orga7bc227" class="outline-3">
+<h3 id="orga7bc227"><span class="section-number-3">4.2.</span> Downward movement</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+We create the downward future returns prediction model based on the same approach as the upward
+model. The only difference is that we switch the direction from <code>"up"</code> to <code>"down"</code>.
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">pm_down</span> = mpr.PMLogit(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   returns_horizon=15,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   direction=<span style="color: #CC9393;">"down"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   threshold=0.00001,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   features=[indic_1, indic_2],
+)
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org63e88c3" class="outline-2">
+<h2 id="org63e88c3"><span class="section-number-2">5.</span> Step 3: Creating a decision model</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+As we are using logistic regression to predict future returns, we need to use a decision model based
+on both buy and sell predictive models. In MOSAIC, this means we need to create an instance of the
+`DM2ML` class as follows:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.decision_model <span style="color: #F0DFAF; font-weight: bold;">as</span> mdm
+
+<span style="color: #DFAF8F;">dm</span> = mdm.DM2ML(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   pm_buy=pm_up,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   pm_sell=pm_down,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   buy_threshold=0.01,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   sell_threshold=0.01,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   )
+</pre>
+</div>
+<p>
+This decision model allows you to specify:
+</p>
+<ul class="org-ul">
+<li><code>pm_buy</code>: the model to predict buy signals, which is why we set our model to <code>pm_up</code>.</li>
+<li><code>pm_sell</code>: the model to predict sell signals, which is why we set our model to <code>pm_sell</code>.</li>
+<li><code>buy_threshold</code>: the absolute threshold above which a buy signal is generated by the decision model.</li>
+<li><code>sell_threshold</code>: the absolute threshold above which a sell signal is generated by the decision model.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org53509a2" class="outline-2">
+<h2 id="org53509a2"><span class="section-number-2">6.</span> Step 4: Fitting the decision model with OHLCV data</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+The decision model we have built consists of both the buy and sell predictive models. Like all
+machine learning/statistical models, both models need to be fitted with data. 
+</p>
+
+<p>
+First, let's retrieve some historical OHLCV data. We can use the MOSAIC `ExchangeCCXT` class to
+connect to Binance and fetch the data. 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
+
+<span style="color: #DFAF8F;">exchange</span> = mtr.ExchangeCCXT(name=<span style="color: #CC9393;">"binance"</span>)
+exchange.connect()
+</pre>
+</div>
+<p>
+Next, we can use the `get_historic_ohlcv` method from our `exchange` variable to retrieve the
+historic BTC/FDUSD data between 2023-10-01 00:00:00 and 2023-10-10 00:00:00 with a 1-second
+timeframe:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">ohlcv_fit_df</span> = \
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   exchange.get_historic_ohlcv(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_start=<span style="color: #CC9393;">'2023-10-01 00:00:00'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_end=<span style="color: #CC9393;">'2023-10-10 00:00:00'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=<span style="color: #CC9393;">'BTC/FDUSD'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=<span style="color: #CC9393;">'1s'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   index=<span style="color: #CC9393;">"datetime"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   data_dir=<span style="color: #CC9393;">"."</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   progress_mode=<span style="color: #BFEBBF;">True</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   )
+</pre>
+</div>
+
+<p>
+Finally, we can fit the decision model with the OHLCV data:
+</p>
+<div class="org-src-container">
+<pre class="src src-python">dm.fit(ohlcv_fit_df)
+</pre>
+</div>
+
+<p>
+Note that you can check the fitting results of the prediction models using their `bkd`
+attribute. Since the logistic regression model relies on the <a href="https://www.statsmodels.org/stable/index.html">Statsmodels library</a>, the `bkd`
+attribute is an instance of a Statsmodels class.
+</p>
+
+<p>
+Here are the parameters of the buy model:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DCDCCC; font-weight: bold;">print</span>(dm.pm_buy.bkd.summary())
+</pre>
+</div>
+
+<pre class="example" id="orga266567">
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:              ret_15_up   No. Observations:               774223
+Model:                          Logit   Df Residuals:                   774218
+Method:                           MLE   Df Model:                            4
+Date:                Mon, 16 Oct 2023   Pseudo R-squ.:                0.002226
+Time:                        18:26:20   Log-Likelihood:            -5.3370e+05
+converged:                       True   LL-Null:                   -5.3489e+05
+Covariance Type:            nonrobust   LLR p-value:                     0.000
+=================================================================================
+                    coef    std err          z      P&gt;|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+const            -0.2090      0.005    -40.623      0.000      -0.219      -0.199
+SRI_close_5      -0.1296      0.003    -41.903      0.000      -0.136      -0.123
+SRI_HL_low_5     -0.0263      0.002    -12.206      0.000      -0.030      -0.022
+SRI_HH_high_5     0.0460      0.002     21.309      0.000       0.042       0.050
+MFI_5             0.0011   7.14e-05     15.496      0.000       0.001       0.001
+=================================================================================
+</pre>
+
+<p>
+And here, the parameters of the sell model:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DCDCCC; font-weight: bold;">print</span>(dm.pm_sell.bkd.summary())
+</pre>
+</div>
+
+<pre class="example" id="orgaf10f0c">
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:            ret_15_down   No. Observations:               774223
+Model:                          Logit   Df Residuals:                   774218
+Method:                           MLE   Df Model:                            4
+Date:                Mon, 16 Oct 2023   Pseudo R-squ.:                0.002225
+Time:                        18:26:21   Log-Likelihood:            -5.3371e+05
+converged:                       True   LL-Null:                   -5.3490e+05
+Covariance Type:            nonrobust   LLR p-value:                     0.000
+=================================================================================
+                    coef    std err          z      P&gt;|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+const             0.2090      0.005     40.625      0.000       0.199       0.219
+SRI_close_5       0.1295      0.003     41.890      0.000       0.123       0.136
+SRI_HL_low_5      0.0262      0.002     12.184      0.000       0.022       0.030
+SRI_HH_high_5    -0.0460      0.002    -21.313      0.000      -0.050      -0.042
+MFI_5            -0.0011   7.14e-05    -15.505      0.000      -0.001      -0.001
+=================================================================================
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-org35cd7f0" class="outline-2">
+<h2 id="org35cd7f0"><span class="section-number-2">7.</span> Step 5: Predicting buy and sell decisions</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+It is worth noting the <code>DM2ML</code> class generates the buy/sell signal following this process:
+</p>
+<ol class="org-ol">
+<li>Compute the buy score from the <code>pm_buy</code> model. This score is often interpretable as the probability of having an upward movement of future returns.</li>
+<li>Compute the sell score from the <code>pm_sell</code> model. This score is often interpretable as the probability of having a downward movement of future returns.</li>
+<li>Subtract the sell score from the buy score to obtain the signal score.</li>
+<li>If the signal score &gt; buy_threshold, generate a buy signal.
+If the signal score &lt; -sell_threshold, generate a sell signal.
+Generate no signal otherwise.</li>
+</ol>
+
+<p>
+To test our decision model, we will use BTC/FDUSD data between 2023-10-10 00:00:00 and 2023-10-15 00:00:00 with a 1-second
+timeframe:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #DFAF8F;">ohlcv_test_df</span> = \
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   exchange.get_historic_ohlcv(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_start=<span style="color: #CC9393;">'2023-10-10 00:00:00'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   date_end=<span style="color: #CC9393;">'2023-10-15 00:00:00'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   symbol=<span style="color: #CC9393;">'BTC/FDUSD'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   timeframe=<span style="color: #CC9393;">'1s'</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   index=<span style="color: #CC9393;">"datetime"</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   data_dir=<span style="color: #CC9393;">"."</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   progress_mode=<span style="color: #BFEBBF;">True</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   )
+</pre>
+</div>
+
+<p>
+As the decision is now fitted, we can hence use the <code>predict</code> method to generate buy/sell signals. The
+following call of <code>predict</code> shows the first 50 signals:  
+</p>
+<div class="org-src-container">
+<pre class="src src-python">dm.predict(ohlcv_test_df.head(50))
+</pre>
+</div>
+
+<pre class="example" id="org747df37">
+                          signal     score
+datetime                                  
+2023-10-10 02:00:00+02:00    NaN       NaN
+2023-10-10 02:00:01+02:00    NaN       NaN
+2023-10-10 02:00:02+02:00    NaN       NaN
+2023-10-10 02:00:03+02:00    NaN       NaN
+2023-10-10 02:00:04+02:00   sell -0.088158
+2023-10-10 02:00:05+02:00   sell -0.029812
+2023-10-10 02:00:06+02:00    NaN  0.003097
+2023-10-10 02:00:07+02:00    NaN -0.006799
+2023-10-10 02:00:08+02:00   sell -0.029812
+2023-10-10 02:00:09+02:00    NaN -0.005031
+2023-10-10 02:00:10+02:00   sell -0.124323
+2023-10-10 02:00:11+02:00   sell -0.072885
+2023-10-10 02:00:12+02:00   sell -0.100467
+2023-10-10 02:00:13+02:00   sell -0.071769
+2023-10-10 02:00:14+02:00    NaN -0.008701
+2023-10-10 02:00:15+02:00   sell -0.115177
+2023-10-10 02:00:16+02:00    buy  0.020245
+2023-10-10 02:00:17+02:00    NaN  0.001313
+2023-10-10 02:00:18+02:00   sell -0.019866
+2023-10-10 02:00:19+02:00   sell -0.020398
+2023-10-10 02:00:20+02:00   sell -0.019923
+2023-10-10 02:00:21+02:00   sell -0.019923
+2023-10-10 02:00:22+02:00   sell -0.029812
+2023-10-10 02:00:23+02:00    NaN -0.006799
+2023-10-10 02:00:24+02:00   sell -0.019923
+2023-10-10 02:00:25+02:00    NaN -0.007408
+2023-10-10 02:00:26+02:00   sell -0.102444
+2023-10-10 02:00:27+02:00   sell -0.085825
+2023-10-10 02:00:28+02:00   sell -0.080609
+2023-10-10 02:00:29+02:00   sell -0.058168
+2023-10-10 02:00:30+02:00   sell -0.014324
+2023-10-10 02:00:31+02:00   sell -0.120801
+2023-10-10 02:00:32+02:00   sell -0.098934
+2023-10-10 02:00:33+02:00   sell -0.048241
+2023-10-10 02:00:34+02:00    buy  0.039185
+2023-10-10 02:00:35+02:00    NaN  0.009713
+2023-10-10 02:00:36+02:00   sell -0.071222
+2023-10-10 02:00:37+02:00   sell -0.079574
+2023-10-10 02:00:38+02:00   sell -0.051199
+2023-10-10 02:00:39+02:00   sell -0.140459
+2023-10-10 02:00:40+02:00   sell -0.067380
+2023-10-10 02:00:41+02:00   sell -0.079823
+2023-10-10 02:00:42+02:00   sell -0.113857
+2023-10-10 02:00:43+02:00   sell -0.076398
+2023-10-10 02:00:44+02:00   sell -0.097717
+2023-10-10 02:00:45+02:00   sell -0.106381
+2023-10-10 02:00:46+02:00   sell -0.154789
+2023-10-10 02:00:47+02:00   sell -0.017929
+2023-10-10 02:00:48+02:00   sell -0.016327
+2023-10-10 02:00:49+02:00   sell -0.057891
+</pre>
+
+<p>
+Remarks:
+</p>
+<ul class="org-ul">
+<li>The first 5 signals are <code>NaN</code> because the maximum length of data required to compute the
+indicators is 5.</li>
+<li>Other <code>NaN</code> values correspond to cases when the absolute signal score is below both the buy
+threshold and the sell threshold.</li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>
