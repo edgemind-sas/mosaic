@@ -44,10 +44,6 @@ fig = indic_sri_ex.plotly(ohlcv_ex_df,
                           layout=dict(
                               title="BTC/USDC x Support Range Index"))
 
-pio.to_html(fig, include_plotlyjs="cdn",
-            full_html=False,
-            config={'displayModeBar': False})
-
 # Technical Environment
 
 # The Python libraries used in the processes presented in this document are:

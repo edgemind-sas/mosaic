@@ -1,11 +1,13 @@
 import pydantic
 import typing
 import pandas as pd
+import numpy as np
 import random
 #import tqdm
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from ..utils.data_management import HyperParams
+from ..utils.viz_tools import plotly_convert_to_line_style
 
 #from ..trading.core import SignalBase
 from ..core import ObjMOSAIC
@@ -21,7 +23,7 @@ if 'ipdb' in installed_pkg:
 
         
 class DMBase(ObjMOSAIC):
-
+    """ Decision model base class """
     buy_threshold: float = \
         pydantic.Field(0, description="If signal_score > buy_threshold => buy signal generated",
                        ge=0)
@@ -29,6 +31,9 @@ class DMBase(ObjMOSAIC):
     sell_threshold: float = \
         pydantic.Field(0, description="If signal_score < -sell_threshold => sell signal generated",
                        ge=0)
+
+    no_signal_code: str = \
+        pydantic.Field("pass", description="String to be used when no signal is generated")
     
     params: HyperParams = \
         pydantic.Field(None, description="Decision model parameters")
@@ -43,23 +48,27 @@ class DMBase(ObjMOSAIC):
     def bw_length(self):
         return 0
 
-    def compute_signal(self, signal_score, **kwrds):
+    def compute_signal(self, signal_score_df, **kwrds):
 
-        #ipdb.set_trace()
-        signal_s = pd.Series(index=signal_score.index,
-                             name="signal",
-                             dtype="object")
+        signal_s = pd.Series(
+            self.no_signal_code,
+            index=signal_score_df.index,
+            name="decision",
+            dtype=pd.CategoricalDtype(
+                categories=["buy", "sell", self.no_signal_code]
+            ),
+        )
 
         if self.buy_threshold is not None:
-            idx_buy = signal_score > self.buy_threshold
+            idx_buy = signal_score_df["score"] > self.buy_threshold
             signal_s.loc[idx_buy] = "buy"
             
         if self.sell_threshold is not None:
-            idx_sell = signal_score < -self.sell_threshold
+            idx_sell = signal_score_df["score"] < -self.sell_threshold
             signal_s.loc[idx_sell] = "sell"
 
         return pd.concat([signal_s,
-                          signal_score.rename("score")],
+                          signal_score_df],
                          axis=1)
     
     def predict(self, ohlcv_df, **kwrds):
@@ -120,26 +129,28 @@ class DMBase(ObjMOSAIC):
     def plotly(self, ohlcv_df,
                ret_signals=False,
                layout={},
-               layout_ohlcv={},
-               layout_indic={},
+               #layout_ohlcv={},
                var_buy="open",
                var_sell="open",
+               nb_sub_plot=2,
+               buy_style=dict(
+                   color="#FFD700",
+                   opacity=0.7,
+               ),
+               sell_style=dict(
+                   color="#C74AFF",
+                   opacity=0.7,
+               ),
+               score_style=dict(
+                   color="#1f416d",
+                   opacity=0.7,
+               ),
                **params):
 
-        signals = self.compute_signal(ohlcv_df, **params)
-        decisions_s = signals["signal"]
+        signals = self.predict(ohlcv_df, **params)
+        decisions_s = signals["decision"]
         scores = signals["score"]
         
-        buy_style = dict(
-            color="#FFD700",
-        )
-        sell_style = dict(
-            color="#C74AFF",
-        )
-        score_style = dict(
-            color="#3300CC",
-        )
-
         var_buy_data = self.ohlcv_names.get(var_buy)
         var_sell_data = self.ohlcv_names.get(var_sell)
         
@@ -148,7 +159,7 @@ class DMBase(ObjMOSAIC):
             x=signals_buy.index,
             y=ohlcv_df.loc[signals_buy.index, var_buy_data],
             mode='markers',
-            marker=dict(color=buy_style.get("color")),
+            marker=buy_style,
             name='buy signals')
 
         signals_sell = decisions_s.loc[decisions_s == "sell"]
@@ -156,19 +167,20 @@ class DMBase(ObjMOSAIC):
             x=signals_sell.index,
             y=ohlcv_df.loc[signals_sell.index, var_sell_data],
             mode='markers',
-            marker=dict(color=sell_style.get("color")),
+            marker=sell_style,
             name='sell signals')
 
         signals_score_trace = go.Scatter(
             x=scores.index,
             y=scores,
-            mode='markers+line',
-            marker=dict(color=score_style.get("color")),
+            mode='markers+lines',
+            marker=score_style,
+            line=plotly_convert_to_line_style(score_style),
             name='Score')
 
         ohlcv_sub = dict(row=1, col=1)
         signal_score_sub = dict(row=2, col=1)
-        subplot_layout = dict(rows=2, cols=1)
+        subplot_layout = dict(rows=nb_sub_plot, cols=1)
 
         fig_sp = make_subplots(shared_xaxes=True,
                                vertical_spacing=0.02,
@@ -188,7 +200,7 @@ class DMBase(ObjMOSAIC):
         #fig_ohlcv.update_layout(**layout_ohlcv)
         fig_sp.add_trace(trace_ohlcv, **ohlcv_sub)
         fig_sp.add_trace(signals_score_trace, **signal_score_sub)
-            
+
         fig_sp.add_trace(signals_buy_trace, **ohlcv_sub)
         fig_sp.add_trace(signals_sell_trace, **ohlcv_sub)
 
@@ -203,8 +215,8 @@ class DMBase(ObjMOSAIC):
 
         fig_sp.add_shape(
             type="line",
-            x0=scores.index.min(), y0=self.sell_threshold,
-            x1=scores.index.max(), y1=self.sell_threshold,
+            x0=scores.index.min(), y0=-self.sell_threshold,
+            x1=scores.index.max(), y1=-self.sell_threshold,
             line=dict(color=sell_style.get("color"),
                       width=3,
                       dash="dot"), **signal_score_sub)
@@ -219,7 +231,8 @@ class DMBase(ObjMOSAIC):
 
 
 class DM1ML(DMBase):
-    
+    """ Decision model based on a single machine learning prediction model """
+
     pm: PredictModelBase = \
         pydantic.Field(PredictModelBase(), description="Buy/sell predict model")
 
@@ -231,11 +244,15 @@ class DM1ML(DMBase):
         self.pm.fit(ohlcv_df, **kwrds)
     
     def predict(self, ohlcv_df, **kwrds):
-        signal_score = self.pm.predict(ohlcv_df, **kwrds)
-        return self.compute_signal(signal_score)
+        signal_score_df = pd.DataFrame(
+            self.pm.predict(ohlcv_df, **kwrds).rename("score")
+            )
+        
+        return self.compute_signal(signal_score_df)
 
     
 class DM2ML(DMBase):
+    """ Decision model based on two distinct machine learning prediction model : one for buy decisions and one for sell decisions """
     
     pm_buy: PredictModelBase = \
         pydantic.Field(PredictModelBase(), description="Buy predict model")
@@ -252,9 +269,63 @@ class DM2ML(DMBase):
     
     def predict(self, ohlcv_df, **kwrds):
 
-        buy_score = self.pm_buy.predict(ohlcv_df, **kwrds)
-        sell_score = self.pm_sell.predict(ohlcv_df, **kwrds)
+        buy_score = self.pm_buy.predict(ohlcv_df, **kwrds).rename("buy_score")
+        sell_score = self.pm_sell.predict(ohlcv_df, **kwrds).rename("sell_score")
 
-        signal_score = buy_score - sell_score
+        signal_score = (buy_score - sell_score).rename("score")
 
-        return self.compute_signal(signal_score)
+        signal_score_df = pd.concat([signal_score,
+                                     buy_score,
+                                     sell_score], axis=1)
+        return self.compute_signal(signal_score_df)
+
+    def plotly(self,
+               ohlcv_df,
+               ret_signals=False,
+               buy_style=dict(
+                   color="#FFD700",
+                   opacity=0.7,
+               ),
+               sell_style=dict(
+                   color="#C74AFF",
+                   opacity=0.7,
+               ),
+               score_style=dict(
+                   color="#1f416d",
+                   opacity=0.7,
+               ),
+               **kwrds):
+
+        fig, signals = \
+            super().plotly(ohlcv_df,
+                           ret_signals=True,
+                           nb_sub_plot=3,
+                           buy_style=buy_style,
+                           sell_style=sell_style,
+                           score_style=score_style,
+                           **kwrds)
+
+        buy_score_trace = go.Scatter(
+            x=signals.index,
+            y=signals["buy_score"],
+            mode='markers+lines',
+            marker=buy_style,
+            line=plotly_convert_to_line_style(buy_style),
+            name='Buy score')
+        
+        sell_score_trace = go.Scatter(
+            x=signals.index,
+            y=signals["sell_score"],
+            mode='markers+lines',
+            marker=sell_style,
+            line=plotly_convert_to_line_style(sell_style),
+            name='Sell score')
+
+        fig.add_trace(buy_score_trace, row=3, col=1)
+        fig.add_trace(sell_score_trace, row=3, col=1)
+        
+        if ret_signals:
+            return fig, signals
+        else:
+            return fig
+

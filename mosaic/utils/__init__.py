@@ -18,6 +18,7 @@ from .scores import \
     eval_ers
 
 from .viz_tools import \
+    plotly_convert_to_line_style, \
     plotly_ohlcv, \
     plotly_ohlcv_indics
 

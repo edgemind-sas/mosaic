@@ -1,3 +1,9 @@
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
+import mosaic
+
 import mosaic.indicator as mid
 
 indic_1 = mid.SRI(length=5)
@@ -24,8 +30,8 @@ import mosaic.decision_model as mdm
 dm = mdm.DM2ML(
     pm_buy=pm_up,
     pm_sell=pm_down,
-    buy_threshold=0.01,
-    sell_threshold=0.01,
+    buy_threshold=0.05,
+    sell_threshold=0.125,
     )
 
 import mosaic.trading as mtr
@@ -62,3 +68,32 @@ ohlcv_test_df = \
     )
 
 dm.predict(ohlcv_test_df.head(50))
+
+import pandas as pd
+
+idx_buy = \
+    dm.pm_buy.compute_returns(ohlcv_test_df)
+idx_sell = \
+    dm.pm_sell.compute_returns(ohlcv_test_df)
+decisions_true = pd.Series("pass",
+                           index=ohlcv_test_df.index,
+                           dtype="object",
+                           name="decision_true")
+decisions_true.loc[idx_buy] = "buy"
+decisions_true.loc[idx_sell] = "sell"
+
+decisions_mod = dm.predict(ohlcv_test_df)
+
+decisions_confmat = pd.crosstab(decisions_mod["decision"], decisions_true)
+decisions_confmat
+
+
+
+# We can also visually represent the results of the decision model using the `plotly` method. The
+# following code displays the decisions for the first 3600 timestamps:
+
+fig = dm.plotly(
+    ohlcv_test_df.iloc[:3600],
+    layout=dict(
+        title="Decision model results")
+)

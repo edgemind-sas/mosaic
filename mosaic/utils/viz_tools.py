@@ -8,6 +8,45 @@ if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
 
 
+def plotly_convert_to_line_style(style_dict):
+    """
+    Convert a dictionary of style parameters to a Plotly line style dictionary.
+    
+    Parameters:
+        style_dict (dict): A dictionary containing style parameters for a line.
+        
+    Returns:
+        dict: A Plotly line style dictionary with converted style parameters.
+        
+    Summary:
+        This function takes a dictionary of style parameters for a line and converts it into a line style dictionary compatible with Plotly. The style dictionary can contain the following optional parameters:
+        
+        - 'color' (str): The color of the line in hexadecimal format. If both 'color' and 'opacity' are present, the function converts the color to RGBA format. If only 'color' is present, it is directly assigned to the 'color' attribute in the line style dictionary.
+        
+        - 'opacity' (float): The opacity of the line, ranging from 0.0 (completely transparent) to 1.0 (
+
+completely opaque). If 'opacity' is present without 'color', a warning message is printed and the 'opacity' parameter is ignored.
+        
+        The function returns a Plotly line style dictionary with converted style parameters. If neither 'color' nor 'opacity' are present in the style dictionary, an empty line style dictionary is returned.
+    """
+    line_style = {}
+    
+    if "color" in style_dict and "opacity" in style_dict:
+        # Extract the hex color and convert it to RGB
+        hex_color = style_dict["color"].lstrip('#')
+        rgb_tuple = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        
+        # Combine RGB and opacity to form an RGBA string
+        rgba_color = f"rgba({rgb_tuple[0]}, {rgb_tuple[1]}, {rgb_tuple[2]}, {style_dict['opacity']})"
+        line_style["color"] = rgba_color
+    else:
+        if "color" in style_dict:
+            line_style["color"] = style_dict["color"]
+        if "opacity" in style_dict:
+            print("Warning: opacity without color will be ignored.")
+    
+    return line_style
+
 def plotly_ohlcv(ohlcv_df, fig=None, ohlcv_names={}, trace_params={}, layout={}):
     open_var = ohlcv_names.get("open", "open")
     high_var = ohlcv_names.get("high", "high")
