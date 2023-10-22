@@ -560,22 +560,22 @@ class BotTrading(ObjMOSAIC):
                     )
             ohlcv_dm_df = self.ohlcv_dm_dfd[self.ds_dm_code]
         
-        signals_df = \
+        decisions_df = \
             self.decision_model.predict(ohlcv_dm_df.shift(1), **kwrds)
 
-        signals_s = signals_df["signal"].copy()
+        decision_s = decisions_df["decision"].copy()
         
-        signals_s = signals_s.fillna(method="ffill")
-        signals_s = signals_s.loc[signals_s.shift() != signals_s]
+        decision_s = decision_s.fillna(method="ffill")
+        decision_s = decision_s.loc[decision_s.shift() != decision_s]
 
-        idx_buy = signals_s == "buy"
-        dt_buy = signals_s.index[idx_buy]
+        idx_buy = decision_s == "buy"
+        dt_buy = decision_s.index[idx_buy]
 
-        idx_sell = signals_s == "sell"
+        idx_sell = decision_s == "sell"
         if len(dt_buy) > 0:
-            idx_sell &= (signals_s.index >= dt_buy[0])
-        dt_sell = signals_s.index[idx_sell]
-        
+            idx_sell &= (decision_s.index >= dt_buy[0])
+        dt_sell = decision_s.index[idx_sell]
+
         orders_list = []
         for self.dt_ohlcv_current in tqdm.tqdm(dt_buy,
                                                disable=not progress_mode,
