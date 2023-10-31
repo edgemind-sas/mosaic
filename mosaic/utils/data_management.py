@@ -248,14 +248,32 @@ class HyperParams(pydantic.BaseModel):
 # --------------
 def round_datetime(dt, delta):
     """
-    Arrondit un datetime à l'intervalle de temps le plus proche spécifié par un timedelta.
+    Round a datetime to the nearest interval specified by a timedelta.
+    
+    Parameters:
+        dt (datetime): The datetime object to be rounded.
+        delta (timedelta): The duration of the interval to round to.
+        
+    Returns:
+        datetime: The rounded datetime object.
+        
+    Summary:
+        This function takes a datetime object 'dt' and a timedelta object 'delta' as inputs and rounds the datetime to the nearest interval specified by 'delta'. The function performs the following steps:
+        
+        1. Convert the timedelta object 'delta' to seconds.
+        2. Convert the datetime object 'dt' to a timestamp (number of seconds since 1970-01-01).
+        3. Round the timestamp to the nearest multiple of the interval specified by 'delta'.
+        4. Convert the rounded timestamp back to a datetime object.
+        5. Return the rounded datetime object.
+        
+        Note that the rounding operation is based on the number of seconds since 1970-01-01, so the precision of the rounding depends on the precision of the input datetime object.
     """
     seconds = delta.total_seconds()
-    # Convertir le datetime en un timestamp (secondes depuis 1970-1-1)
+    # Convert the datetime to a timestamp (seconds since 1970-1-1)
     since_epoch = dt.timestamp()
-    # Arrondir au timedelta le plus proche
+    # Round to the nearest timedelta
     rounded_timestamp = round(since_epoch / seconds) * seconds
-    # Convertir à nouveau en datetime
+    # Convert back to datetime
     rounded_dt = datetime.fromtimestamp(rounded_timestamp)
     
     return rounded_dt
@@ -302,6 +320,7 @@ def lag(data, n=0, lag_fmt="{name}[{n}]"):
         data_lag.name = lag_fmt.format(name=data_lag.name, n=-n)
 
     return data_lag
+
 
 def prepare_returns_indic(ret_dfd, indic):
     if isinstance(ret_dfd, pd.DataFrame):
@@ -386,7 +405,37 @@ def set_obj_attr_simple(obj, attr_path, value):
         setattr(obj, last_attr, value)
 
 
-def set_obj_attr(obj, attr_path, value):
+# Recursive function to walk through attributes and set values
+def recursive_set(obj, attrs, value):
+    """
+    Set the value of a nested attribute or list item in an object recursively.
+
+    Parameters:
+        obj (object): The object whose attribute you want to set.
+        attrs (list): The list of attributes specifying the path to the target attribute.
+                      Each attribute in the path can be a regular expression pattern matching multiple keys.
+        value (any): The value you want to set the attribute to.
+
+    Examples:
+        recursive_set(bot, ["decision_model.pm_*.features[0].length"], 10)
+    """
+    attr = attrs[0]
+    if "*" in attr:  # Regex pattern detected
+        keys = [key for key in dir(obj) if re.match(attr, key)]
+        for key in keys:
+            recursive_set(getattr(obj, key), attrs[1:], value)
+    else:
+        next_obj = obj[int(attr)] if attr.isdigit() else getattr(obj, attr)
+        if len(attrs) == 1:  # This is the last attribute, set the value
+            if attr.isdigit():
+                obj[int(attr)] = value
+            else:
+                setattr(obj, attr, value)
+        else:
+            recursive_set(next_obj, attrs[1:], value)
+
+
+def set_obj_one_attr(obj, attr_path, value):
     """
     Set the value of a nested attribute or list item in an object.
     Supports regular expression matching for keys in the attribute path.
@@ -394,37 +443,37 @@ def set_obj_attr(obj, attr_path, value):
     Parameters:
         obj (object): The object whose attribute you want to set.
         attr_path (str): The path to the attribute, separated by dots.
-                         For list indices, use square brackets. Regular expressions can be used to match keys.
+                         For list indices, use square brackets. Regular
+                         expressions can be used to match keys.
         value (any): The value you want to set the attribute to.
 
     Examples:
-        set_obj_attrs_with_regex(bot, "decision_model.pm_*.features[0].length", 10)
+        set_obj_one_attr(bot, "decision_model.pm_*.features[0].length", 10)
     """
-    
     # Split the attribute path using dots and square brackets
     attrs = re.split(r'\.|\[|\]', attr_path)
     # Remove any empty strings resulting from the split
     attrs = list(filter(lambda x: x != '', attrs))
-    
-    # Recursive function to walk through attributes and set values
-    def recursive_set(obj, attrs, value):
-        attr = attrs[0]
-        if "*" in attr:  # Regex pattern detected
-            keys = [key for key in dir(obj) if re.match(attr, key)]
-            for key in keys:
-                recursive_set(getattr(obj, key), attrs[1:], value)
-        else:
-            next_obj = obj[int(attr)] if attr.isdigit() else getattr(obj, attr)
-            if len(attrs) == 1:  # This is the last attribute, set the value
-                if attr.isdigit():
-                    obj[int(attr)] = value
-                else:
-                    setattr(obj, attr, value)
-            else:
-                recursive_set(next_obj, attrs[1:], value)
-                
+
     recursive_set(obj, attrs, value)
-    
+
+
+def set_obj_attrs(obj, attrs):
+    """
+    Set multiple attributes of an object using a dictionary containing
+    attribute-value pairs.
+
+    Parameters:
+        obj (object): The object whose attributes you want to set.
+        attrs (dict): A dictionary mapping attribute names to their respective
+                      values.
+
+    Examples:
+        set_obj_attrs(obj, {"attribute1": value1, "attribute2": value2})
+    """
+    for attr, val in attrs.items():
+        set_obj_one_attr(obj, attr, val)
+
 
 def flatten_dict(d, parent_key=(), level=-1, current_level=0, join_key=None):
     """

@@ -25,21 +25,21 @@
 <ul>
 <li><a href="#introduction">1. Introduction</a></li>
 <li><a href="#init-env">2. Technical prerequisites</a></li>
-<li><a href="#org6c1a652">3. Creating a Bot</a>
+<li><a href="#org7926dfa">3. Creating a Bot</a>
 <ul>
-<li><a href="#orgf74f9ab">3.1. Bot Specification</a>
+<li><a href="#org9da26ae">3.1. Bot Specification</a>
 <ul>
-<li><a href="#org276866e">3.1.1. YAML Configuration</a></li>
-<li><a href="#org4d59187">3.1.2. Bot Configuration Elements</a></li>
+<li><a href="#org595bf87">3.1.1. YAML Configuration</a></li>
+<li><a href="#orgbc9eeb7">3.1.2. Bot Configuration Elements</a></li>
 </ul>
 </li>
-<li><a href="#org6549fd4">3.2. Executing the bot in backtest mode</a></li>
+<li><a href="#orgf98b087">3.2. Executing the bot in backtest mode</a></li>
 </ul>
 </li>
-<li><a href="#orgba99c41">4. Using MongoDB to monitor the bot</a>
+<li><a href="#org2c890ac">4. Using MongoDB to monitor the bot</a>
 <ul>
-<li><a href="#org97d13a7">4.1. Install MongoDB with Docker-compose</a></li>
-<li><a href="#orgba7d4b4">4.2. Storing bot data to the MongoDB database</a></li>
+<li><a href="#org59caee1">4.1. Install MongoDB with Docker-compose</a></li>
+<li><a href="#org914b7ca">4.2. Storing bot data to the MongoDB database</a></li>
 </ul>
 </li>
 </ul>
@@ -86,7 +86,7 @@ perform this tutorial. So start by installing the <code>pew</code> manager if yo
 Then create a new virtual environment:
 </p>
 <div class="org-src-container">
-<pre class="src src-shell">pew new mosaic_step_by_step
+<pre class="src src-shell">pew new mosaic_bot_bt_dba
 </pre>
 </div>
 
@@ -129,22 +129,22 @@ session and display its version:
 </div>
 
 <pre class="example">
-0.0.40
+0.0.41
 </pre>
 </div>
 </div>
 
 
-<div id="outline-container-org6c1a652" class="outline-2">
-<h2 id="org6c1a652"><span class="section-number-2">3.</span> Creating a Bot</h2>
+<div id="outline-container-org7926dfa" class="outline-2">
+<h2 id="org7926dfa"><span class="section-number-2">3.</span> Creating a Bot</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-orgf74f9ab" class="outline-3">
-<h3 id="orgf74f9ab"><span class="section-number-3">3.1.</span> Bot Specification</h3>
+<div id="outline-container-org9da26ae" class="outline-3">
+<h3 id="org9da26ae"><span class="section-number-3">3.1.</span> Bot Specification</h3>
 <div class="outline-text-3" id="text-3-1">
 </div>
-<div id="outline-container-org276866e" class="outline-4">
-<h4 id="org276866e"><span class="section-number-4">3.1.1.</span> YAML Configuration</h4>
+<div id="outline-container-org595bf87" class="outline-4">
+<h4 id="org595bf87"><span class="section-number-4">3.1.1.</span> YAML Configuration</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 To define a bot, the easiest way is to create a configuration file that specifies the
@@ -232,8 +232,8 @@ To do this, create a YAML file named <code>bot.yaml</code> with the following el
 </div>
 </div>
 
-<div id="outline-container-org4d59187" class="outline-4">
-<h4 id="org4d59187"><span class="section-number-4">3.1.2.</span> Bot Configuration Elements</h4>
+<div id="outline-container-orgbc9eeb7" class="outline-4">
+<h4 id="orgbc9eeb7"><span class="section-number-4">3.1.2.</span> Bot Configuration Elements</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
 <b>Definition of Indicators</b>
@@ -300,8 +300,8 @@ Uses <code>mfi_short</code> and <code>mfi_long</code> as explanatory variables.<
 </div>
 </div>
 
-<div id="outline-container-org6549fd4" class="outline-3">
-<h3 id="org6549fd4"><span class="section-number-3">3.2.</span> Executing the bot in backtest mode</h3>
+<div id="outline-container-orgf98b087" class="outline-3">
+<h3 id="orgf98b087"><span class="section-number-3">3.2.</span> Executing the bot in backtest mode</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 Next, create the following Python file <code>bot.py</code> to backtest the bot defined in the previous YAML
@@ -336,12 +336,12 @@ profitable&#x2026;
 </div>
 
 
-<div id="outline-container-orgba99c41" class="outline-2">
-<h2 id="orgba99c41"><span class="section-number-2">4.</span> Using MongoDB to monitor the bot</h2>
+<div id="outline-container-org2c890ac" class="outline-2">
+<h2 id="org2c890ac"><span class="section-number-2">4.</span> Using MongoDB to monitor the bot</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-org97d13a7" class="outline-3">
-<h3 id="org97d13a7"><span class="section-number-3">4.1.</span> Install MongoDB with Docker-compose</h3>
+<div id="outline-container-org59caee1" class="outline-3">
+<h3 id="org59caee1"><span class="section-number-3">4.1.</span> Install MongoDB with Docker-compose</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 Before you begin, make sure you have a functional Docker installation with the ability to launch a
@@ -382,8 +382,8 @@ Launch MongoDB with Docker-compose as follows:
 </div>
 </div>
 
-<div id="outline-container-orgba7d4b4" class="outline-3">
-<h3 id="orgba7d4b4"><span class="section-number-3">4.2.</span> Storing bot data to the MongoDB database</h3>
+<div id="outline-container-org914b7ca" class="outline-3">
+<h3 id="org914b7ca"><span class="section-number-3">4.2.</span> Storing bot data to the MongoDB database</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 If you have set up a MongoDB database on your machine using the previous Docker configuration, you

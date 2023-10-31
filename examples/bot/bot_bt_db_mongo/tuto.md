@@ -3,14 +3,14 @@
 
 1.  [Introduction](#introduction)
 2.  [Technical prerequisites](#init-env)
-3.  [Creating a Bot](#org39258c6)
-    1.  [Bot Specification](#orgd6f3d14)
-        1.  [YAML Configuration](#orgb76173b)
-        2.  [Bot Configuration Elements](#org68d2e5e)
-    2.  [Executing the bot in backtest mode](#orgc8cd3c4)
-4.  [Using MongoDB to monitor the bot](#org11ac31f)
-    1.  [Install MongoDB with Docker-compose](#org4b2ae57)
-    2.  [Storing bot data to the MongoDB database](#org44d66c7)
+3.  [Creating a Bot](#org694fd72)
+    1.  [Bot Specification](#org0c44672)
+        1.  [YAML Configuration](#org2063053)
+        2.  [Bot Configuration Elements](#org064b146)
+    2.  [Executing the bot in backtest mode](#org3c034c5)
+4.  [Using MongoDB to monitor the bot](#orga492768)
+    1.  [Install MongoDB with Docker-compose](#org828fc1a)
+    2.  [Storing bot data to the MongoDB database](#org0399974)
 
 
 
@@ -43,7 +43,7 @@ perform this tutorial. So start by installing the `pew` manager if you haven't a
 
 Then create a new virtual environment:
 
-    pew new mosaic_step_by_step
+    pew new mosaic_bot_bt_dba
 
 Now create a directory that will contain the files of this tutorial, e.g. `bot_bt_db`, and
 navigate to this directory: 
@@ -67,20 +67,20 @@ session and display its version:
     
     print(mosaic.__version__)
 
-    0.0.40
+    0.0.41
 
 
-<a id="org39258c6"></a>
+<a id="org694fd72"></a>
 
 # Creating a Bot
 
 
-<a id="orgd6f3d14"></a>
+<a id="org0c44672"></a>
 
 ## Bot Specification
 
 
-<a id="orgb76173b"></a>
+<a id="org2063053"></a>
 
 ### YAML Configuration
 
@@ -163,7 +163,7 @@ To do this, create a YAML file named `bot.yaml` with the following elements:
           maker: 0
 
 
-<a id="org68d2e5e"></a>
+<a id="org064b146"></a>
 
 ### Bot Configuration Elements
 
@@ -206,7 +206,7 @@ To do this, create a YAML file named `bot.yaml` with the following elements:
         -   `fees_rates`: Used transaction fees.
 
 
-<a id="orgc8cd3c4"></a>
+<a id="org3c034c5"></a>
 
 ## Executing the bot in backtest mode
 
@@ -234,12 +234,12 @@ observe the state of the bot's portfolio at the end of the backtest. In this cas
 profitable&#x2026;
 
 
-<a id="org11ac31f"></a>
+<a id="orga492768"></a>
 
 # Using MongoDB to monitor the bot
 
 
-<a id="org4b2ae57"></a>
+<a id="org828fc1a"></a>
 
 ## Install MongoDB with Docker-compose
 
@@ -271,7 +271,7 @@ Launch MongoDB with Docker-compose as follows:
     docker-compose up -d
 
 
-<a id="org44d66c7"></a>
+<a id="org0399974"></a>
 
 ## Storing bot data to the MongoDB database
 

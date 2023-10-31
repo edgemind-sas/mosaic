@@ -14,11 +14,13 @@ import numpy as np
 import plotly.express as px
 import hashlib
 import tqdm
-from textwrap import dedent
+from textwrap import dedent, indent
 
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
+if 'colored' in installed_pkg:
+    import colored # noqa: F401
 
 from ..core import ObjMOSAIC
 from .orders import OrderBase, OrderMarket
@@ -61,6 +63,8 @@ class Portfolio(pydantic.BaseModel):
         0, description="Current base amount in quote equivalent")
     quote_value: float = pydantic.Field(
         0, description="Current portfolio value in quote unit")
+    asset_performance: float = pydantic.Field(
+        0, description="Current asset performance")
     performance: float = pydantic.Field(
         0, description="Current portfolio performance")
 
@@ -69,6 +73,40 @@ class Portfolio(pydantic.BaseModel):
 
         self.reset()
 
+    def __str__(self, exclude_bot_uid=False):
+
+        if exclude_bot_uid:
+            attrs_liststr = []
+        else:
+            attrs_liststr = [f"Bot UID: {self.bot_uid}"]
+
+        attrs_liststr.extend([
+            f"Time: {self.dt}",
+            f"Initial quote amount: {fmt_currency(self.quote_amount_init)}",
+            f"Quote price: {fmt_currency(self.quote_price)}",
+            f"Quote amount: {fmt_currency(self.quote_amount)}",
+            f"Base amount: {fmt_currency(self.base_amount)}",
+            f"Quote exposed: {fmt_currency(self.quote_exposed)}",
+            f"Quote value: {fmt_currency(self.quote_value)}",
+            f"Performance: {self.format_performance()}",
+        ])
+        return "\n".join(attrs_liststr)
+
+    def format_performance(self):
+        performance_str = f"{self.performance:.3}"
+        if 'colored' in installed_pkg:
+            if self.performance > 1 and self.performance > self.asset_performance:
+                return colored.stylize(performance_str, colored.fg("green"))
+            elif self.performance > 1 and self.performance <= self.asset_performance:
+                return colored.stylize(performance_str, colored.fg("blue"))
+            elif self.performance < 1 and self.performance > self.asset_performance:
+                return colored.stylize(performance_str, colored.fg("magenta"))
+            else:
+                return colored.stylize(performance_str, colored.fg("red"))
+
+        return performance_str
+
+        
     def reset(self):
         
         self.quote_amount = self.quote_amount_init
@@ -108,12 +146,14 @@ class Portfolio(pydantic.BaseModel):
         report_str = f"BOT: {self.bot_uid}\nDate: {self.dt}\nPerformance: {self.performance}"
         return report_str
 
-
+    
 class BotTrading(ObjMOSAIC):
     """Handles automated trading operations. 
     Supports various backtesting and live trading modes. Capable of interacting 
     with various data sources and decision models.
     """
+    mosaic_version: str = pydantic.Field(
+        MOSAIC_VERSION, description="MOSAIC version")
     
     uid: str = pydantic.Field(
         None, description="Unique identifier for the bot")
@@ -358,28 +398,43 @@ class BotTrading(ObjMOSAIC):
 
         return self_dict
 
-    def summary_header(self):
-        summary_str = f"""
-        Bot Live Session
-        Id              : {self.uid}
-        Name            : {self.name}
-        Base currency   : {self.base}
-        Quote currency  : {self.quote}
-        Timeframe       : {self.timeframe}
-        Session DT      : {self.dt_session_start}
-        Mode            : {self.mode}
-        MOSAIC version  : {MOSAIC_VERSION}
-            
-        Exchange
-        Name            : {self.exchange.name}
-        Fees maker      : {self.exchange.fees_rates.maker}
-        Fees taker      : {self.exchange.fees_rates.taker}
+    def __str__(self):
+
+        attrs_liststr = [
+            f"ID: {self.uid}",
+            f"Name: {self.name}",
+            f"Symbol: {self.symbol}",
+            f"Timeframe: {self.timeframe}",
+            f"Mode: {self.mode}",
+            f"MOSAIC version: {MOSAIC_VERSION}",
+        ]
+        return "\n".join(attrs_liststr)
         
-        Portfolio
-        quote_amount    : {self.portfolio.quote_amount}
-        base_amount     : {self.portfolio.base_amount}
-        """
-        return dedent(summary_str)
+    
+    def summary_header(self):
+        indent_str = 4*" "
+        
+        summary_liststr = []
+        summary_liststr.append("Bot")
+        summary_liststr.append(
+            indent(self.portfolio.__str__(exclude_bot_uid=True), indent_str)
+        )
+
+        if self.dt_session_start:
+            summary_liststr.append("Session")
+            summary_liststr.append(
+                indent("Started at: {self.dt_session_start}", indent_str)
+            )
+        # Exchange
+        # Name            : {self.exchange.name}
+        # Fees maker      : {self.exchange.fees_rates.maker}
+        # Fees taker      : {self.exchange.fees_rates.taker}
+
+        summary_liststr.append("Portfolio")
+        summary_liststr.append(
+            indent(self.portfolio.__str__(exclude_bot_uid=True), indent_str)
+        )
+        return "\n".join(summary_liststr)
 
     def summary_live(self,
                      custom_format={},
@@ -563,9 +618,9 @@ class BotTrading(ObjMOSAIC):
         decisions_df = \
             self.decision_model.predict(ohlcv_dm_df.shift(1), **kwrds)
 
-        decision_s = decisions_df["decision"].copy()
-        
-        decision_s = decision_s.fillna(method="ffill")
+        idx_pass = decisions_df["decision"] == "pass"
+
+        decision_s = decisions_df["decision"].loc[~idx_pass]
         decision_s = decision_s.loc[decision_s.shift() != decision_s]
 
         idx_buy = decision_s == "buy"
@@ -645,12 +700,14 @@ class BotTrading(ObjMOSAIC):
                 
             self.db.put(endpoint="portfolio",
                         data=portfolio_df.to_dict("records"),
-                        index=portfolio_index_var)
+                        index=portfolio_index_var,
+                        time_field="dt")
 
             self.db.put(endpoint="orders",
                         data=[od.dict()
                               for od in self.orders_executed.values()],
-                        index=["uid", "bot_uid"])
+                        index=["uid"],
+                        time_field="dt_closed")
 
             self.db_update()
         

@@ -11,7 +11,7 @@ from .data_management import \
     dict_to_yaml_string, \
     convert_to_local_time, \
     parse_value, \
-    set_obj_attr
+    set_obj_attrs
 
 from .scores import \
     eval_returns_emp_quantiles, \
