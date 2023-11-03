@@ -49,8 +49,17 @@ class Portfolio(pydantic.BaseModel):
     
     bot_uid: str = pydantic.Field(
         None, description="Bot id")
+    fees_taker: float = pydantic.Field(
+        0, description="Fees taker to be considered to compute quote value")
+
     dt: datetime = pydantic.Field(
         None, description="Current timestamp")
+    last_buy_order_dt: datetime = pydantic.Field(
+        None, description="Last buy order timestamp")
+    last_sell_order_dt: datetime = pydantic.Field(
+        None, description="Last buy order timestamp")
+    quote_price_init: datetime = pydantic.Field(
+        None, description="Initial quote price")
     quote_price: datetime = pydantic.Field(
         None, description="Current quote price")
     quote_amount_init: float = pydantic.Field(
@@ -65,9 +74,28 @@ class Portfolio(pydantic.BaseModel):
         0, description="Current portfolio value in quote unit")
     asset_performance: float = pydantic.Field(
         0, description="Current asset performance")
+    intratrade_duration_cum: int = pydantic.Field(
+        0, description="Cumulative trade duration in seconds (between consecutive buy and sell orders)")
+    intertrade_duration_cum: int = pydantic.Field(
+        0, description="Cumulative inter trade duration in seconds (between consecutive sell and buy orders)")
+    nb_buy_orders: int = pydantic.Field(
+        0, description="Nomber of buy orders")
+    nb_sell_orders: int = pydantic.Field(
+        0, description="Nomber of sell orders")
     performance: float = pydantic.Field(
         0, description="Current portfolio performance")
 
+    @property
+    def intratrade_duration_mean(self):
+        return timedelta(seconds=self.intratrade_duration_cum)/self.nb_buy_orders \
+            if self.nb_buy_orders > 0 else None
+
+    @property
+    def intertrade_duration_mean(self):
+        return timedelta(seconds=self.intertrade_duration_cum)/self.nb_buy_orders \
+            if self.nb_buy_orders > 0 else None
+
+    
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
 
@@ -75,22 +103,44 @@ class Portfolio(pydantic.BaseModel):
 
     def __str__(self, exclude_bot_uid=False):
 
+        indent_str = " "*4
+        
         if exclude_bot_uid:
             attrs_liststr = []
         else:
             attrs_liststr = [f"Bot UID: {self.bot_uid}"]
 
-        attrs_liststr.extend([
-            f"Time: {self.dt}",
-            f"Initial quote amount: {fmt_currency(self.quote_amount_init)}",
-            f"Quote price: {fmt_currency(self.quote_price)}",
-            f"Quote amount: {fmt_currency(self.quote_amount)}",
-            f"Base amount: {fmt_currency(self.base_amount)}",
-            f"Quote exposed: {fmt_currency(self.quote_exposed)}",
-            f"Quote value: {fmt_currency(self.quote_value)}",
-            f"Performance: {self.format_performance()}",
-        ])
+        attrs_liststr.append(f"Time: {self.dt}")
+
+        attrs_liststr.append(f"Initial quote amount: {fmt_currency(self.quote_amount_init)}")
+        attrs_liststr.append(f"Quote amount: {fmt_currency(self.quote_amount)}")
+        attrs_liststr.append(f"Base amount: {fmt_currency(float(self.base_amount))}")
+        attrs_liststr.append(f"Quote exposed: {fmt_currency(self.quote_exposed)}")
+        attrs_liststr.append(f"Quote value: {fmt_currency(self.quote_value)}")
+
+        attrs_liststr.append("KPI")
+        attrs_liststr.append(
+            indent(f"Asset performance: {self.asset_performance:.3}",
+                   indent_str))
+        attrs_liststr.append(
+            indent(f"Strategy performance: {self.format_performance()}",
+                   indent_str))
+        attrs_liststr.append(
+            indent(f"# orders: {self.nb_buy_orders} buys | {self.nb_sell_orders} sells",
+                   indent_str))
+        if self.intertrade_duration_mean:
+            attrs_liststr.append(
+                indent(f"Mean intertrade duration: {self.intertrade_duration_mean}",
+                       indent_str))
+        if self.intratrade_duration_mean:
+            attrs_liststr.append(
+                indent(f"Mean intratrade duration: {self.intratrade_duration_mean}",
+                       indent_str))
+
         return "\n".join(attrs_liststr)
+
+    def __repr__(self):
+        return self.__str__()
 
     def format_performance(self):
         performance_str = f"{self.performance:.3}"
@@ -110,8 +160,9 @@ class Portfolio(pydantic.BaseModel):
     def reset(self):
         
         self.quote_amount = self.quote_amount_init
-        self.base_amount = 0
+        self.base_amount = 0.0
         self.quote_price = None
+        self.quote_price_init = None
         self.dt = None
         self.update()
         
@@ -121,30 +172,39 @@ class Portfolio(pydantic.BaseModel):
 
             self.quote_amount -= od.quote_amount
             self.base_amount += od.base_amount
+            self.nb_buy_orders += 1
+            self.last_buy_order_dt = self.dt
+            if self.last_sell_order_dt:
+                self.intertrade_duration_cum += \
+                    (self.last_buy_order_dt - self.last_sell_order_dt).total_seconds()
 
         elif od.side == "sell":
             
             self.quote_amount += od.quote_amount
             self.base_amount -= od.base_amount
+            self.nb_sell_orders += 1
+            self.last_sell_order_dt = self.dt
+            if self.last_buy_order_dt:
+                self.intratrade_duration_cum += \
+                    (self.last_sell_order_dt - self.last_buy_order_dt).total_seconds()
 
         else:
 
             raise ValueError(f"Unrecognized order side {od.side}")
 
-    def update(self, fees=0):
+        self.update()
+
+    def update(self):
 
         self.quote_exposed = 0 if self.quote_price is None \
-            else self.base_amount*self.quote_price*(1 - fees)
+            else self.base_amount*self.quote_price*(1 - self.fees_taker)
 
         self.quote_value = self.quote_amount + self.quote_exposed
 
+        self.asset_performance = 0 if self.quote_price_init is None \
+            else self.quote_price/self.quote_price_init
+
         self.performance = self.quote_value/self.quote_amount_init
-
-
-    def report(self):
-
-        report_str = f"BOT: {self.bot_uid}\nDate: {self.dt}\nPerformance: {self.performance}"
-        return report_str
 
     
 class BotTrading(ObjMOSAIC):
@@ -252,8 +312,11 @@ class BotTrading(ObjMOSAIC):
         None, description="Trading architecture exchange")
     
     db: DBBase = pydantic.Field(
-        None, description="Trading data backend")
+        None, description="Bot status data backend")
 
+    db_trace: DBBase = pydantic.Field(
+        None, description="Bot trading data backend")
+    
     logger: typing.Any = pydantic.Field(
         None, description="Trading architecture logger")
 
@@ -315,6 +378,11 @@ class BotTrading(ObjMOSAIC):
         return self.symbol.split("/")[1]
 
     @property
+    def session_duration(self):
+        return self.dt_session_end - self.dt_session_start \
+            if self.dt_session_end else None
+    
+    @property
     def ds_trading_code(self):
         return f"{self.ds_trading.symbol}{self.ds_trading.timeframe}"\
             f"{self.ds_trading.dt_s}{self.ds_trading.dt_e}"
@@ -352,6 +420,12 @@ class BotTrading(ObjMOSAIC):
         if self.db:
             self.db.logger = self.logger
             self.db.connect()
+
+        if self.db_trace:
+            self.db_trace.logger = self.logger
+            self.db_trace.connect()
+        elif self.db:
+            self.db_trace = self.db
 
     def reset(self):
 
@@ -400,41 +474,94 @@ class BotTrading(ObjMOSAIC):
 
     def __str__(self):
 
+        indent_str = 4*" "
+        
+        repr_liststr = []
+        repr_liststr.append("Bot")
         attrs_liststr = [
+            f"MOSAIC version: {MOSAIC_VERSION}",
             f"ID: {self.uid}",
             f"Name: {self.name}",
             f"Symbol: {self.symbol}",
             f"Timeframe: {self.timeframe}",
             f"Mode: {self.mode}",
-            f"MOSAIC version: {MOSAIC_VERSION}",
         ]
-        return "\n".join(attrs_liststr)
+        repr_liststr.append(
+            indent("\n".join(attrs_liststr), indent_str)
+        )
+        if self.mode.startswith("bt"):
+            repr_liststr.append(
+                indent(f"Buy on: {self.bt_buy_on}", 2*indent_str)
+            )
+            repr_liststr.append(
+                indent(f"Sell on: {self.bt_sell_on}", 2*indent_str)
+            )
+
+        # Session
+        repr_liststr.append("")
+        repr_liststr.append("Session")
+        if self.dt_session_start:
+            repr_liststr.append(
+                indent(f"Started at: {self.dt_session_start}", indent_str)
+            )
+        if self.dt_session_end:
+            repr_liststr.append(
+                indent(f"Ended at: {self.dt_session_end}", indent_str)
+            )
+            repr_liststr.append(
+                indent(f"Duration: {self.session_duration}", indent_str)
+            )
+            if self.mode.startswith("bt"):
+                repr_liststr.append(
+                    indent(f"OHLCV period: {self.ds_trading.dt_e - self.ds_trading.dt_s} | "
+                           f"{self.ds_trading.dt_s} -> {self.ds_trading.dt_e}", indent_str)
+                )
+                
+
+        else:
+            repr_liststr.append(
+                indent(f"DT OHLCV current: {self.dt_ohlcv_current}",
+                       indent_str)
+            )
+            repr_liststr.append(
+                indent(f"DT OHLCV closed: {self.dt_ohlcv_closed}",
+                       indent_str)
+            )
+            
+        if self.mode.startswith("live"):
+            repr_liststr.append(
+                indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
+                       indent_str)
+            )
+        repr_liststr.append(
+            indent(f"# Open orders: {len(self.orders_open)}", indent_str)
+        )
+        repr_liststr.append(
+            indent(f"# Cancelled orders: {len(self.orders_cancelled)}", indent_str)
+        )
+        repr_liststr.append(
+            indent(f"# Executed orders: {len(self.orders_executed)}", indent_str)
+        )
+
+        repr_liststr.append("")
+        repr_liststr.append("Exchange")
+        repr_liststr.append(
+            indent(self.exchange.__str__(), indent_str)
+        )
+        
+        repr_liststr.append("")
+        repr_liststr.append("Portfolio")
+        repr_liststr.append(
+            indent(self.portfolio.__str__(exclude_bot_uid=True), indent_str)
+        )
+        return "\n".join(repr_liststr)
+        
+    def __repr__(self):
+        return self.__str__()
         
     
     def summary_header(self):
-        indent_str = 4*" "
-        
-        summary_liststr = []
-        summary_liststr.append("Bot")
-        summary_liststr.append(
-            indent(self.portfolio.__str__(exclude_bot_uid=True), indent_str)
-        )
-
-        if self.dt_session_start:
-            summary_liststr.append("Session")
-            summary_liststr.append(
-                indent("Started at: {self.dt_session_start}", indent_str)
-            )
-        # Exchange
-        # Name            : {self.exchange.name}
-        # Fees maker      : {self.exchange.fees_rates.maker}
-        # Fees taker      : {self.exchange.fees_rates.taker}
-
-        summary_liststr.append("Portfolio")
-        summary_liststr.append(
-            indent(self.portfolio.__str__(exclude_bot_uid=True), indent_str)
-        )
-        return "\n".join(summary_liststr)
+        return self.__str__()
 
     def summary_live(self,
                      custom_format={},
@@ -502,6 +629,7 @@ class BotTrading(ObjMOSAIC):
 
         # Init fees
         self.exchange.set_trading_fees(self.symbol)
+        self.portfolio.fees_taker = self.exchange.fees_rates.taker
         
         self.db_update()
         if self.logger:
@@ -594,7 +722,9 @@ class BotTrading(ObjMOSAIC):
                     progress_mode=progress_mode,
                 )
         ohlcv_trading_df = self.ohlcv_trading_dfd[self.ds_trading_code]
-
+        self.portfolio.quote_price_init = \
+            ohlcv_trading_df[self.ohlcv_names.get("close")].iloc[0]
+                
         if self.logger:
             self.logger.info("Getting decision model data")
 
@@ -677,7 +807,6 @@ class BotTrading(ObjMOSAIC):
             self.portfolio.dt = od.dt_closed
             self.portfolio.quote_price = quote_current
             self.portfolio.update_order(od)
-            self.portfolio.update(fees=self.exchange.fees_rates.taker)
             
             portfolio_list.append(self.portfolio.dict())
             
@@ -688,28 +817,26 @@ class BotTrading(ObjMOSAIC):
         self.portfolio.quote_price = \
             ohlcv_trading_df.loc[self.portfolio.dt,
                                  self.ohlcv_names.get(self.bt_sell_on)]
-        self.portfolio.update(fees=self.exchange.fees_rates.taker)
+        self.portfolio.update()
         portfolio_list.append(self.portfolio.dict())
             
-        if self.db:
+        if self.db_trace:
             portfolio_index_var = ["bot_uid", "dt"]
             portfolio_df = \
                 pd.DataFrame(portfolio_list)\
                   .drop_duplicates(subset=portfolio_index_var,
                                    keep="last")
                 
-            self.db.put(endpoint="portfolio",
+            self.db_trace.put(endpoint="portfolio",
                         data=portfolio_df.to_dict("records"),
                         index=portfolio_index_var,
                         time_field="dt")
 
-            self.db.put(endpoint="orders",
+            self.db_trace.put(endpoint="orders",
                         data=[od.dict()
                               for od in self.orders_executed.values()],
                         index=["uid"],
                         time_field="dt_closed")
-
-            self.db_update()
         
         return
 
@@ -744,23 +871,23 @@ class BotTrading(ObjMOSAIC):
                 if self.dt_ohlcv_current != self.dt_ohlcv_closed:
                     dt_start = self.dt_ohlcv_current - tdelta*self.decision_model.bw_length
                     ohlcv_cur_df = ohlcv_closed_df.loc[dt_start:self.dt_ohlcv_current]
-                    signal, signal_score = \
+                    decision_df = \
                         self.decision_model.predict(ohlcv_cur_df, **kwrds)\
-                                           .replace({np.nan: None})\
                                            .loc[self.dt_ohlcv_current]
-
+                    decision = decision_df["decision"]
+                    
                     if self.logger:
                         self.logger.debug(f"DT current:     {self.dt_ohlcv_current}\n"
                                           f"Quote price:    {fmt_currency(self.quote_current)} {self.quote}\n"
                                           f"DT last closed: {self.dt_ohlcv_closed}\n"
-                                          f"signal:         {signal}\n"
+                                          f"decision:         {decision}\n"
                                           f"OHLCV:\n"
                                           f"{ohlcv_cur_df}")
 
                     #decision = self.bot.tick(quote_cur)
                     # Create Buy / Sell order
-                    if signal:
-                        order = getattr(self, signal)()
+                    if decision != "pass":
+                        order = getattr(self, decision)()
                         self.register_order(order)
 
                 else:
@@ -775,7 +902,7 @@ class BotTrading(ObjMOSAIC):
                 # Updating portfolio
                 self.portfolio.dt = self.dt_ohlcv_current
                 self.portfolio.quote_price = self.quote_current
-                self.portfolio.update(fees=self.exchange.fees_rates.maker)
+                self.portfolio.update()
                 self.progress_update()
                 if self.db:
                     self.db.update(endpoint="portfolio",
@@ -841,7 +968,7 @@ class BotTrading(ObjMOSAIC):
                 # Updating portfolio
                 self.portfolio.dt = self.dt_ohlcv_current
                 self.portfolio.quote_price = self.quote_current
-                self.portfolio.update(fees=self.exchange.fees_rates.maker)
+                self.portfolio.update()
                 self.progress_update()
                 if self.db:
                     self.db.update(endpoint="portfolio",

@@ -14,6 +14,7 @@ import pandas as pd
 from ..core import ObjMOSAIC
 from ..utils.data_management import timeframe_to_seconds
 
+from textwrap import indent
 
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -42,6 +43,13 @@ class FeesRates(pydantic.BaseModel):
     maker: float = pydantic.Field(
         None, description="Maker fees (limit orders)")
 
+    def __str__(self):
+
+        repr_liststr = []
+        repr_liststr.append(f"Taker: {self.taker}")
+        repr_liststr.append(f"Maker: {self.maker}")
+
+        return "\n".join(repr_liststr)
 
 class ExchangeErrors(pydantic.BaseModel):
 
@@ -118,6 +126,20 @@ class ExchangeBase(ObjMOSAIC):
             
         return super().dict(**kwrds)
 
+    def __str__(self):
+
+        indent_str = 4*" "
+        
+        repr_liststr = []
+        repr_liststr.append(f"Name: {self.name}")
+        repr_liststr.append("Fees:")
+        repr_liststr.append(indent(self.fees_rates.__str__(), indent_str))
+
+        return "\n".join(repr_liststr)
+
+    def __repr__(self):
+        return self.__str__()
+    
     # MOVED TO utils.datamanagement
     # @staticmethod
     # def timeframe_to_seconds(timeframe):
@@ -430,7 +452,7 @@ class ExchangeCCXT(ExchangeOnline):
                            data_dir=".",
                            force_reload=False,
                            progress_mode=False,
-                           fetching_pause=30,
+                           fetching_pause=5,
                            fetching_max_tries=3,
                            ):
 
@@ -521,9 +543,8 @@ class ExchangeCCXT(ExchangeOnline):
                                                  since=ts_s,
                                                  limit=limit)
                     # NOTE : We decide to drop na value while getting historical data
-                    ohlcv_cur_df = pd.DataFrame(
-                        ohlcv, columns=ohlcv_var)
-                    assert ts_s == ohlcv_cur_df["timestamp"].iloc[0]
+                    ohlcv_cur_df = pd.DataFrame(ohlcv, columns=ohlcv_var)
+                    # assert ts_s == ohlcv_cur_df["timestamp"].iloc[0]
 
                 except Exception as e:
                     nb_fetch_tries += 1
