@@ -48,6 +48,7 @@ setup(name='mosaic',
           "tqdm==4.64.1",
           "colored==2.2.3",
           "pymongo==4.4.1",
+          "influxdb==5.3.1",
       ],
       zip_safe=False,
       )
