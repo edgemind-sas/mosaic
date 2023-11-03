@@ -6,6 +6,7 @@ from .db_base import DBBase, SGBDConfigBase
 
 import pkg_resources
 
+
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401

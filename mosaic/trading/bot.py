@@ -631,7 +631,7 @@ class BotTrading(ObjMOSAIC):
         self.exchange.set_trading_fees(self.symbol)
         self.portfolio.fees_taker = self.exchange.fees_rates.taker
         
-        self.db_update()
+        #self.db_update()
         if self.logger:
             self.logger.info(self.summary_header())
 
@@ -655,8 +655,8 @@ class BotTrading(ObjMOSAIC):
         self.status = "finished"
         self.progress = 1
         
-        if self.db:
-            self.db_update()
+        #if self.db:
+            #self.db_update()
 
         if self.logger:
             log_msg_str = f"Trading session {self.name} closed at {self.dt_session_end}"
@@ -831,11 +831,12 @@ class BotTrading(ObjMOSAIC):
                         data=portfolio_df.to_dict("records"),
                         index=portfolio_index_var,
                         time_field="dt")
-
-            self.db_trace.put(endpoint="orders",
+            
+            # Use dt_closed as time field
+            self.db.put(endpoint="orders",
                         data=[od.dict()
                               for od in self.orders_executed.values()],
-                        index=["uid"],
+                        index=["bot_uid"],
                         time_field="dt_closed")
         
         return

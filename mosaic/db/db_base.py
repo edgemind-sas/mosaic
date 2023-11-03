@@ -11,31 +11,12 @@ if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
 
 
-# def create_db(**specs):
 
-#     DBBase_sub_dict = {cls.__name__: cls for cls in get_subclasses(DBBase)}
-
-#     db_classname = specs.pop("cls")
-#     db_cls = DBBase_sub_dict.get(db_classname)
-
-#     if db_cls is None:
-#         raise ValueError(f"{db_classname} is not a subclass of DBBase")
-
-#     db = db_cls(**specs)
-
-#     return db
 
 
 class DBConfigBase(pydantic.BaseModel):
     pass
-#     database: str = pydantic.Field(None, description="DB database name")
-#     version: str = pydantic.Field(default=None,
-#                                   description="The data backend provider version")
-#     host: str = pydantic.Field("localhost", description="DB host address")
-#     port: str = pydantic.Field(default=None, description="DB host port")
-#     user: str = pydantic.Field(default=None, description="DB user name")
-#     password: str = pydantic.Field(
-#         default=None, description="DB user password")
+
 
 class SGBDConfigBase(DBConfigBase):
     database: str = pydantic.Field(None, description="DB database name")
