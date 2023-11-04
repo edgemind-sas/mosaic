@@ -22,16 +22,13 @@ PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
 class FeesValue(pydantic.BaseModel):
-
     value: float = pydantic.Field(0, description="Fees value")
     asset: str = pydantic.Field(0, description="Asset name")
 
     
 class OrderParams(HyperParams):
     pass
-    # auto_reverse_order_horizon: int = pydantic.Field(
-    #     0, description="Sell horizon time units", ge=0)
-    
+
 
 class OrderBase(ObjMOSAIC):
 
@@ -60,21 +57,22 @@ class OrderBase(ObjMOSAIC):
         None, description="Base amount traded")
 
     quote_price: float = pydantic.Field(
-        None, description="Price of one base currency in quote currency (e.g. in USDT/BTC for BTC/USDT symbol)")
-
-    # bot: TradingBot = pydantic.Field(
-    #     TradingBot(), description="Parent trading robot")
+        None, description="Asset price in quote currency (e.g. in USDT for BTC/USDT symbol)")
 
     status: str = pydantic.Field(
         "open", description="Order status : open, executed, cancelled")
 
+    dt: datetime = pydantic.Field(
+        None,
+        description="Order current datetime")
+    
     dt_open: datetime = pydantic.Field(
         None,
-        description="Order placing/opening UTC timestamp ")
+        description="Order placing/opening datetime")
 
     dt_closed: datetime = pydantic.Field(
         None,
-        description="Order execution/cancellation UTC timestamp")
+        description="Order execution/cancellation datetime")
 
     fees: FeesValue = pydantic.Field(FeesValue(), description="Trade fees")
 
@@ -91,6 +89,8 @@ class OrderBase(ObjMOSAIC):
     logger: typing.Any = pydantic.Field(
         None, description="Logger")
 
+    model_config = pydantic.ConfigDict(validate_assignment=True)
+    
     @pydantic.validator('uid', pre=True, always=True)
     def set_default_id(cls, uid):
         return uid or str(uuid.uuid4())
@@ -103,34 +103,45 @@ class OrderBase(ObjMOSAIC):
     def quote(self):
         return self.symbol.split("/")[1]
 
-    
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
 
         self.update_db()
 
-    def dict(self, exclude={"bkd", "db", "logger"}, **kwrds):
+    # TODO : MOVE THIS METHOD AT OBJMOSAIC LEVEL
+    def update(self, **new_data):
 
+        if len(new_data) > 0:
+            for field, value in new_data.items():
+                setattr(self, field, value)
+
+    def dict(self, exclude={"bkd", "db", "logger"}, **kwrds):
         return super().dict(exclude=exclude, **kwrds)
-        
+
     def dict_params(self):
         return self.dict(include={'params'})
     
-    def update_db(self):
+    def update_db(self, **new_data):
+
+        self.update(**new_data)
+        
         if self.db:
             self.db.update(endpoint="orders",
                            data=self.dict(),
-                           index=["uid", "bot_uid"])
+                           index=["bot_uid"])
 
-    def __repr__(self):
+    def __str__(self):
         return self.repr(sep="\n")
+        
+    def __repr__(self):
+        return self.repr(sep=" ")
 
     def repr(self, sep="\n"):
 
         repr_list = []
         repr_list.append("Order id: " +
                          colored.stylize(f"{self.uid}",
-                                         self.get_id_style()))
+                                         self.get_uid_style()))
 
         repr_list.append("Side/Status: " +
                          colored.stylize(f"{self.side}",
@@ -147,104 +158,11 @@ class OrderBase(ObjMOSAIC):
                              colored.stylize(f"{self.dt_closed}",
                                              self.get_date_style()))
         
-        # repr_list.append("Total quote: " +
-        #                  colored.stylize(f"{bu.fmt_currency(self.total_quote)} {self.quote}",
-        #                                  self.get_default_style()))
-
-
         repr_str = sep.join(repr_list)
         return repr_str
 
-    def report_oneliner(self):
-
-        repr_str = ""
-        repr_str += colored.stylize(f"{self.id:<12}: ",
-                                    self.get_id_style())
-
-        # repr_str += " TQ: " + \
-        #     colored.stylize(f"{bu.fmt_currency(self.total_quote):8} {self.quote}",
-        #                     self.get_default_style())
-
-        # repr_str += " PQ: " + \
-        #     colored.stylize(f"{bu.fmt_currency(self.price_quote):8} {self.quote}",
-        #                     self.get_default_style())
-
-        return repr_str
-
-    # def json(self, exclude=None, **kwargs):
-    #     exclude_attr = {"parent_order",
-    #                     "take_profit_order",
-    #                     "stop_loss_order"}
-
-    #     json_expr =
-    #     return super().json(exclude=exclude_attr), **kwargs)
-
-    # def dict(self, exclude=None, **kwargs):
-    #     exclude_attr = {
-    #         "bkd",
-    #         "logger",
-    #         }
-
-    #     dict_export = super().dict(exclude=exclude_attr, **kwargs)
-
-    #     # Add base and quote currencies
-    #     # dict_export["base"] = self.base
-    #     # dict_export["quote"] = self.quote
-
-    #     # dict_export["fee_currency"] = self.fee["currency"]
-    #     # dict_export["fee_cost"] = self.fee["cost"]
-
-    #     # dict_export["parent_order"] = \
-    #     #     self.parent_order.id if self.parent_order else None
-
-    #     # dict_export["take_profit_order"] = \
-    #     #     self.take_profit_order.id if self.take_profit_order else None
-
-    #     # dict_export["stop_loss_order"] = \
-    #     #     self.stop_loss_order.id if self.stop_loss_order else None
-
-    #     return dict_export
-
-    # def to_frame(self):
-
-    #     # ipdb.set_trace()
-    #     var_order = [
-    #         "id",
-    #         "symbol",
-    #         "side",
-    #         "status",
-    #         "amount_base",
-    #         "base",
-    #         "total_quote",
-    #         "price_quote",
-    #         "result",
-    #         "result_net",
-    #         "quote",
-    #         "returns",
-    #         "returns_net",
-    #         "ts_created",
-    #         "ts_open",
-    #         "take_profit_returns",
-    #         "stop_loss_returns",
-    #     ]
-
-    #     return pd.DataFrame([self.dict()])[var_order].set_index("id")
-
-    def is_executable(self, dt):
-        return self.dt_open <= dt
-
-    
-    # def log(self, endpoint_base="orders"):
-
-    #     order_df = self.to_frame()
-
-    #     self.db_logs.put(endpoint=endpoint_base + "_status",
-    #                      data=order_df,
-    #                      update=True)
-
-    #     self.db_logs.put(endpoint=endpoint_base + "_history",
-    #                      data=order_df,
-    #                      update=False)
+    def is_executable(self):
+        return self.dt_open <= self.dt
 
     def get_default_style(self):
         return colored.attr("bold") + \
@@ -265,7 +183,7 @@ class OrderBase(ObjMOSAIC):
 
         return style
 
-    def get_id_style(self):
+    def get_uid_style(self):
         return colored.fg("white") + colored.bg(240) + colored.attr("bold")
 
     def get_date_style(self):
@@ -289,54 +207,10 @@ class OrderBase(ObjMOSAIC):
 
         return colored.bg(color_idx) + colored.fg("white")
 
-    def execute_pre(self, dt, quote_price):
-
-        self.quote_price = quote_price
-        
-    def execute_order(self, dt, quote_price):
-        return True
             
-    # def create_reverse_order(self, dt, quote_price):
-
-    #     side = "buy" if self.side == "sell" else "sell"
-
-    #     timeframe_delta = timeframe_to_timedelta(self.timeframe)
-
-    #     delta = timeframe_delta*self.params.auto_reverse_order_horizon
-    #     dt_open = self.dt_closed + delta
-        
-    #     order = self.__class__(
-    #         bot_uid=self.bot_uid,
-    #         symbol=self.symbol,
-    #         dt_open=dt_open,
-    #         fees=self.fees,
-    #         side=side,
-    #         db=self.db,
-    #         **self.dict_params(),
-    #     )
-    #     # Inhibate auto reverse order horizon for autogenerated orders
-    #     order.params.auto_reverse_order_horizon = None
-        
-    #     if side == "buy":
-    #         order.quote_amount = self.quote_amount
-    #     else:
-    #         order.base_amount = self.base_amount
-
-    #     return order
-
-    def execute(self, dt, quote_price):
-        self.execute_pre(dt, quote_price)
-
-        order_status = self.execute_order(dt, quote_price)
-
-        return order_status
+    def execute(self):
+        return True
     
-        # if self.status == "executed" and self.params.auto_reverse_order_horizon:
-        #     order_rev = self.create_reverse_order(dt, quote_price)
-        #     return order_rev
-        # else:
-        #     return order_status
-
     def get_order_id_backend(self):
 
         if self.exchange.name == "binance":
@@ -375,53 +249,11 @@ class OrderBase(ObjMOSAIC):
             self.ts_filled_on = order_backend["timestamp"]
 
 
-
-
-# # TODO: add print method to show stats
-# class TradingPerf(pydantic.BaseModel):
-#     fund_init: float = pydantic.Field(
-#         0, description="Initial fund")
-
-#     price_quote_init: float = pydantic.Field(
-#         None, description="Initial price quote")
-
-#     result: float = pydantic.Field(
-#         0, description="Current result")
-
-#     result_avg: float = pydantic.Field(
-#         0, description="Current result per tick")
-
-#     returns: float = pydantic.Field(
-#         0, description="Current bot returns")
-
-#     returns_avg: float = pydantic.Field(
-#         0, description="Current returns per tick")
-
-#     returns_min: float = pydantic.Field(
-#         0, description="Current min returns")
-
-#     returns_max: float = pydantic.Field(
-#         0, description="Current max returns")
-
-#     returns_quote_period: float = pydantic.Field(
-#         0, description="Returns quote price during the period")
-
-#     price_quote_open_trades_max: float = pydantic.Field(
-#         None, description="Current price quote max in open trades")
-
-#     total_quote_open_trades: float = pydantic.Field(
-#         None, description="Current total quote in open trades")
-
-
-
 class OrderMarket(OrderBase):
 
-    def is_executable(self, dt):
-        return super().is_executable(dt)
+    def execute(self):
 
-    def execute_order(self, dt, quote_price):
-
-        super().execute_order(dt, quote_price)
+        super().execute()
 
         if self.side == "buy":
             self.base_amount = \
@@ -471,10 +303,50 @@ class OrderMarket(OrderBase):
                 self.fees.asset = self.quote
                 self.quote_amount -= self.fees.value
 
-            self.dt_closed = dt
+            self.dt_closed = self.dt
             self.status = "executed"
-
 
         self.update_db()
 
         return True
+
+
+class OrderTrailingMarket(OrderMarket):
+
+    quote_price_at_create: float = pydantic.Field(
+        None, description="Quote price at order creation")
+    
+    activation_pct: float = pydantic.Field(
+        0, description="Activation percentage")
+
+    quote_price_activation: float = pydantic.Field(
+        None, description="Order quote price activation")
+
+    def update(self, **new_data):
+
+        super().update(**new_data)
+
+        if self.quote_price_at_create is None:
+            self.quote_price_at_create = self.quote_price
+
+        if self.quote_price_activation is None:
+            self.quote_price_activation = self.quote_price
+        
+        if self.side == "buy":
+            quote_price_activation_th = self.quote_price*(1 + self.activation_pct)
+            if self.quote_price_activation > quote_price_activation_th:
+                self.quote_price_activation = quote_price_activation_th
+        else:
+            quote_price_activation_th = self.quote_price*(1 - self.activation_pct)
+            if self.quote_price_activation < quote_price_activation_th:
+                self.quote_price_activation = quote_price_activation_th
+        
+    
+    def is_executable(self):
+
+        activate_order = \
+            self.quote_price > self.quote_price_activation \
+            if self.side == "buy" \
+            else self.quote_price < self.quote_price_activation
+
+        return super().is_executable() and activate_order

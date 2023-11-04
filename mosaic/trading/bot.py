@@ -58,9 +58,9 @@ class Portfolio(pydantic.BaseModel):
         None, description="Last buy order timestamp")
     last_sell_order_dt: datetime = pydantic.Field(
         None, description="Last buy order timestamp")
-    quote_price_init: datetime = pydantic.Field(
+    quote_price_init: float = pydantic.Field(
         None, description="Initial quote price")
-    quote_price: datetime = pydantic.Field(
+    quote_price: float = pydantic.Field(
         None, description="Current quote price")
     quote_amount_init: float = pydantic.Field(
         1, description="Initial quote amount")
@@ -126,7 +126,7 @@ class Portfolio(pydantic.BaseModel):
             indent(f"Strategy performance: {self.format_performance()}",
                    indent_str))
         attrs_liststr.append(
-            indent(f"# orders: {self.nb_buy_orders} buys | {self.nb_sell_orders} sells",
+            indent(f"# orders executed: {self.nb_buy_orders} buys | {self.nb_sell_orders} sells",
                    indent_str))
         if self.intertrade_duration_mean:
             attrs_liststr.append(
@@ -208,9 +208,45 @@ class Portfolio(pydantic.BaseModel):
 
     
 class BotTrading(ObjMOSAIC):
-    """Handles automated trading operations. 
-    Supports various backtesting and live trading modes. Capable of interacting 
-    with various data sources and decision models.
+    """
+    BotTrading handles automated trading operations.  It supports various backtesting and live trading modes 
+    and is capable of interacting with various data sources and decision models.
+
+    Attributes:
+        mosaic_version (str): The MOSAIC version being used.
+        uid (str): A unique identifier for the bot.
+        name (str): A descriptive name for the bot.
+        ds_trading (DSOHLCV): The primary data source used for real-time trading or backtesting.
+        ds_dm (DSOHLCV): The data source specifically used for the decision-making model.
+        ds_fit (DSOHLCV): The data source used for model fitting or optimization.
+        dt_ohlcv_current (datetime): The current datetime for the Session OHLCV.
+        dt_ohlcv_closed (datetime): The last closed datetime for the Session OHLCV.
+        dt_session_start (datetime): The start date of the session.
+        dt_session_end (datetime): The end date of the session.
+        quote_current (float): The current asset quotation.
+        bt_buy_on (str): The backtest buy price hypothesis.
+        bt_sell_on (str): The backtest sell price hypothesis.
+        mode (str): The bot mode. Can be 'btfast', 'btclassic', 'livetest', or 'live'.
+        status (str): The current status of the bot.
+        status_comment (str): Additional status info, mostly used when something goes wrong.
+        portfolio (Portfolio): The current portfolio of the bot.
+        decision_model (DMBase): The decision model being used.
+        order_model (OrderBase): The order model being used.
+        invest_model (InvestModelBase): The investment model being used.
+        diff_thresh_buy_sell_orders (int): Limit for buy/sell orders diff. 0 means we can buy only if there 
+            are as many buy orders as sell orders.
+        orders_open (dict): A dictionary holding the open orders.
+        orders_executed (dict): A dictionary holding the executed orders.
+        orders_cancelled (dict): A dictionary holding the cancelled orders.
+        ohlcv_names (dict): A dictionary mapping of OHLCV variable names.
+        progress (float): The bot's progress in backtest mode.
+        ohlcv_fit_dfd (dict): The bot's modeling data for fitting.
+        ohlcv_dm_dfd (dict): The bot's modeling data for decision making.
+        ohlcv_trading_dfd (dict): The bot's trading modeling data.
+        db (DBBase): The bot's status data backend.
+        db_trace (DBBase): The bot's trading data backend.
+        logger (any): Used for logging architecture.
+
     """
     mosaic_version: str = pydantic.Field(
         MOSAIC_VERSION, description="MOSAIC version")
@@ -300,13 +336,13 @@ class BotTrading(ObjMOSAIC):
         0, description="Bot progress in backtest mode")
 
     ohlcv_fit_dfd: dict = pydantic.Field(
-        {}, description="Bot progress in backtest mode")
+        {}, description="Bot modeling data for fitting")
 
     ohlcv_dm_dfd: dict = pydantic.Field(
-        {}, description="Bot progress in backtest mode")
+        {}, description="Bot modeling data for decision making")
 
     ohlcv_trading_dfd: dict = pydantic.Field(
-        {}, description="Bot progress in backtest mode")
+        {}, description="Bot trading modeling data")
 
     exchange: ExchangeBase = pydantic.Field(
         None, description="Trading architecture exchange")
@@ -536,11 +572,13 @@ class BotTrading(ObjMOSAIC):
         repr_liststr.append(
             indent(f"# Open orders: {len(self.orders_open)}", indent_str)
         )
+        for od in self.orders_open:
+            repr_liststr.append(
+                indent(f"{self.repr(sep=' ')}", indent_str)
+            )
+        
         repr_liststr.append(
             indent(f"# Cancelled orders: {len(self.orders_cancelled)}", indent_str)
-        )
-        repr_liststr.append(
-            indent(f"# Executed orders: {len(self.orders_executed)}", indent_str)
         )
 
         repr_liststr.append("")
@@ -786,22 +824,24 @@ class BotTrading(ObjMOSAIC):
                             ):
 
             if od.side == "buy":
-                quote_current = \
-                    ohlcv_trading_df.loc[od.dt_open, self.ohlcv_names.get(self.bt_buy_on)]
 
-                od.quote_amount = \
-                    self.invest_model.get_buy_quote_amount(self.portfolio)
+                od.update(
+                    dt=od.dt_open,
+                    quote_price=ohlcv_trading_df.loc[od.dt_open,
+                                                     self.ohlcv_names.get(self.bt_buy_on)],
+                    quote_amount=self.invest_model.get_buy_quote_amount(self.portfolio)
+                )
             elif od.side == "sell":
-                quote_current = \
-                    ohlcv_trading_df.loc[od.dt_open, self.ohlcv_names.get(self.bt_sell_on)]
-
-                od.base_amount = \
-                    self.invest_model.get_sell_base_amount(self.portfolio)
+                od.update(
+                    dt=od.dt_open,
+                    quote_price=ohlcv_trading_df.loc[od.dt_open,
+                                                     self.ohlcv_names.get(self.bt_sell_on)],
+                    base_amount=self.invest_model.get_sell_base_amount(self.portfolio),
+                )
             else:
                 raise ValueError(f"Order side {od.side} not supported") 
 
-            od.execute(dt=od.dt_open,
-                       quote_price=quote_current)
+            od.execute()
             
             # Update buy and sell price
             self.portfolio.dt = od.dt_closed
@@ -821,16 +861,16 @@ class BotTrading(ObjMOSAIC):
         portfolio_list.append(self.portfolio.dict())
             
         if self.db_trace:
-            portfolio_index_var = ["bot_uid", "dt"]
+            portfolio_index_var = ["bot_uid"]
             portfolio_df = \
                 pd.DataFrame(portfolio_list)\
                   .drop_duplicates(subset=portfolio_index_var,
                                    keep="last")
                 
             self.db_trace.put(endpoint="portfolio",
-                        data=portfolio_df.to_dict("records"),
-                        index=portfolio_index_var,
-                        time_field="dt")
+                              data=portfolio_df.to_dict("records"),
+                              index=portfolio_index_var,
+                              time_field="dt")
             
             # Use dt_closed as time field
             self.db.put(endpoint="orders",
@@ -856,6 +896,8 @@ class BotTrading(ObjMOSAIC):
                 progress_mode=progress_mode
             )
         quote_current_s, ohlcv_closed_df = self.exchange.flatten_ohlcv(ohlcv_ori_df)
+
+        self.portfolio.quote_price_init = quote_current_s.iloc[0]
 
         #self.ds_trading.dt_s = ohlcv_closed_df.index[0]
         #self.ds_trading.dt_e = ohlcv_closed_df.index[-1]
@@ -908,14 +950,19 @@ class BotTrading(ObjMOSAIC):
                 if self.db:
                     self.db.update(endpoint="portfolio",
                                    data=self.portfolio.dict(),
-                                   index=["bot_uid", "dt"])
-
+                                   index=["bot_uid"],
+                                   time_field="dt")
+                                   
                     if (pbar.n % 1000) == 0:
                         self.db_update()
                     
                 # Updating variables
-                #ipdb.set_trace()               
+                #ipdb.set_trace()
+                if progress_mode:
+                    update_console(self.__str__())
+                    
                 self.dt_ohlcv_closed = self.dt_ohlcv_current
+
                 pbar.update()
 
         return
@@ -937,10 +984,14 @@ class BotTrading(ObjMOSAIC):
                 )
 
             self.dt_ohlcv_current = ohlcv_current_df.index[0]
+            
             self.quote_current = \
                 ohlcv_current_df.loc[self.dt_ohlcv_current,
                                      self.ohlcv_names.get("close")]
-                
+
+            if self.portfolio.quote_price_init is None:
+                self.portfolio.quote_price_init = self.quote_current
+            
             if self.dt_ohlcv_current != self.dt_ohlcv_closed:
 
                 ohlcv_closed_cur_df = \
@@ -974,7 +1025,8 @@ class BotTrading(ObjMOSAIC):
                 if self.db:
                     self.db.update(endpoint="portfolio",
                                    data=self.portfolio.dict(),
-                                   index=["bot_uid", "dt"])
+                                   index=["bot_uid"],
+                                   time_field="dt")
 
             if progress_mode:
                 update_console(self.summary_live())
@@ -1094,9 +1146,12 @@ class BotTrading(ObjMOSAIC):
         # of buy_orders_open while scanning it.
         for od_uid in list(self.orders_open.keys()):
             od = self.orders_open[od_uid]
-            if od.is_executable(dt=self.dt_ohlcv_current):
-                res = od.execute(dt=self.dt_ohlcv_current,
-                                 quote_price=self.quote_current)
+            od.update(
+                dt=self.dt_ohlcv_current,
+                quote_price=self.quote_current,
+            )
+            if od.is_executable():
+                res = od.execute()
                 self.portfolio.update_order(od)
                 self.orders_executed[od_uid] = self.orders_open.pop(od_uid)
 

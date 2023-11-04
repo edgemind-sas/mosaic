@@ -25,18 +25,6 @@ PandasDataFrame = typing.TypeVar('pandas.core.frame.DataFrame')
 PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
-# class Portfolio(pydantic.BaseModel):
-#     balance: dict = pydantic.Field(
-#         {}, description="Asserts balance")
-#     in_orders: dict = pydantic.Field(
-#         {}, description="Assets in orders")
-
-#     def to_df(self):
-
-#         return pd.DataFrame(data={"balance": self.balance,
-#                                   "in_orders": self.in_orders})
-
-
 class FeesRates(pydantic.BaseModel):
     taker: float = pydantic.Field(
         None, description="Taker fees (market orders)")
@@ -51,57 +39,14 @@ class FeesRates(pydantic.BaseModel):
 
         return "\n".join(repr_liststr)
 
-class ExchangeErrors(pydantic.BaseModel):
-
-    create_order_sell: int = pydantic.Field(
-        0, description="Count sell order error")
-
-    create_order_sell_tol: int = pydantic.Field(
-        3, description="Count sell order error tolerance")
-
-    def check(self):
-
-        if self.create_order_sell > self.create_order_sell_tol:
-            raise ValueError("create_order_sell reaches limits")
-
-    def report_str(self):
-
-        repr_strlist = []
-        if self.create_order_sell > 0:
-
-            repr_str = f"{'Order sell':<12}: "\
-                f"{self.create_order_sell} "\
-                f"({self.create_order_sell_tol})"
-
-            repr_strlist.append(repr_str)
-
-        return "\n".join(repr_strlist)
-
 
 class ExchangeBase(ObjMOSAIC):
     name: str = pydantic.Field(
         "binance", description="Exchange name")
 
-
-    # portfolio_init_from_exchange: bool = pydantic.Field(
-    #     True,
-    #     description="Init portfolio information from exchange")
-
-    # portfolio: Portfolio = pydantic.Field(
-    #     Portfolio(),
-    #     description="Portfolio information")
-
-    # quote_currency_balance: float = pydantic.Field(
-    #     0, description="Amount of quote currency available")
-    # base_currency_balance: float = pydantic.Field(
-    #     0, description="Amount of base currency available")
-
     # Add a method to initiate fees using self.bkd.fetch_trading_fee("BTC/USDT")
     fees_rates: FeesRates = pydantic.Field(
         FeesRates(), description="Order fees")
-
-    errors: ExchangeErrors = pydantic.Field(
-        ExchangeErrors(), description="Exchange error tracking")
 
     ohlcv_names: dict = pydantic.Field(
         {v: v for v in ["open", "high", "low", "close", "volume"]},
@@ -140,26 +85,6 @@ class ExchangeBase(ObjMOSAIC):
     def __repr__(self):
         return self.__str__()
     
-    # MOVED TO utils.datamanagement
-    # @staticmethod
-    # def timeframe_to_seconds(timeframe):
-    #     timeframe_to_sec = \
-    #         {'s': 1, 'm': 60, 'h': 60*60, 'd': 24*60*60}
-    #     timeframe_unit = timeframe[-1]
-    #     timeframe_fact_str = timeframe[:-1]
-    #     timeframe_fact = int(timeframe_fact_str)
-    #     timeframe_nb_sec = timeframe_to_sec[timeframe_unit]
-
-    #     return timeframe_fact*timeframe_nb_sec
-
-    # @staticmethod
-    # def timeframe_to_timedelta(timeframe):
-    #     value = int(timeframe[:-1])
-    #     unit = timeframe[-1]
-    #     timedelta_unit_map = \
-    #         {'s': "seconds", 'm': "minutes", 'h': "hours", 'd': "days"}
-    #     return timedelta(**{timedelta_unit_map.get(unit): value})
-
     def get_portfolio_as_str(self):
         return self.portfolio.to_df().to_string()
 
@@ -189,40 +114,7 @@ class ExchangeBase(ObjMOSAIC):
         if self.fees_rates.taker is None:
             self.fees_rates.taker = 0
 
-# class ExchangeOffline(ExchangeBase):
 
-#     ohlcv_df: PandasDataFrame = pydantic.Field(
-#         None, description="Exchange data")
-
-#     def dict(self, **kwrds):
-
-#         if kwrds["exclude"]:
-#             kwrds["exclude"].add("ohlcv_df")
-#         else:
-#             kwrds["exclude"] = {"ohlcv_df"}
-            
-#         return super().dict(**kwrds)
-
-    # def get_ohlcv(self):
-    #     """ Transform OHLCV dataframe into a OHL vector to simulate live data.
-
-    #     For each timestep, the vector contains opening quote value, then
-    #     low quote value and finally high quote value.
-
-    #     Then the vector goes to the next timestep and so on.
-    #     """
-    #     var_open = self.ohlcv_names.get("open", "open")
-    #     var_low = self.ohlcv_names.get("low", "low")
-    #     var_high = self.ohlcv_names.get("high", "high")
-        
-    #     quote_current_s = self.ohlcv_df[[
-    #         var_open, var_low, var_high,
-    #     ]].stack().rename("quote").reset_index(1, drop=True)
-
-    #     return quote_current_s, self.ohlcv_df.shift(1)
-
-
-    
 class ExchangeOnline(ExchangeBase):
 
     live_api_key: str = pydantic.Field(
@@ -237,7 +129,6 @@ class ExchangeOnline(ExchangeBase):
     #     None, description="Exchange API key")
     # testnet_secret: str = pydantic.Field(
     #     None, description="Exchange API secret")
-
 
     def wait_for_order_fill(self, order, **kwrds):
         return True
@@ -304,7 +195,7 @@ class ExchangeCCXT(ExchangeOnline):
             # Fetch the most recent order data
             order = self.bkd.fetch_order(order['id'], symbol)
 
-            if order['status'] == 'closed': 
+            if order['status'] == 'closed':
                 return order
 
             if self.logger:
@@ -353,15 +244,56 @@ class ExchangeCCXT(ExchangeOnline):
                 raise TimeoutError("Order was not filled within the timeout.")
 
         except ccxt.NetworkError as e:
-            #self.errors.create_order_sell += 1
             print(f"Network error: {e}")
             return None
         except ccxt.ExchangeError as e:
-            #self.errors.create_order_sell += 1
             print(f"Exchange error: {e}")
             return None            
         except Exception as e:
-            #self.errors.create_order_sell += 1
+            print(f"An unexpected error occurred: {e}")
+            return None
+
+    def create_limit_order(self, symbol, side, amount, price,
+                           fill_order_timeout=300, poll_interval=None):
+        """
+        Creates a limit order and waits for it to be fully filled.
+
+        Parameters:
+        - symbol (str): The trading symbol (e.g., 'BTC/USDT').
+        - side (str): The side of the order ('buy' or 'sell').
+        - amount (float): The amount of asset to buy/sell.
+        - price (float): The price per asset.
+        - fill_order_timeout (int): Max time to wait for the order to be filled in seconds. Default is 300 seconds.
+        - poll_interval (int): Time interval between each poll in seconds. Default is 5 seconds.
+
+        Returns:
+        - dict: Filled order info if the order is successfully created and filled within the timeout.
+        - None: If the order isn't filled within the timeout or an exception occurs.
+        """
+
+        try:
+            # Create a limit order
+            order = self.bkd.create_limit_order(symbol, side, amount, price)
+
+            # Wait for the order to be filled
+            filled_order = self.wait_for_order_fill(
+                order=order,
+                symbol=symbol,
+                timeout=fill_order_timeout,
+                poll_interval=poll_interval,
+            )
+
+            if filled_order is not None:
+                return filled_order
+            else:
+                raise TimeoutError("Order wasn't filled within the timeout.")
+        except ccxt.NetworkError as e:
+            print(f"Network error: {e}")
+            return None
+        except ccxt.ExchangeError as e:
+            print(f"Exchange error: {e}")
+            return None
+        except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return None
         
