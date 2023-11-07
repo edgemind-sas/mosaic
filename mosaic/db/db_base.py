@@ -12,13 +12,24 @@ if 'ipdb' in installed_pkg:
 
 
 
-
-
 class DBConfigBase(pydantic.BaseModel):
+    """Base configuration model for database."""
     pass
 
 
-class SGBDConfigBase(DBConfigBase):
+class DMBSConfigBase(DBConfigBase):
+    """
+    Base configuration for database management systems (DBMS).
+
+    Args:
+        database: Name of the database.
+        version: Version of the data backend provider.
+        host: Host address of the database.
+        port: Host port of the database.
+        username: Username of the database user.
+        password: Password of the database user.
+    """
+
     database: str = pydantic.Field(None, description="DB database name")
     version: str = pydantic.Field(default=None,
                                   description="The data backend provider version")
@@ -30,14 +41,43 @@ class SGBDConfigBase(DBConfigBase):
 
 
 class DBBase(ObjMOSAIC):
-    """Abstract data backend model."""
+    """
+    Abstract data backend model.
+
+    Args:
+        name: Identifier of the data backend.
+        config: Configuration of the data backend.
+        logger: Logger for the database.
+        bkd: Connector for the data backend.
+
+    Methods:
+        connect(**params):
+            Establishes a connection to the database.
+        
+        count(endpoint, filter={}, **params):
+            Counts number of records after filtering.
+
+        update(endpoint, data=[], **params):
+            Updates data in the database.
+
+        put(endpoint, data={}, **params):
+            Inserts data into the database.
+
+        get(endpoint, filter={}, **params):
+            Retrieves data from the database.
+
+        delete(endpoint, filter={}, **params):
+            Deletes data from the database.
+    """
     name: str = pydantic.Field(None, description="Data backend id/name")
-    config: DBConfigBase = pydantic.Field(default=DBConfigBase(),
-                                          description="The data backend configuration")
+    config: DBConfigBase = \
+        pydantic.Field(default=DBConfigBase(),
+                       description="The data backend configuration")
     logger: typing.Any = pydantic.Field(
         None, description="DB logger")
-    bkd: typing.Any = pydantic.Field(default=None,
-                                    description="The data backend connector")
+    bkd: typing.Any = \
+        pydantic.Field(default=None,
+                       description="The data backend connector")
 
     def connect(self, **params):
         """DB connection function."""

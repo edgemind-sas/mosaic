@@ -51,8 +51,6 @@ class RangeIndex(IndicatorOHLCV):
         """Indicator names format mapping: To be overloaded"""
         return {
             "ri": f"RI_{self.var_ri}_{self.length}",
-            "lb": f"LB_{self.var_range_min}_{self.length}",
-            "hb": f"HB_{self.var_range_max}_{self.length}",
         }
 
     def compute(self, ohlcv_df, return_range=False, **kwrds):
@@ -72,11 +70,15 @@ class RangeIndex(IndicatorOHLCV):
         indic_df = pd.DataFrame(index=ohlcv_df.index)
 
         data_var_ri = ohlcv_df[self.ohlcv_names.get(self.var_ri)]
-        
+
         data_range_min = ohlcv_df[self.ohlcv_names.get(self.var_range_min)]\
-            .rolling(self.length).min()
+            .rolling(self.length)\
+            .min()\
+            .rename(f"LB_{self.var_range_min}_{self.length}")
         data_range_max = ohlcv_df[self.ohlcv_names.get(self.var_range_max)]\
-            .rolling(self.length).max()
+            .rolling(self.length)\
+            .max()\
+            .rename(f"HB_{self.var_range_max}_{self.length}")
 
         data_range = data_range_max - data_range_min
 
@@ -128,7 +130,7 @@ class RangeIndex(IndicatorOHLCV):
         fig.add_trace(go.Scatter(
             x=indic_df.index,
             y=data_range_max,
-            name=self.names("hb"),
+            name=data_range_max.name,
             mode='lines',
             line_color=color_indic,
             line_dash="dot"
@@ -137,7 +139,7 @@ class RangeIndex(IndicatorOHLCV):
         fig.add_trace(go.Scatter(
             x=indic_df.index,
             y=data_range_min,
-            name=self.names("lb"),
+            name=data_range_min.name,
             mode='lines',
             line_color=color_indic,
             line_dash="dot"
@@ -223,6 +225,7 @@ class SRI(RangeIndex):
 
         indic_df, data_range_min, data_range_max = \
             super().compute(ohlcv_df, return_range=True, **kwrds)
+
         ohlcv_low_shift_df = \
             pd.concat([ohlcv_df[var_hit_low].shift(i).rename(i)
                        for i in range(self.length)], axis=1)
@@ -262,9 +265,6 @@ class SRI(RangeIndex):
 
         fig, indic_df, data_range_min, data_range_max = \
             super().plotly(ohlcv_df, layout=layout, ret_indic=True, **params)
-
-        hits_hovertemplate = \
-            "#Hits: %{customdata[0]}"
 
         lhits_hovertemplate = \
             "Lower bound: %{customdata[1]}<br>"\

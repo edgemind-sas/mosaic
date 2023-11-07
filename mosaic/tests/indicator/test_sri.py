@@ -67,8 +67,7 @@ def test_sri_001():
 def test_sri_002(data_btc_usdc_20_df):
 
     indic = mid.SRI()
-
-    assert indic.names() == ['RI_1', 'SRI_HL_1', 'SRI_HH_1']
+    assert indic.names() == ['SRI_close_1', 'SRI_HL_low_1', 'SRI_HH_high_1']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
@@ -81,7 +80,7 @@ def test_sri_003(data_btc_usdc_20_df):
 
     indic = mid.SRI(length=2)
 
-    assert indic.names() == ['RI_2', 'SRI_HL_2', 'SRI_HH_2']
+    assert indic.names() == ['SRI_close_2', 'SRI_HL_low_2', 'SRI_HH_high_2']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
@@ -94,7 +93,7 @@ def test_sri_004(data_btc_usdc_20_df):
 
     indic = mid.SRI(length=3)
 
-    assert indic.names() == ['RI_3', 'SRI_HL_3', 'SRI_HH_3']
+    assert indic.names() == ['SRI_close_3', 'SRI_HL_low_3', 'SRI_HH_high_3']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 
@@ -108,7 +107,7 @@ def test_sri_005(data_btc_usdc_20_df):
 
     indic = mid.SRI(length=10)
 
-    assert indic.names() == ['RI_10', 'SRI_HL_10', 'SRI_HH_10']
+    assert indic.names() == ['SRI_close_10', 'SRI_HL_low_10', 'SRI_HH_high_10']
 
     indic_df = indic.compute(data_btc_usdc_20_df)
 

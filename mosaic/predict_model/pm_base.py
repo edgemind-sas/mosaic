@@ -19,7 +19,7 @@ if 'ipdb' in installed_pkg:
 class PredictModelBase(ObjMOSAIC):
 
     params: HyperParams = \
-        pydantic.Field(None, description="Decision model parameters")
+        pydantic.Field(None, description="Prediction model parameters")
 
     features: typing.List[IndicatorOHLCV] = pydantic.Field(
         [], description="List of features indicators")
@@ -28,7 +28,7 @@ class PredictModelBase(ObjMOSAIC):
         {v: v for v in ["open", "high", "low", "close", "volume"]},
         description="OHLCV variable name dictionnary")
 
-    bkd: typing.Any = pydantic.Field(None, description="Statistical model backend")
+    bkd: typing.Any = pydantic.Field(None, description="Model backend")
 
     @property
     def bw_length(self):
@@ -86,6 +86,19 @@ class PMReturns(PredictModelBase):
     def target_var(self):
         return f"ret_{self.returns_horizon}"
 
+    # def fit(self, ohlcv_df, dropna=True, **kwrds):
+
+    #     features_df = self.fit(ohlcv_df, dropna=dropna, **kwrds)
+    #     target_s = self.compute_returns(ohlcv_df)
+        
+    #     if dropna:
+    #         data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
+    #         features_df = data_all_df[features_df.columns]
+    #         target_s = data_all_df[target_s.name]
+
+    #     return features_df, target_s
+
+    
     def compute_returns(self, ohlcv_df):
 
         close_var = self.ohlcv_names.get("close", "close")

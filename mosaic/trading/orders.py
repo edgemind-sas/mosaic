@@ -331,22 +331,25 @@ class OrderTrailingMarket(OrderMarket):
 
         if self.quote_price_activation is None:
             self.quote_price_activation = self.quote_price
-        
-        if self.side == "buy":
-            quote_price_activation_th = self.quote_price*(1 + self.activation_pct)
-            if self.quote_price_activation > quote_price_activation_th:
-                self.quote_price_activation = quote_price_activation_th
-        else:
-            quote_price_activation_th = self.quote_price*(1 - self.activation_pct)
-            if self.quote_price_activation < quote_price_activation_th:
-                self.quote_price_activation = quote_price_activation_th
+
+        if self.quote_price is not None:
+            if self.side == "buy":
+                quote_price_activation_th = self.quote_price*(1 + self.activation_pct)
+                if self.quote_price_activation > quote_price_activation_th:
+                    self.quote_price_activation = quote_price_activation_th
+            else:
+                quote_price_activation_th = self.quote_price*(1 - self.activation_pct)
+                if self.quote_price_activation < quote_price_activation_th:
+                    self.quote_price_activation = quote_price_activation_th
         
     
     def is_executable(self):
-
+        
         activate_order = \
             self.quote_price > self.quote_price_activation \
             if self.side == "buy" \
             else self.quote_price < self.quote_price_activation
 
+        ipdb.set_trace()
+        
         return super().is_executable() and activate_order

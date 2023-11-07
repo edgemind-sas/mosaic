@@ -1,7 +1,7 @@
 import typing
 import logging
 from influxdb_client.client.write_api import SYNCHRONOUS
-from .db_base import DBBase, SGBDConfigBase, DBConfigBase
+from .db_base import DBBase, DMBSConfigBase, DBConfigBase
 from influxdb_client import Point, WriteOptions
 import ipdb
 
@@ -16,7 +16,7 @@ YNCHRONOUS = WriteOptions(batch_size=500, flush_interval=10_000, jitter_interval
 
 
 
-class InfluxDBConfig(SGBDConfigBase):  # 2. Adapter la classe de configuration de DB Base
+class InfluxDBConfig(DMBSConfigBase):  # 2. Adapter la classe de configuration de DB Base
     url: str = pydantic.Field(default="", description="URL of InfluxDB")
     org: str = pydantic.Field(default="", description="The Organization of InfluxDB")
     token: str = pydantic.Field(default="", description="InfluxDB authorization token")

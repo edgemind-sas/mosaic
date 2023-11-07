@@ -564,17 +564,16 @@ class BotTrading(ObjMOSAIC):
                        indent_str)
             )
             
-        if self.mode.startswith("live"):
-            repr_liststr.append(
-                indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
-                       indent_str)
-            )
+        repr_liststr.append(
+            indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
+                   indent_str)
+        )
         repr_liststr.append(
             indent(f"# Open orders: {len(self.orders_open)}", indent_str)
         )
-        for od in self.orders_open:
+        for od in self.orders_open.values():
             repr_liststr.append(
-                indent(f"{self.repr(sep=' ')}", indent_str)
+                indent(f"{od.repr(sep=' ')}", indent_str)
             )
         
         repr_liststr.append(
@@ -929,6 +928,11 @@ class BotTrading(ObjMOSAIC):
 
                     #decision = self.bot.tick(quote_cur)
                     # Create Buy / Sell order
+
+                    # TODO DEBUG
+                    if self.dt_ohlcv_current == quote_current_s.index[10]:
+                        decision = "buy"
+                    
                     if decision != "pass":
                         order = getattr(self, decision)()
                         self.register_order(order)
@@ -1052,8 +1056,6 @@ class BotTrading(ObjMOSAIC):
         
         time.sleep(time_to_ohlcv_next.total_seconds())
 
-
-        
     
     def get_nb_buy_sell_orders_diff(self):
 

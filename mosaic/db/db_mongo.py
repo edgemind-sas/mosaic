@@ -2,7 +2,7 @@ import pymongo
 import pydantic
 import typing
 
-from .db_base import DBBase, SGBDConfigBase
+from .db_base import DBBase, DMBSConfigBase
 
 import pkg_resources
 
@@ -27,8 +27,8 @@ class DBMongo(DBBase):
     - `log_db_ops`: Logs information about the performed database operations.
     """
 
-    config: SGBDConfigBase = \
-        pydantic.Field(default=SGBDConfigBase(),
+    config: DMBSConfigBase = \
+        pydantic.Field(default=DMBSConfigBase(),
                        description="The data backend configuration")
 
     def connect(self, serverSelectionTimeoutMS=2000, **params):
