@@ -37,7 +37,7 @@ class PredictModelBase(ObjMOSAIC):
 
     def dict(self, **kwrds):
 
-        if kwrds["exclude"]:
+        if kwrds.get("exclude"):
             kwrds["exclude"].add("bkd")
             kwrds["exclude"].add("logger")
         else:
@@ -62,15 +62,13 @@ class PredictModelBase(ObjMOSAIC):
         # NOTE : Here features are shifted to properly align returns with 
         # features observed just before the corresponding returns
         features_df = self.compute_features(ohlcv_df).shift(1)
-        target_s = self.compute_returns(ohlcv_df)
         if dropna:
-            data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
-            features_df = data_all_df[features_df.columns]
-            target_s = data_all_df[target_s.name]
+            features_df = features_df.dropna()
 
-        return features_df, target_s
+        return features_df
 
     def predict(self, ohlcv_df, **kwrds):
+        # To be overloaded
         return pd.Series(0.0,
                          index=ohlcv_df.index,
                          name="PMBase",
@@ -86,18 +84,17 @@ class PMReturns(PredictModelBase):
     def target_var(self):
         return f"ret_{self.returns_horizon}"
 
-    # def fit(self, ohlcv_df, dropna=True, **kwrds):
+    def fit(self, ohlcv_df, dropna=True, **kwrds):
 
-    #     features_df = self.fit(ohlcv_df, dropna=dropna, **kwrds)
-    #     target_s = self.compute_returns(ohlcv_df)
+        features_df = self.fit(ohlcv_df, dropna=dropna, **kwrds)
+        target_s = self.compute_returns(ohlcv_df)
         
-    #     if dropna:
-    #         data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
-    #         features_df = data_all_df[features_df.columns]
-    #         target_s = data_all_df[target_s.name]
+        if dropna:
+            data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
+            features_df = data_all_df[features_df.columns]
+            target_s = data_all_df[target_s.name]
 
-    #     return features_df, target_s
-
+        return features_df, target_s
     
     def compute_returns(self, ohlcv_df):
 
