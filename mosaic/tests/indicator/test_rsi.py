@@ -61,12 +61,12 @@ def data_btc_usdc_1000_df():
 # =============== Tests begin here ================== #
 
 
-def test_sri_001():
+def test_rsi_001():
 
     indic = mid.SRI()
 
 
-def test_sri_002(data_btc_usdc_20_df):
+def test_rsi_002(data_btc_usdc_20_df):
 
     indic = mid.RSI()
 
@@ -78,7 +78,7 @@ def test_sri_002(data_btc_usdc_20_df):
     assert isinstance(indic_df, pd.DataFrame)
 
 
-def test_sri_003(data_btc_usdc_20_df):
+def test_rsi_003(data_btc_usdc_20_df):
 
     indic = mid.RSI(length=1)
 
@@ -96,7 +96,7 @@ def test_sri_003(data_btc_usdc_20_df):
     np.testing.assert_allclose(indic_cla_df, indic_wil_df)
 
 
-def test_sri_004(data_btc_usdc_20_df):
+def test_rsi_004(data_btc_usdc_20_df):
 
     indic = mid.RSI(length=2)
 

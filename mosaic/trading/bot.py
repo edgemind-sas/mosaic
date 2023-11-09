@@ -563,7 +563,7 @@ class BotTrading(ObjMOSAIC):
                 indent(f"DT OHLCV closed: {self.dt_ohlcv_closed}",
                        indent_str)
             )
-            
+        
         repr_liststr.append(
             indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
                    indent_str)
@@ -672,7 +672,8 @@ class BotTrading(ObjMOSAIC):
         if self.logger:
             self.logger.info(self.summary_header())
 
-        self.fit_dm(**kwrds)
+        if self.ds_fit:
+            self.fit_dm(**kwrds)
 
         if self.ds_dm is None:
             self.ds_dm = self.ds_trading
@@ -719,11 +720,11 @@ class BotTrading(ObjMOSAIC):
             self.logger.info(log_msg_str)
 
     def fit_dm(self, progress_mode=False, data_dir=".", **kwrds):
-
+        
         if self.logger:
             log_msg_str = "Fitting decision model"
             self.logger.info(log_msg_str)
-
+        
         if not (self.ds_fit_code in self.ohlcv_fit_dfd.keys()):
             self.ohlcv_fit_dfd[self.ds_fit_code] = \
                 self.exchange.get_historic_ohlcv(
@@ -843,8 +844,11 @@ class BotTrading(ObjMOSAIC):
             od.execute()
             
             # Update buy and sell price
+            self.quote_current = \
+                ohlcv_trading_df.loc[od.dt_closed,
+                                     self.ohlcv_names.get("close")]
             self.portfolio.dt = od.dt_closed
-            self.portfolio.quote_price = quote_current
+            self.portfolio.quote_price = self.quote_current
             self.portfolio.update_order(od)
             
             portfolio_list.append(self.portfolio.dict())

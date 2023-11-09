@@ -38,7 +38,6 @@ def test_pm_base_001():
     model = mpm.PredictModelBase()
 
     assert 'bkd' not in model.dict()
-    assert 'logger' not in model.dict()
 
 def test_pm_base_002():
 

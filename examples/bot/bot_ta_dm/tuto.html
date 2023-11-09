@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Building a stratagy based on deterministic rules on technical indicator</title>
+<meta name="author" content="Roland Donat" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<link rel="stylesheet" type="text/css" href="https://edgemind-sas.github.io/visual-identity/official_docs/css/edgemind.css" />
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Building a stratagy based on deterministic rules on technical indicator</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table des matières</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#init-env">2. Technical prerequisites</a></li>
+<li><a href="#org6752885">3. Create the decision model</a></li>
+<li><a href="#org047207b">4. Bot Specification</a>
+<ul>
+<li>
+<ul>
+<li><a href="#orgade3780">4.0.1. YAML Configuration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#orge92d988">5. Executing the bot in backtest mode</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+This tutorial explains how to create a trading bot using a deterministic rule based on a technical
+indicators. For example, consider a traditional trading method that uses RSI thresholds to
+trigger buy and sell orders.
+</p>
+</div>
+</div>
+
+<div id="outline-container-init-env" class="outline-2">
+<h2 id="init-env"><span class="section-number-2">2.</span> Technical prerequisites</h2>
+<div class="outline-text-2" id="text-init-env">
+<p>
+The MOSAIC library requires Python version &gt;= 3.10.
+</p>
+
+<p>
+To facilitate your development projects, it is recommended to use a Python virtual environment to
+perform this tutorial. So start by installing the <code>pew</code> manager if you haven't already done so: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install pew
+</pre>
+</div>
+
+<p>
+Then create a new virtual environment:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew new bot_ta_dm
+</pre>
+</div>
+
+<p>
+Now create a directory that will contain the files of this tutorial, e.g. <code>bot_ta_dm</code>, and
+navigate to this directory: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">mkdir bot_ta_dm
+<span style="color: #DCDCCC; font-weight: bold;">cd</span> bot_ta_dm
+</pre>
+</div>
+
+<p>
+Note that you can save this directory as associated with the virtual environment you just created
+with the command: 
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pew setproject
+</pre>
+</div>
+
+<p>
+Finally, install the MOSAIC library in your environment from GitHub:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">pip install https://github.com/edgemind-sas/mosaic.git          
+</pre>
+</div>
+
+<p>
+If the installation was successful, you should be able to import the MOSAIC library in a Python
+session and display its version: 
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic
+
+<span style="color: #DCDCCC; font-weight: bold;">print</span>(mosaic.__version__)
+</pre>
+</div>
+
+<pre class="example">
+0.0.42
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org6752885" class="outline-2">
+<h2 id="org6752885"><span class="section-number-2">3.</span> Create the decision model</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Let's create a decision model based on RSI indicator. To do this, we define a decision model class
+<code>DMRSI</code> that inherits from class <code>mdm.DMDR</code>.
+</p>
+
+<p>
+What you need is merely to define :
+</p>
+<ul class="org-ul">
+<li>The <code>features</code> attributes as a dictionary that only contains a RSI indicator (from the MOSAIC
+library) with its period (here of length 10) as the only technical indicator needed.</li>
+<li>A method <code>compute_signal_idx</code> that takes a pandas DataFrame, <code>features_df</code>, expected to contain
+RSI values. The method defines the strategy by setting buy signals when the RSI is below <code>self.buy_threshold</code> and sell signals when
+it is above <code>self.sell_threshold</code>, and returning two pandas Series with boolean values marking these
+events.</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #F0DFAF; font-weight: bold;">import</span> typing
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.indicator <span style="color: #F0DFAF; font-weight: bold;">as</span> mid
+<span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.decision_model <span style="color: #F0DFAF; font-weight: bold;">as</span> mdm
+
+<span style="color: #F0DFAF; font-weight: bold;">class</span> <span style="color: #7CB8BB;">DMRSI</span>(mdm.DMDR):
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DFAF8F;">features</span>: typing.Dict[<span style="color: #DCDCCC; font-weight: bold;">str</span>, mid.<span style="color: #DFAF8F;">Indicator</span>] = {
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #CC9393;">"rsi"</span>: mid.RSI(length=10)
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   }
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #F0DFAF; font-weight: bold;">def</span> <span style="color: #93E0E3;">compute_signal_idx</span>(<span style="color: #F0DFAF; font-weight: bold;">self</span>, features_df):
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #9FC59F;">"""</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   Compute the buy and sell signal indices based on the RSI feature from the input dataframe.</span>
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   This method must be defined to implement the specific decision rules for trading signals.</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   Iat utilizes the Relative Strength Index (RSI) to determine buy and sell points by comparing</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   the RSI values against predefined thresholds.</span>
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   Args:</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   features_df (pandas.DataFrame): Dataframe containing at least the RSI feature.</span>
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   Returns:</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   tuple of (pandas.Series, pandas.Series): </span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   - The first series contains boolean values representing the buy signals (True where the RSI is below the buy threshold).</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   - The second series contains boolean values representing the sell signals (True where the RSI is above the sell threshold).</span>
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   Note:</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   The caller must ensure the input dataframe contains the necessary features</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   prescribed by the 'features' attribute of the class (especially 'rsi').</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   </span><span style="color: #DCDCCC; background-color: #4F4F4F;"> </span><span style="color: #9FC59F;">   """</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Get RSI values</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   rsi_s = features_df[<span style="color: #F0DFAF; font-weight: bold;">self</span>.features[<span style="color: #CC9393;">"rsi"</span>].names(<span style="color: #CC9393;">"rsi"</span>)]
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #5F7F5F;"># </span><span style="color: #7F9F7F;">Compute index of buy and sell signals</span>
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   idx_buy = rsi_s &lt; <span style="color: #F0DFAF; font-weight: bold;">self</span>.buy_threshold
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   idx_sell = rsi_s &gt; <span style="color: #F0DFAF; font-weight: bold;">self</span>.sell_threshold
+
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #F0DFAF; font-weight: bold;">return</span> idx_buy, idx_sell
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org047207b" class="outline-2">
+<h2 id="org047207b"><span class="section-number-2">4.</span> Bot Specification</h2>
+<div class="outline-text-2" id="text-4">
+</div>
+<div id="outline-container-orgade3780" class="outline-4">
+<h4 id="orgade3780"><span class="section-number-4">4.0.1.</span> YAML Configuration</h4>
+<div class="outline-text-4" id="text-4-0-1">
+<p>
+To build our bot, we use the following configuration file (called here <code>bot.yaml</code>) that specifies
+our trading strategy:
+</p>
+<div class="org-src-container">
+<pre class="src src-yaml"><span style="color: #DFAF8F;">bot</span>:
+  <span style="color: #DFAF8F;">name</span>: <span style="color: #CC9393;">"bot_ta_dm"</span>
+  <span style="color: #DFAF8F;">mode</span>: <span style="color: #CC9393;">"btfast"</span>
+  <span style="color: #DFAF8F;">bt_buy_on</span>: high
+  <span style="color: #DFAF8F;">bt_sell_on</span>: low
+  
+  <span style="color: #DFAF8F;">ds_trading</span>: <span style="color: #93E0E3;">&amp;ds_trading</span>
+    <span style="color: #DFAF8F;">symbol</span>: <span style="color: #CC9393;">"BTC/USDT"</span>
+    <span style="color: #DFAF8F;">timeframe</span>: <span style="color: #CC9393;">"1h"</span>
+    <span style="color: #DFAF8F;">dt_start</span>: <span style="color: #CC9393;">"2023-01-01 00:00:00"</span>
+    <span style="color: #DFAF8F;">dt_end</span>: <span style="color: #CC9393;">"2023-07-01 00:00:00"</span>
+    
+  <span style="color: #DFAF8F;">decision_model</span>:
+    <span style="color: #DFAF8F;">cls</span>: DMRSI
+    <span style="color: #DFAF8F;">buy_threshold</span>: 30
+    <span style="color: #DFAF8F;">sell_threshold</span>: 70
+            
+  <span style="color: #DFAF8F;">exchange</span> :
+    <span style="color: #DFAF8F;">cls</span>: ExchangeCCXT
+    <span style="color: #DFAF8F;">name</span>: binance
+</pre>
+</div>
+<ul class="org-ul">
+<li><code>bot</code>: This block specifies the trading bot configuration details.
+<ul class="org-ul">
+<li><code>name</code>: Bot name.</li>
+<li><code>mode</code>: Operating mode, "btfast" for quick backtesting.</li>
+<li><code>bt_buy_on</code> and <code>bt_sell_on</code>: Assumptions for buy and sell prices in backtesting.</li>
+<li><code>ds_trading</code>: Data source for real-time trading or backtesting.</li>
+<li><code>decision_model</code>: Specifies buy and sell thresholds for our RSI based decision model.</li>
+<li><code>exchange</code>: Details of the exchange where OHLCV data is retrieved.
+<ul class="org-ul">
+<li><code>name</code>: The exchange's name, in this case, Binance.</li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orge92d988" class="outline-2">
+<h2 id="orge92d988"><span class="section-number-2">5.</span> Executing the bot in backtest mode</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+Next, create the following Python file <code>bot.py</code> to backtest the bot defined in the previous YAML
+file.
+</p>
+<div class="org-src-container">
+<pre class="src src-python" id="org9ea89b3"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
+<span style="color: #F0DFAF; font-weight: bold;">import</span> yaml
+
+<span style="color: #F0DFAF; font-weight: bold;">with</span> <span style="color: #DCDCCC; font-weight: bold;">open</span>(<span style="color: #CC9393;">"bot.yaml"</span>, <span style="color: #CC9393;">'r'</span>, encoding=<span style="color: #CC9393;">"utf-8"</span>) <span style="color: #F0DFAF; font-weight: bold;">as</span> yaml_file:
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   bot_config = yaml.load(yaml_file,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   <span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>  Loader=yaml.SafeLoader)
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   bot_config[<span style="color: #CC9393;">"bot"</span>].setdefault(<span style="color: #CC9393;">"cls"</span>, <span style="color: #CC9393;">"BotTrading"</span>)
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   bot = mtr.BotTrading.from_dict(bot_config[<span style="color: #CC9393;">"bot"</span>])
+
+bot.start(
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   data_dir=<span style="color: #CC9393;">"."</span>,
+<span style="color: #DCDCCC; background-color: #4F4F4F;"> </span>   progress_mode=<span style="color: #BFEBBF;">True</span>,
+)
+
+<span style="color: #DCDCCC; font-weight: bold;">print</span>(bot)
+</pre>
+</div>
+
+<p>
+Launch the bot by running the <code>python bot.py</code> command and see the results :
+</p>
+<pre class="example" id="org16c41db">
+Buy orders:   0% 0/33 [00:00&lt;?, ?it/s]Buy orders: 100% 33/33 [00:00&lt;00:00, 8716.12it/s]
+Sell orders:   0% 0/33 [00:00&lt;?, ?it/s]Sell orders: 100% 33/33 [00:00&lt;00:00, 9380.69it/s]
+Executing orders:   0% 0/66 [00:00&lt;?, ?it/s]Executing orders: 100% 66/66 [00:00&lt;00:00, 4845.94it/s]
+Bot
+    MOSAIC version: 0.0.42
+    ID: 6885148e6cd7b3b3d577ab65d1f54f4c43f0672b773955c47c52c42ec72300bb
+    Name: bot_ta_dm
+    Symbol: BTC/USDT
+    Timeframe: 1h
+    Mode: btfast
+        Buy on: high
+        Sell on: low
+
+Session
+    Started at: 2023-11-09 22:30:16.627571+01:00
+    Ended at: 2023-11-09 22:30:20.677631+01:00
+    Duration: 0:00:04.050060
+    OHLCV period: 180 days, 23:00:00 | 2023-01-01 00:00:00+01:00 -&gt; 2023-07-01 00:00:00+02:00
+    Current quote price: 30713.99 USDT
+    # Open orders: 0
+    # Cancelled orders: 0
+
+Exchange
+    Name: binance
+    Fees:
+        Taker: 0.001
+        Maker: 0.001
+
+Portfolio
+    Time: 2023-06-30 23:00:00+02:00
+    Initial quote amount: 1.00
+    Quote amount: 0.861
+    Base amount: 0.0
+    Quote exposed: 0.0
+    Quote value: 0.861
+    KPI
+        Asset performance: 1.83
+        Strategy performance: [38;5;1m0.861[0m
+        # orders executed: 33 buys | 33 sells
+        Mean intertrade duration: 3 days, 1:12:43.636364
+        Mean intratrade duration: 2 days, 3:52:43.636364
+</pre>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -12,7 +12,7 @@ from ..utils.viz_tools import plotly_convert_to_line_style
 #from ..trading.core import SignalBase
 from ..core import ObjMOSAIC
 from ..predict_model.pm_base import PredictModelBase
-
+from ..indicator.indicator import Indicator
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
 if 'ipdb' in installed_pkg:
@@ -75,56 +75,6 @@ class DMBase(ObjMOSAIC):
         
         raise NotImplementedError("compute method not implemented")
 
-    # def fit(self, ohlcv_df, method="brute_force", **fit_params):
-
-    #     fit_method = getattr(self, f"fit_{method}")
-
-    #     fit_method(ohlcv_df, **fit_params)
-       
-    # def fit_brute_force(self, ohlcv_df,
-    #                     bt_cls,
-    #                     bt_params={},
-    #                     dm_params={},
-    #                     progress_mode=True,
-    #                     target_measure="perf_open_open",
-    #                     nb_trades_min=15,
-    #                     ):
-
-    #     dm_params_list = compute_combinations(**self.dm_params)
-
-    #     bt_eval_list = []
-    #     for params in tqdm.tqdm(dm_params_list,
-    #                             disable=not progress_mode,
-    #                             desc="Parameters",
-    #                             ):
-            
-    #         bt_cur = bt_cls(
-    #             ohlcv_df=ohlcv_df,
-    #             decision_model=self.dm_cls(**params),
-    #             **bt_params,
-    #         )
-            
-    #         bt_cur.run()
-    
-    #         bt_eval_list.append(dict(params, **bt_cur.perf.dict()))
-
-    #     brute_force_df = \
-    #         pd.DataFrame.from_records(bt_eval_list)\
-    #                     .sort_values(by=target_measure,
-    #                                  ascending=False)
-
-    #     idx_const_nb_trades = \
-    #         brute_force_df["nb_trades"] > nb_trades_min
-
-    #     brute_force_bis_df = \
-    #         brute_force_df.loc[idx_const_nb_trades]
-
-    #     dm_params_opt = \
-    #         brute_force_bis_df.iloc[0]\
-    #                           .loc[dm_params.keys()]\
-    #                           .to_dict()
-
-    #     self.params = self.params.__class__(**dm_params_opt)
 
     def plotly(self, ohlcv_df,
                ret_signals=False,
@@ -229,7 +179,7 @@ class DMBase(ObjMOSAIC):
         else:
             return fig_sp
 
-
+        
 class DM1ML(DMBase):
     """ Decision model based on a single machine learning prediction model """
 
@@ -249,6 +199,50 @@ class DM1ML(DMBase):
             )
         
         return self.compute_signal(signal_score_df)
+
+
+class DMDR(DM1ML):
+    """ Decision model based on deterministic rules """
+
+    features: typing.Dict[str, Indicator] = pydantic.Field(
+        [], description="Dict of features indicators")
+
+    def __init__(self, **data: typing.Any):
+        super().__init__(**data)
+
+        self.pm = PredictModelBase(features=list(self.features.values()),
+                                   ohlcv_names=self.ohlcv_names)
+    
+    def fit(self, ohlcv_df, **kwrds):
+        pass
+
+    def compute_signal_idx(self, features_df, **kwrds):
+        """To be overloaded"""
+        raise NotImplementedError
+    
+    def compute_signal(self, features_df, **kwrds):
+
+        signal_s = pd.Series(
+            self.no_signal_code,
+            index=features_df.index,
+            name="decision",
+            dtype=pd.CategoricalDtype(
+                categories=["buy", "sell", self.no_signal_code]
+            ),
+        )
+
+        idx_buy, idx_sell = \
+            self.compute_signal_idx(features_df, **kwrds)
+
+        signal_s.loc[idx_buy] = "buy"
+        signal_s.loc[idx_sell] = "sell"
+
+        return pd.concat([signal_s,
+                          features_df],
+                         axis=1)
+
+    def predict(self, ohlcv_df, **kwrds):
+        return self.compute_signal(self.pm.compute_features(ohlcv_df))
 
     
 class DM2ML(DMBase):
