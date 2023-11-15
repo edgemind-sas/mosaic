@@ -205,7 +205,7 @@ class DMDR(DM1ML):
     """ Decision model based on deterministic rules """
 
     features: typing.Dict[str, Indicator] = pydantic.Field(
-        [], description="Dict of features indicators")
+        {}, description="Dict of features indicators")
 
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
@@ -217,7 +217,7 @@ class DMDR(DM1ML):
         pass
 
     def compute_signal_idx(self, features_df, **kwrds):
-        """To be overloaded"""
+        """To be overloaded in order to define the strategy"""
         raise NotImplementedError
     
     def compute_signal(self, features_df, **kwrds):

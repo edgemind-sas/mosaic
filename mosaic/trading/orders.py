@@ -9,7 +9,7 @@ import uuid
 from ..core import ObjMOSAIC
 from ..db.db_base import DBBase
 from ..utils.data_management import \
-    timeframe_to_timedelta, HyperParams, parse_value
+    timeframe_to_timedelta, HyperParams, parse_value, fmt_currency
 from .exchange import ExchangeBase
 
 
@@ -22,8 +22,8 @@ PandasSeries = typing.TypeVar('pandas.core.frame.Series')
 
 
 class FeesValue(pydantic.BaseModel):
-    value: float = pydantic.Field(0, description="Fees value")
-    asset: str = pydantic.Field(0, description="Asset name")
+    value: float = pydantic.Field(None, description="Fees value")
+    asset: str = pydantic.Field(None, description="Asset name")
 
     
 class OrderParams(HyperParams):
@@ -139,16 +139,21 @@ class OrderBase(ObjMOSAIC):
     def repr(self, sep="\n"):
 
         repr_list = []
-        repr_list.append("Order id: " +
+        repr_list.append(colored.stylize(f"{type(self).__name__}",
+                                         self.get_class_style()))
+
+        repr_list.append("UID: " +
                          colored.stylize(f"{self.uid}",
                                          self.get_uid_style()))
 
         repr_list.append("Side/Status: " +
                          colored.stylize(f"{self.side}",
+                                         self.get_side_style()) +
+                         colored.stylize(" ",
                                          self.get_default_style()) +
-                         colored.stylize(f" ({self.status})",
-                                         self.get_default_style()))
-
+                         colored.stylize(f"({self.status})",
+                                         self.get_status_style()))
+        
         if self.dt_open:
             repr_list.append("Opening date: " +
                              colored.stylize(f"{self.dt_open}",
@@ -157,7 +162,35 @@ class OrderBase(ObjMOSAIC):
             repr_list.append("Closing date: " +
                              colored.stylize(f"{self.dt_closed}",
                                              self.get_date_style()))
-        
+
+        if self.quote_price is not None:
+            repr_list.append("QP: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+
+        if self.quote_amount is not None:
+            repr_list.append("QA: " +
+                             colored.stylize(f"{fmt_currency(self.quote_amount)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+
+        if self.base_amount is not None:
+            repr_list.append("BA: " +
+                             colored.stylize(f"{fmt_currency(self.base_amount)}",
+                                             self.get_default_style()) +
+                             f" {self.base}"
+                             )
+
+        if self.fees.value is not None:
+            repr_list.append("Fees: " +
+                             colored.stylize(f"{fmt_currency(self.fees.value)}",
+                                             self.get_default_style()) +
+                             f" {self.fees.asset}"
+                             )
+            
         repr_str = sep.join(repr_list)
         return repr_str
 
@@ -171,10 +204,10 @@ class OrderBase(ObjMOSAIC):
     def get_status_style(self):
         if self.status == "open":
             style = colored.fg("white") + \
-                colored.bg("green")
+                colored.bg("blue")
         elif self.status == "executed":
             style = colored.fg("white") + \
-                colored.bg("blue")
+                colored.bg("green")
         elif self.status == "cancelled":
             style = colored.fg("white") + \
                 colored.bg("dark_orange")
@@ -183,17 +216,20 @@ class OrderBase(ObjMOSAIC):
 
         return style
 
-    def get_uid_style(self):
+    def get_class_style(self):
         return colored.fg("white") + colored.bg(240) + colored.attr("bold")
+
+    def get_uid_style(self):
+        return self.get_default_style()
 
     def get_date_style(self):
         return colored.fg("white") #+ colored.bg(240) + colored.attr("bold")
 
     def get_side_style(self):
 
-        if self.side == "long":
+        if self.side == "buy":
             return colored.bg(6) + colored.fg("white")
-        elif self.side == "short":
+        elif self.side == "sell":
             return colored.bg(125) + colored.fg("white")
         else:
             raise ValueError("Order side {self.side} not supported")
@@ -311,17 +347,73 @@ class OrderMarket(OrderBase):
         return True
 
 
+class OrderTrailingMarketParams(OrderParams):
+    activation_rate: float = pydantic.Field(
+        0, description="Activation percentage")
+
+
 class OrderTrailingMarket(OrderMarket):
 
     quote_price_at_create: float = pydantic.Field(
         None, description="Quote price at order creation")
     
-    activation_pct: float = pydantic.Field(
-        0, description="Activation percentage")
-
     quote_price_activation: float = pydantic.Field(
         None, description="Order quote price activation")
 
+    params: OrderTrailingMarketParams = \
+        pydantic.Field(OrderTrailingMarketParams(),
+                       description="Order parameters")
+    
+    @property
+    def quote_price_activation_th(self):
+        if self.quote_price is not None:
+            sign = 2*(self.side == "buy") - 1
+            return self.quote_price*(1 + sign*self.params.activation_rate)
+        else:
+            return None
+
+    @property
+    def quote_price_delta_rate(self):
+        if self.quote_price is not None:
+            return self.quote_price/self.quote_price_at_create - 1
+        else:
+            return None
+
+    
+    def repr(self, sep="\n"):
+        
+        repr_list = [super().repr(sep=sep)]
+
+        repr_list.append("Act. Rate: " +
+                         colored.stylize(f"{self.params.activation_rate}",
+                                         self.get_default_style())
+                         )
+        if self.quote_price_delta_rate:
+            repr_list.append("QPDelta: " +
+                             colored.stylize(f"{self.quote_price_delta_rate:.2%}",
+                                             self.get_default_style())
+                             )
+        if self.dt_closed is None and self.quote_price_at_create is not None:
+            repr_list.append("QP@Create: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_at_create)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+            repr_list.append("QPA: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_activation)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+            repr_list.append("QPth: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_activation_th)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+            
+        repr_str = sep.join(repr_list)
+        return repr_str
+
+    
     def update(self, **new_data):
 
         super().update(**new_data)
@@ -334,14 +426,11 @@ class OrderTrailingMarket(OrderMarket):
 
         if self.quote_price is not None:
             if self.side == "buy":
-                quote_price_activation_th = self.quote_price*(1 + self.activation_pct)
-                if self.quote_price_activation > quote_price_activation_th:
-                    self.quote_price_activation = quote_price_activation_th
+                if self.quote_price_activation > self.quote_price_activation_th:
+                    self.quote_price_activation = self.quote_price_activation_th
             else:
-                quote_price_activation_th = self.quote_price*(1 - self.activation_pct)
-                if self.quote_price_activation < quote_price_activation_th:
-                    self.quote_price_activation = quote_price_activation_th
-        
+                if self.quote_price_activation < self.quote_price_activation_th:
+                    self.quote_price_activation = self.quote_price_activation_th
     
     def is_executable(self):
         
@@ -349,7 +438,5 @@ class OrderTrailingMarket(OrderMarket):
             self.quote_price > self.quote_price_activation \
             if self.side == "buy" \
             else self.quote_price < self.quote_price_activation
-
-        ipdb.set_trace()
         
         return super().is_executable() and activate_order

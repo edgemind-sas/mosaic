@@ -3,10 +3,10 @@
 
 1.  [Introduction](#introduction)
 2.  [Technical prerequisites](#init-env)
-3.  [Create the decision model](#orgda5ba18)
-4.  [Bot Specification](#org90af8f7)
-        1.  [YAML Configuration](#orga485c72)
-5.  [Executing the bot in backtest mode](#orgaa19343)
+3.  [Create the decision model](#org254be7d)
+4.  [Bot Specification](#org933efcc)
+        1.  [YAML Configuration](#orgc643419)
+5.  [Executing the bot in backtest mode](#org112c14b)
 
 
 
@@ -32,13 +32,13 @@ perform this tutorial. So start by installing the `pew` manager if you haven't a
 
 Then create a new virtual environment:
 
-    pew new bot_ta_dm
+    pew new mosaic_bot_rsi
 
-Now create a directory that will contain the files of this tutorial, e.g. `bot_ta_dm`, and
+Now create a directory that will contain the files of this tutorial, e.g. `mosaic_bot_rsi`, and
 navigate to this directory: 
 
-    mkdir bot_ta_dm
-    cd bot_ta_dm
+    mkdir mosaic_bot_rsi
+    cd mosaic_bot_rsi
 
 Note that you can save this directory as associated with the virtual environment you just created
 with the command: 
@@ -59,20 +59,20 @@ session and display its version:
     0.0.42
 
 
-<a id="orgda5ba18"></a>
+<a id="org254be7d"></a>
 
 # Create the decision model
 
 Let's create a decision model based on RSI indicator. To do this, we define a decision model class
 `DMRSI` that inherits from class `mdm.DMDR`.
 
-What you need is merely to define :
+What you need is to define :
 
--   The `features` attributes as a dictionary that only contains a RSI indicator (from the MOSAIC
+-   The `features` attributes as a dictionary that contains an RSI indicator (from the MOSAIC
     library) with its period (here of length 10) as the only technical indicator needed.
--   A method `compute_signal_idx` that takes a pandas DataFrame, `features_df`, expected to contain
-    RSI values. The method defines the strategy by setting buy signals when the RSI is below `self.buy_threshold` and sell signals when
-    it is above `self.sell_threshold`, and returning two pandas Series with boolean values marking these
+-   A method `compute_signal_idx` that accepts a pandas DataFrame, `features_df`, which is expected to contain
+    RSI values. The method defines the strategy by making buy signals when the RSI is below `self.buy_threshold` and sell signals when
+    it is above `self.sell_threshold`. It returns two Pandas Series with boolean values indicating these
     events.
 
     import typing
@@ -114,12 +114,12 @@ What you need is merely to define :
             return idx_buy, idx_sell
 
 
-<a id="org90af8f7"></a>
+<a id="org933efcc"></a>
 
 # Bot Specification
 
 
-<a id="orga485c72"></a>
+<a id="orgc643419"></a>
 
 ### YAML Configuration
 
@@ -127,7 +127,7 @@ To build our bot, we use the following configuration file (called here `bot.yaml
 our trading strategy:
 
     bot:
-      name: "bot_ta_dm"
+      name: "mosaic_bot_rsi"
       mode: "btfast"
       bt_buy_on: high
       bt_sell_on: low
@@ -157,7 +157,7 @@ our trading strategy:
         -   `name`: The exchange's name, in this case, Binance.
 
 
-<a id="orgaa19343"></a>
+<a id="org112c14b"></a>
 
 # Executing the bot in backtest mode
 
@@ -182,13 +182,13 @@ file.
 
 Launch the bot by running the `python bot.py` command and see the results :
 
-    Buy orders:   0% 0/33 [00:00<?, ?it/s]Buy orders: 100% 33/33 [00:00<00:00, 8795.33it/s]
-    Sell orders:   0% 0/33 [00:00<?, ?it/s]Sell orders: 100% 33/33 [00:00<00:00, 6853.78it/s]
-    Executing orders:   0% 0/66 [00:00<?, ?it/s]Executing orders: 100% 66/66 [00:00<00:00, 4589.11it/s]
+    Buy orders:   0%|                                                            | 0/33 [00:00<?, ?it/s]Buy orders: 100%|█████████████████████████████████████████████████| 33/33 [00:00<00:00, 8043.47it/s]
+    Sell orders:   0%|                                                           | 0/33 [00:00<?, ?it/s]Sell orders: 100%|████████████████████████████████████████████████| 33/33 [00:00<00:00, 5995.50it/s]
+    Executing orders:   0%|                                                      | 0/66 [00:00<?, ?it/s]Executing orders: 100%|███████████████████████████████████████████| 66/66 [00:00<00:00, 3485.57it/s]
     Bot
         MOSAIC version: 0.0.42
-        ID: b10a018a466433401a42f8cf3411cb503ca4a4b4c3dc6e65ed4daed425fe1ebc
-        Name: bot_ta_dm
+        ID: 59923bb7c7350f3e058f1727978c67b01cbb2e9fea72501a7ab9518e585b085c
+        Name: mosaic_bot_rsi
         Symbol: BTC/USDT
         Timeframe: 1h
         Mode: btfast
@@ -196,9 +196,9 @@ Launch the bot by running the `python bot.py` command and see the results :
             Sell on: low
     
     Session
-        Started at: 2023-11-09 22:30:21.019633+01:00
-        Ended at: 2023-11-09 22:30:25.101724+01:00
-        Duration: 0:00:04.082091
+        Started at: 2023-11-10 09:17:31.239250+01:00
+        Ended at: 2023-11-10 09:17:35.510283+01:00
+        Duration: 0:00:04.271033
         OHLCV period: 180 days, 23:00:00 | 2023-01-01 00:00:00+01:00 -> 2023-07-01 00:00:00+02:00
         Current quote price: 30713.99 USDT
         # Open orders: 0

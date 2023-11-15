@@ -302,7 +302,7 @@ def fmt_currency(val, dec_prec_inf_1=".3", dec_prec_sup_1=".2f"):
     """Utility function to format currency."""
     return "{{val:{prec}}}".format(prec=(dec_prec_inf_1
                                          if val < 1 else dec_prec_sup_1))\
-                           .format(val=val)
+                           .format(val=float(val))
 
 
 def lag(data, n=0, lag_fmt="{name}[{n}]"):

@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Building a stratagy based on deterministic rules on technical indicator</title>
+<title>Backtesting a stratagy based on RSI indicator</title>
 <meta name="author" content="Roland Donat" />
 <meta name="generator" content="Org Mode" />
 <link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
@@ -18,24 +18,24 @@
 </head>
 <body>
 <div id="content" class="content">
-<h1 class="title">Building a stratagy based on deterministic rules on technical indicator</h1>
+<h1 class="title">Backtesting a stratagy based on RSI indicator</h1>
 <div id="table-of-contents" role="doc-toc">
 <h2>Table des matières</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
 <li><a href="#introduction">1. Introduction</a></li>
 <li><a href="#init-env">2. Technical prerequisites</a></li>
-<li><a href="#org6752885">3. Create the decision model</a></li>
-<li><a href="#org047207b">4. Bot Specification</a>
+<li><a href="#org8e520c0">3. Create the decision model</a></li>
+<li><a href="#org99983c2">4. Bot Specification</a>
 <ul>
 <li>
 <ul>
-<li><a href="#orgade3780">4.0.1. YAML Configuration</a></li>
+<li><a href="#orge2e7e5d">4.0.1. YAML Configuration</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orge92d988">5. Executing the bot in backtest mode</a></li>
+<li><a href="#orgd829308">5. Executing the bot in backtest mode</a></li>
 </ul>
 </div>
 </div>
@@ -71,17 +71,17 @@ perform this tutorial. So start by installing the <code>pew</code> manager if yo
 Then create a new virtual environment:
 </p>
 <div class="org-src-container">
-<pre class="src src-shell">pew new bot_ta_dm
+<pre class="src src-shell">pew new mosaic_bot_rsi
 </pre>
 </div>
 
 <p>
-Now create a directory that will contain the files of this tutorial, e.g. <code>bot_ta_dm</code>, and
+Now create a directory that will contain the files of this tutorial, e.g. <code>mosaic_bot_rsi</code>, and
 navigate to this directory: 
 </p>
 <div class="org-src-container">
-<pre class="src src-shell">mkdir bot_ta_dm
-<span style="color: #DCDCCC; font-weight: bold;">cd</span> bot_ta_dm
+<pre class="src src-shell">mkdir mosaic_bot_rsi
+<span style="color: #DCDCCC; font-weight: bold;">cd</span> mosaic_bot_rsi
 </pre>
 </div>
 
@@ -119,8 +119,8 @@ session and display its version:
 </div>
 </div>
 
-<div id="outline-container-org6752885" class="outline-2">
-<h2 id="org6752885"><span class="section-number-2">3.</span> Create the decision model</h2>
+<div id="outline-container-org8e520c0" class="outline-2">
+<h2 id="org8e520c0"><span class="section-number-2">3.</span> Create the decision model</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Let's create a decision model based on RSI indicator. To do this, we define a decision model class
@@ -128,14 +128,14 @@ Let's create a decision model based on RSI indicator. To do this, we define a de
 </p>
 
 <p>
-What you need is merely to define :
+What you need is to define :
 </p>
 <ul class="org-ul">
-<li>The <code>features</code> attributes as a dictionary that only contains a RSI indicator (from the MOSAIC
+<li>The <code>features</code> attributes as a dictionary that contains an RSI indicator (from the MOSAIC
 library) with its period (here of length 10) as the only technical indicator needed.</li>
-<li>A method <code>compute_signal_idx</code> that takes a pandas DataFrame, <code>features_df</code>, expected to contain
-RSI values. The method defines the strategy by setting buy signals when the RSI is below <code>self.buy_threshold</code> and sell signals when
-it is above <code>self.sell_threshold</code>, and returning two pandas Series with boolean values marking these
+<li>A method <code>compute_signal_idx</code> that accepts a pandas DataFrame, <code>features_df</code>, which is expected to contain
+RSI values. The method defines the strategy by making buy signals when the RSI is below <code>self.buy_threshold</code> and sell signals when
+it is above <code>self.sell_threshold</code>. It returns two Pandas Series with boolean values indicating these
 events.</li>
 </ul>
 <div class="org-src-container">
@@ -182,12 +182,12 @@ events.</li>
 </div>
 </div>
 
-<div id="outline-container-org047207b" class="outline-2">
-<h2 id="org047207b"><span class="section-number-2">4.</span> Bot Specification</h2>
+<div id="outline-container-org99983c2" class="outline-2">
+<h2 id="org99983c2"><span class="section-number-2">4.</span> Bot Specification</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-orgade3780" class="outline-4">
-<h4 id="orgade3780"><span class="section-number-4">4.0.1.</span> YAML Configuration</h4>
+<div id="outline-container-orge2e7e5d" class="outline-4">
+<h4 id="orge2e7e5d"><span class="section-number-4">4.0.1.</span> YAML Configuration</h4>
 <div class="outline-text-4" id="text-4-0-1">
 <p>
 To build our bot, we use the following configuration file (called here <code>bot.yaml</code>) that specifies
@@ -195,7 +195,7 @@ our trading strategy:
 </p>
 <div class="org-src-container">
 <pre class="src src-yaml"><span style="color: #DFAF8F;">bot</span>:
-  <span style="color: #DFAF8F;">name</span>: <span style="color: #CC9393;">"bot_ta_dm"</span>
+  <span style="color: #DFAF8F;">name</span>: <span style="color: #CC9393;">"mosaic_bot_rsi"</span>
   <span style="color: #DFAF8F;">mode</span>: <span style="color: #CC9393;">"btfast"</span>
   <span style="color: #DFAF8F;">bt_buy_on</span>: high
   <span style="color: #DFAF8F;">bt_sell_on</span>: low
@@ -235,15 +235,15 @@ our trading strategy:
 </div>
 
 
-<div id="outline-container-orge92d988" class="outline-2">
-<h2 id="orge92d988"><span class="section-number-2">5.</span> Executing the bot in backtest mode</h2>
+<div id="outline-container-orgd829308" class="outline-2">
+<h2 id="orgd829308"><span class="section-number-2">5.</span> Executing the bot in backtest mode</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 Next, create the following Python file <code>bot.py</code> to backtest the bot defined in the previous YAML
 file.
 </p>
 <div class="org-src-container">
-<pre class="src src-python" id="org9ea89b3"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
+<pre class="src src-python" id="orgdf33058"><span style="color: #F0DFAF; font-weight: bold;">import</span> mosaic.trading <span style="color: #F0DFAF; font-weight: bold;">as</span> mtr
 <span style="color: #F0DFAF; font-weight: bold;">import</span> yaml
 
 <span style="color: #F0DFAF; font-weight: bold;">with</span> <span style="color: #DCDCCC; font-weight: bold;">open</span>(<span style="color: #CC9393;">"bot.yaml"</span>, <span style="color: #CC9393;">'r'</span>, encoding=<span style="color: #CC9393;">"utf-8"</span>) <span style="color: #F0DFAF; font-weight: bold;">as</span> yaml_file:
@@ -264,14 +264,14 @@ bot.start(
 <p>
 Launch the bot by running the <code>python bot.py</code> command and see the results :
 </p>
-<pre class="example" id="org16c41db">
-Buy orders:   0% 0/33 [00:00&lt;?, ?it/s]Buy orders: 100% 33/33 [00:00&lt;00:00, 8716.12it/s]
-Sell orders:   0% 0/33 [00:00&lt;?, ?it/s]Sell orders: 100% 33/33 [00:00&lt;00:00, 9380.69it/s]
-Executing orders:   0% 0/66 [00:00&lt;?, ?it/s]Executing orders: 100% 66/66 [00:00&lt;00:00, 4845.94it/s]
+<pre class="example" id="org1f9f510">
+Buy orders:   0%|                                                            | 0/33 [00:00&lt;?, ?it/s]Buy orders: 100%|█████████████████████████████████████████████████| 33/33 [00:00&lt;00:00, 8123.25it/s]
+Sell orders:   0%|                                                           | 0/33 [00:00&lt;?, ?it/s]Sell orders: 100%|████████████████████████████████████████████████| 33/33 [00:00&lt;00:00, 7895.27it/s]
+Executing orders:   0%|                                                      | 0/66 [00:00&lt;?, ?it/s]Executing orders: 100%|███████████████████████████████████████████| 66/66 [00:00&lt;00:00, 3189.99it/s]
 Bot
     MOSAIC version: 0.0.42
-    ID: 6885148e6cd7b3b3d577ab65d1f54f4c43f0672b773955c47c52c42ec72300bb
-    Name: bot_ta_dm
+    ID: 2c8f25ed836aad11d212ea2ad6729834162bf0036aaff2ac104deee86a3aa59a
+    Name: mosaic_bot_rsi
     Symbol: BTC/USDT
     Timeframe: 1h
     Mode: btfast
@@ -279,9 +279,9 @@ Bot
         Sell on: low
 
 Session
-    Started at: 2023-11-09 22:30:16.627571+01:00
-    Ended at: 2023-11-09 22:30:20.677631+01:00
-    Duration: 0:00:04.050060
+    Started at: 2023-11-10 09:17:26.413005+01:00
+    Ended at: 2023-11-10 09:17:30.924153+01:00
+    Duration: 0:00:04.511148
     OHLCV period: 180 days, 23:00:00 | 2023-01-01 00:00:00+01:00 -&gt; 2023-07-01 00:00:00+02:00
     Current quote price: 30713.99 USDT
     # Open orders: 0

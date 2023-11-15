@@ -33,7 +33,7 @@ class PredictModelBase(ObjMOSAIC):
     @property
     def bw_length(self):
         return max([indic.bw_length
-                    for indic in self.features])
+                    for indic in self.features]) if self.features else 0
 
     def dict(self, **kwrds):
 

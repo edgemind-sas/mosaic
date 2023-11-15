@@ -61,6 +61,9 @@ class ExchangeBase(ObjMOSAIC):
     # class Config:
     #     arbitrary_types_allowed = True
 
+    def connect(self):
+        return self.bkd
+    
     def dict(self, **kwrds):
 
         if kwrds["exclude"]:
@@ -106,7 +109,7 @@ class ExchangeBase(ObjMOSAIC):
 
         return quote_flatten_s, ohlcv_df.shift(1)
 
-    def set_trading_fees(self, **kwrds):
+    def set_trading_fees(self, *args, **kwrds):
 
         if self.fees_rates.maker is None:
             self.fees_rates.maker = 0
