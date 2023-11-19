@@ -4,6 +4,8 @@ from .returns_indicator import \
 from .rsi import RSI
 from .mfi import MFI
 from .sri import SRI
+from .candle import Candle
+
 # from .bbands import BollingerBands
 # from .mvl import MVL
 # from .hammer import GHAM

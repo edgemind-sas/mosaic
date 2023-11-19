@@ -27,7 +27,8 @@ class FeesValue(pydantic.BaseModel):
 
     
 class OrderParams(HyperParams):
-    pass
+    exec_bound_rate: float = pydantic.Field(
+        0, description="Execution minimal bound rate")
 
 
 class OrderBase(ObjMOSAIC):
@@ -58,6 +59,15 @@ class OrderBase(ObjMOSAIC):
 
     quote_price: float = pydantic.Field(
         None, description="Asset price in quote currency (e.g. in USDT for BTC/USDT symbol)")
+
+    quote_price_at_create: float = pydantic.Field(
+        None, description="Quote price at order creation")
+    
+    quote_price_exec: float = pydantic.Field(
+        None, description="Order quote price execution")
+
+    quote_price_rate_open_exec: float = pydantic.Field(
+        None, description="Rate between quote price at order opening and order execution")
 
     status: str = pydantic.Field(
         "open", description="Order status : open, executed, cancelled")
@@ -108,12 +118,24 @@ class OrderBase(ObjMOSAIC):
 
         self.update_db()
 
-    # TODO : MOVE THIS METHOD AT OBJMOSAIC LEVEL
     def update(self, **new_data):
 
+        # TODO : MOVE THIS BLOC AT OBJMOSAIC LEVEL
         if len(new_data) > 0:
             for field, value in new_data.items():
                 setattr(self, field, value)
+
+        if self.quote_price_at_create is None:
+            self.quote_price_at_create = self.quote_price
+
+        if self.quote_price_at_create is not None:
+            sign = 2*(self.side == "buy") - 1
+            self.quote_price_exec = \
+                self.quote_price_at_create*(1 - sign*self.params.exec_bound_rate)
+        if self.quote_price is not None:
+            self.quote_price_rate_open_exec = \
+                self.quote_price/self.quote_price_at_create - 1
+
 
     def dict(self, exclude={"bkd", "db", "logger"}, **kwrds):
         return super().dict(exclude=exclude, **kwrds)
@@ -190,12 +212,36 @@ class OrderBase(ObjMOSAIC):
                                              self.get_default_style()) +
                              f" {self.fees.asset}"
                              )
-            
+        if self.quote_price_rate_open_exec is not None:
+            repr_list.append("QP O/E: " +
+                             colored.stylize(f"{self.quote_price_rate_open_exec:.2%}",
+                                             self.get_default_style())
+                             )
+        if self.dt_closed is None and self.quote_price_at_create is not None:
+            repr_list.append("QP@Create: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_at_create)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+            repr_list.append("QP Ex: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_exec)}",
+                                             self.get_default_style()) +
+                             f" {self.quote}"
+                             )
+
         repr_str = sep.join(repr_list)
         return repr_str
 
     def is_executable(self):
-        return self.dt_open <= self.dt
+
+        exec_bound_cond = \
+            self.quote_price <= self.quote_price_exec \
+            if self.side == "buy" \
+            else self.quote_price >= self.quote_price_exec
+
+        exec_dt_cond = self.dt_open <= self.dt
+
+        return exec_dt_cond & exec_bound_cond
 
     def get_default_style(self):
         return colored.attr("bold") + \
@@ -247,42 +293,42 @@ class OrderBase(ObjMOSAIC):
     def execute(self):
         return True
     
-    def get_order_id_backend(self):
+    # def get_order_id_backend(self):
 
-        if self.exchange.name == "binance":
-            return int(self.order_backend_id)
-        else:
-            return self.order_backend_id
+    #     if self.exchange.name == "binance":
+    #         return int(self.order_backend_id)
+    #     else:
+    #         return self.order_backend_id
         
         
-    def update_from_backend(self):
+    # def update_from_backend(self):
 
-        fetch_nb_try = 0
-        order_backend = None
-        while (order_backend is None) and fetch_nb_try <= 5:
+    #     fetch_nb_try = 0
+    #     order_backend = None
+    #     while (order_backend is None) and fetch_nb_try <= 5:
 
-            fetch_nb_try += 1
+    #         fetch_nb_try += 1
 
-            try:
-                order_backend = \
-                    self.exchange.conn.fetch_order(self.get_order_id_backend(),
-                                                   self.symbol)
-            except ccxt.OrderNotFound:
-                fetch_waiting = 2
-                if self.logger:
-                    self.logger.info(
-                        f"Waiting {fetch_waiting} sec to fetch order - Try {fetch_nb_try}")
-                time.sleep(fetch_waiting)
+    #         try:
+    #             order_backend = \
+    #                 self.exchange.conn.fetch_order(self.get_order_id_backend(),
+    #                                                self.symbol)
+    #         except ccxt.OrderNotFound:
+    #             fetch_waiting = 2
+    #             if self.logger:
+    #                 self.logger.info(
+    #                     f"Waiting {fetch_waiting} sec to fetch order - Try {fetch_nb_try}")
+    #             time.sleep(fetch_waiting)
 
-        if order_backend is None:
-            raise ValueError(
-                "Impossible to fetch order {self.get_order_id_backend()}")
+    #     if order_backend is None:
+    #         raise ValueError(
+    #             "Impossible to fetch order {self.get_order_id_backend()}")
 
-        self.amount_base = order_backend["amount"]
+    #     self.amount_base = order_backend["amount"]
 
-        self.filling_rate = order_backend["filled"]/self.amount_base
-        if self.filling_rate > 0.999 and not(self.ts_filled_on):
-            self.ts_filled_on = order_backend["timestamp"]
+    #     self.filling_rate = order_backend["filled"]/self.amount_base
+    #     if self.filling_rate > 0.999 and not(self.ts_filled_on):
+    #         self.ts_filled_on = order_backend["timestamp"]
 
 
 class OrderMarket(OrderBase):
@@ -348,64 +394,35 @@ class OrderMarket(OrderBase):
 
 
 class OrderTrailingMarketParams(OrderParams):
-    activation_rate: float = pydantic.Field(
-        0, description="Activation percentage")
+
+    exec_trailing_rate: float = pydantic.Field(
+        None, description="Execution trailing rate")
 
 
 class OrderTrailingMarket(OrderMarket):
 
-    quote_price_at_create: float = pydantic.Field(
-        None, description="Quote price at order creation")
-    
-    quote_price_activation: float = pydantic.Field(
-        None, description="Order quote price activation")
+    is_trailing_activated: bool = pydantic.Field(
+        False, description="Indicate if order is in trailing mode")
+
+    quote_price_trailing_bound: float = pydantic.Field(
+        None, description="Current execution trailing bound")
 
     params: OrderTrailingMarketParams = \
         pydantic.Field(OrderTrailingMarketParams(),
                        description="Order parameters")
-    
-    @property
-    def quote_price_activation_th(self):
-        if self.quote_price is not None:
-            sign = 2*(self.side == "buy") - 1
-            return self.quote_price*(1 + sign*self.params.activation_rate)
-        else:
-            return None
-
-    @property
-    def quote_price_delta_rate(self):
-        if self.quote_price is not None:
-            return self.quote_price/self.quote_price_at_create - 1
-        else:
-            return None
-
-    
+        
     def repr(self, sep="\n"):
         
         repr_list = [super().repr(sep=sep)]
 
-        repr_list.append("Act. Rate: " +
-                         colored.stylize(f"{self.params.activation_rate}",
-                                         self.get_default_style())
-                         )
-        if self.quote_price_delta_rate:
-            repr_list.append("QPDelta: " +
-                             colored.stylize(f"{self.quote_price_delta_rate:.2%}",
+        if self.is_trailing_activated:
+            repr_list.append("Exec. Rate: " +
+                             colored.stylize(f"{self.params.exec_trailing_rate}",
                                              self.get_default_style())
                              )
-        if self.dt_closed is None and self.quote_price_at_create is not None:
-            repr_list.append("QP@Create: " +
-                             colored.stylize(f"{fmt_currency(self.quote_price_at_create)}",
-                                             self.get_default_style()) +
-                             f" {self.quote}"
-                             )
-            repr_list.append("QPA: " +
-                             colored.stylize(f"{fmt_currency(self.quote_price_activation)}",
-                                             self.get_default_style()) +
-                             f" {self.quote}"
-                             )
-            repr_list.append("QPth: " +
-                             colored.stylize(f"{fmt_currency(self.quote_price_activation_th)}",
+
+            repr_list.append("QPTB: " +
+                             colored.stylize(f"{fmt_currency(self.quote_price_trailing_bound)}",
                                              self.get_default_style()) +
                              f" {self.quote}"
                              )
@@ -418,25 +435,37 @@ class OrderTrailingMarket(OrderMarket):
 
         super().update(**new_data)
 
-        if self.quote_price_at_create is None:
-            self.quote_price_at_create = self.quote_price
+        if self.params.exec_trailing_rate is None:
+            self.params.exec_trailing_rate = self.params.exec_bound_rate
+        
+        if (not self.is_trailing_activated) and \
+           (self.quote_price_at_create is not None) and \
+           super().is_executable():
+            self.is_trailing_activated = True
+            sign = 2*(self.side == "buy") - 1
+            self.quote_price_trailing_bound = \
+                self.quote_price*(1 + sign*self.params.exec_trailing_rate)
 
-        if self.quote_price_activation is None:
-            self.quote_price_activation = self.quote_price
+        if self.quote_price_trailing_bound is not None:
 
-        if self.quote_price is not None:
+            sign = 2*(self.side == "buy") - 1
+            quote_price_trailing_bound_th = \
+                self.quote_price*(1 + sign*self.params.exec_trailing_rate)
+
             if self.side == "buy":
-                if self.quote_price_activation > self.quote_price_activation_th:
-                    self.quote_price_activation = self.quote_price_activation_th
+                if self.quote_price_trailing_bound > quote_price_trailing_bound_th:
+                    self.quote_price_trailing_bound = quote_price_trailing_bound_th
             else:
-                if self.quote_price_activation < self.quote_price_activation_th:
-                    self.quote_price_activation = self.quote_price_activation_th
-    
+                if self.quote_price_trailing_bound < quote_price_trailing_bound_th:
+                    self.quote_price_trailing_bound = quote_price_trailing_bound_th
+
     def is_executable(self):
-        
-        activate_order = \
-            self.quote_price > self.quote_price_activation \
-            if self.side == "buy" \
-            else self.quote_price < self.quote_price_activation
-        
-        return super().is_executable() and activate_order
+        if self.is_trailing_activated:
+            exec_order = \
+                self.quote_price >= self.quote_price_trailing_bound \
+                if self.side == "buy" \
+                else self.quote_price <= self.quote_price_trailing_bound
+        else:
+            exec_order = False
+            
+        return exec_order

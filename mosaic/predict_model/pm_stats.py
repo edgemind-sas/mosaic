@@ -14,12 +14,14 @@ class PMOLS(PMReturns):
 
     def fit(self, ohlcv_df, **kwrds):
 
-        features_df, target_s = super().fit(ohlcv_df, **kwrds)
+        features_df, target_s = self.prepare_data(ohlcv_df, **kwrds)
 
         features_df = sm.add_constant(features_df)
 
         mod = sm.OLS(target_s, features_df)
         self.bkd = mod.fit()
+
+        return self
 
     def predict(self, ohlcv_df, **kwrds):
 
@@ -32,12 +34,14 @@ class PMLogit(PMReturnsUpDown):
 
     def fit(self, ohlcv_df, **kwrds):
 
-        features_df, target_s = super().fit(ohlcv_df, **kwrds)
+        features_df, target_s = self.prepare_data(ohlcv_df, **kwrds)
 
         features_df = sm.add_constant(features_df)
 
         mod = sm.Logit(target_s, features_df)
         self.bkd = mod.fit()
+
+        return self
 
     def predict(self, ohlcv_df, **kwrds):
 

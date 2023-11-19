@@ -907,17 +907,18 @@ class BotTrading(ObjMOSAIC):
                         progress_mode=False, data_dir=".", **kwrds):
 
         if ohlcv_trading_df is None:
-            ohlcv_trading_df = \
-                self.exchange.get_historic_ohlcv(
-                    date_start=self.ds_trading.dt_s,
-                    date_end=self.ds_trading.dt_e,
-                    symbol=self.ds_trading.symbol,
-                    timeframe=self.timeframe,
-                    index="datetime",
-                    data_dir=data_dir,
-                    force_reload=False,
-                    progress_mode=progress_mode
-                )
+            if not (self.ds_trading_code in self.ohlcv_trading_dfd.keys()):
+                self.ohlcv_trading_dfd[self.ds_trading_code] = \
+                    self.exchange.get_historic_ohlcv(
+                        date_start=self.ds_trading.dt_s,
+                        date_end=self.ds_trading.dt_e,
+                        symbol=self.ds_trading.symbol,
+                        timeframe=self.timeframe,
+                        index="datetime",
+                        data_dir=data_dir,
+                        force_reload=False,
+                        progress_mode=progress_mode
+                    )
             ohlcv_trading_df = self.ohlcv_trading_dfd[self.ds_trading_code]
 
         if ohlcv_dm_df is None:
@@ -1087,57 +1088,43 @@ class BotTrading(ObjMOSAIC):
         # print(sleep_msg)
         
         time.sleep(time_to_ohlcv_next.total_seconds())
-
-    
-    def get_nb_buy_sell_orders_diff(self):
-        """Calculate the difference between the number of buy and sell orders executed.
-
-        This method computes the difference between the cumulative number of buy orders
-        that have been executed and the cumulative number of sell orders that have been
-        executed. Only executed orders are taken into account, open orders are not
-        considered in this calculation. 
-
-        Returns:
-            int: The difference between the number of buy and sell orders executed.
-                 A positive number indicates more buy orders have been executed,
-                 while a negative number indicates more sell orders have been executed.
-        """
-
-        nb_buy_orders = \
-            self.nb_buy_orders_executed
-            #self.nb_buy_orders_open + \
-        nb_sell_orders = \
-            self.nb_sell_orders_executed
-            #self.nb_sell_orders_open + \
-
-        return nb_buy_orders - nb_sell_orders
-
     
     def is_buy_allowed(self):
-        """Determine if a new buy order is allowed based on the difference threshold.
+        """Determine if a new buy order is permitted.
 
-        This method checks if a new 'buy' order can be placed by comparing the current
-        difference between executed buy orders and sell orders to a predefined threshold.
-        The 'buy' order is allowed only if this difference is less than or equal to the
-        threshold value stored in `self.diff_thresh_buy_sell_orders`.
-
+        Calculates the difference between the number of executed plus open buy orders
+        and the number of executed sell orders. A new buy order is allowed if this
+        difference is less than or equal to a predefined threshold.
+        
         Returns:
-            bool: True if a new 'buy' order is allowed, False otherwise.
-        """        
-        return self.get_nb_buy_sell_orders_diff() <= self.diff_thresh_buy_sell_orders
+            bool: True if the buy order is permitted, False otherwise.
+        """
+        nb_buy_orders = \
+            self.nb_buy_orders_executed + self.nb_buy_orders_open
+        nb_sell_orders = self.nb_sell_orders_executed
+
+        order_diff = nb_buy_orders - nb_sell_orders
+        return order_diff <= self.diff_thresh_buy_sell_orders
 
     def is_sell_allowed(self):
-        """Determine if a new sell order is allowed based on the difference threshold.
-
-        This method checks if a new 'sell' order can be placed by comparing the current
-        difference between executed buy orders and sell orders to a predefined threshold
-        incremented by one. The 'sell' order is allowed only if this difference is exactly
-        equal to `self.diff_thresh_buy_sell_orders + 1`.
-
+        """Check if executing a sell order is currently allowed.
+        
+        The decision is based on the difference between the number
+        of executed buy orders and the total number of open and executed sell orders.
+        Selling is permitted if this difference is exactly one greater than a set
+        threshold.
+        
         Returns:
-            bool: True if a new 'sell' order is allowed, False otherwise.
+            bool: True if selling is allowed, False otherwise.
         """
-        return self.get_nb_buy_sell_orders_diff() == self.diff_thresh_buy_sell_orders + 1
+        nb_buy_orders = \
+            self.nb_buy_orders_executed
+        nb_sell_orders = \
+            self.nb_sell_orders_open + self.nb_sell_orders_executed
+
+        order_diff = nb_buy_orders - nb_sell_orders
+
+        return order_diff == self.diff_thresh_buy_sell_orders + 1
 
     def register_order(self, order, **kwrds):
         """Register a new order if allowed based on the order side and current thresholds.

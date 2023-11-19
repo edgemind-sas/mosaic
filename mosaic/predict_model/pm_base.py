@@ -24,6 +24,15 @@ class PredictModelBase(ObjMOSAIC):
     features: typing.List[IndicatorOHLCV] = pydantic.Field(
         [], description="List of features indicators")
 
+    standard_features: bool = pydantic.Field(
+        True, description="Indicates if features should be center and scaled")
+
+    features_center: list = pydantic.Field(
+        None, description="Feature center vector")
+
+    features_std: list = pydantic.Field(
+        None, description="Feature standard deviation vector")
+
     ohlcv_names: dict = pydantic.Field(
         {v: v for v in ["open", "high", "low", "close", "volume"]},
         description="OHLCV variable name dictionnary")
@@ -37,11 +46,12 @@ class PredictModelBase(ObjMOSAIC):
 
     def dict(self, **kwrds):
 
+        attr_to_exclude = {"bkd", "logger"}
+        
         if kwrds.get("exclude"):
-            kwrds["exclude"].add("bkd")
-            kwrds["exclude"].add("logger")
+            [kwrds["exclude"].add(attr) for attr in attr_to_exclude]
         else:
-            kwrds["exclude"] = {"bkd", "logger"}
+            kwrds["exclude"] = attr_to_exclude
             
         return super().dict(**kwrds)
 
@@ -50,7 +60,6 @@ class PredictModelBase(ObjMOSAIC):
         features_df_list = \
             [indic.compute(ohlcv_df)
              for indic in self.features]
-
         if features_df_list:
             features_df = pd.concat(features_df_list, axis=1)
         else:
@@ -58,15 +67,41 @@ class PredictModelBase(ObjMOSAIC):
             
         return features_df
 
-    def fit(self, ohlcv_df, dropna=True, **kwrds):
-        # NOTE : Here features are shifted to properly align returns with 
-        # features observed just before the corresponding returns
-        features_df = self.compute_features(ohlcv_df).shift(1)
-        if dropna:
-            features_df = features_df.dropna()
+    def standardize_features(self, features_df):
+
+        if self.standard_features:
+
+            if self.features_centers is None:
+                center = features_df.mean()
+                self.features_centers = center.tolist()
+            else:
+                center = pd.Series(self.features_centers,
+                                   index=features_df.columns)
+            if self.features_std is None:
+                std = features_df.std()
+                self.features_std = std.tolist()
+            else:
+                center = pd.Series(self.features_std,
+                                   index=features_df.columns)
+
+            features_df = (features_df - center).div(std)
+            
 
         return features_df
 
+    
+    def prepare_data(self, ohlcv_df, dropna=True, **kwrds):
+        # NOTE : Here features are shifted to properly align returns with 
+        # features observed just before the corresponding returns
+        features_df = self.compute_features(ohlcv_df).shift(1)
+        features_df = self.standardize_features(features_df)
+        
+        if dropna:
+            features_df = features_df.dropna()
+            
+        return features_df
+
+    
     def predict(self, ohlcv_df, **kwrds):
         # To be overloaded
         return pd.Series(0.0,
@@ -84,16 +119,17 @@ class PMReturns(PredictModelBase):
     def target_var(self):
         return f"ret_{self.returns_horizon}"
 
-    def fit(self, ohlcv_df, dropna=True, **kwrds):
+    def prepare_data(self, ohlcv_df, dropna=True, **kwrds):
 
-        features_df = self.fit(ohlcv_df, dropna=dropna, **kwrds)
+        features_df = self.compute_features(ohlcv_df).shift(1)
         target_s = self.compute_returns(ohlcv_df)
+        features_df = self.standardize_features(features_df)
         
         if dropna:
             data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
             features_df = data_all_df[features_df.columns]
             target_s = data_all_df[target_s.name]
-
+            
         return features_df, target_s
     
     def compute_returns(self, ohlcv_df):

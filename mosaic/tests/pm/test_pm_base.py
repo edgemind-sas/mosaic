@@ -22,7 +22,12 @@ EXPECTED_PATH = os.path.join(os.path.dirname(__file__), "expected")
 pathlib.Path(DATA_PATH).mkdir(parents=True, exist_ok=True)
 pathlib.Path(EXPECTED_PATH).mkdir(parents=True, exist_ok=True)
 
+@pytest.fixture
+def data_btc_usdc_20_df():
 
+    data_filename = os.path.join(DATA_PATH, "data_btc_usdc_20.csv")
+    data_df = pd.read_csv(data_filename, sep=",", index_col="datetime")
+    return data_df
 
 @pytest.fixture
 def data_btc_usdc_1000_df():
@@ -64,12 +69,14 @@ def test_pm_base_003():
             return features_th_df
 
     model = mpm.PredictModelBase(
-        features=[MockIndicator()])
+        features=[MockIndicator()],
+        standard_features=False,
+    )
 
     features_df = model.compute_features(pd.DataFrame())
     assert features_df.equals(features_th_df)
 
-    features_df = model.fit(pd.DataFrame())
+    features_df = model.prepare_data(pd.DataFrame())
     assert features_df.equals(features_th_df.shift(1).dropna())
 
 
