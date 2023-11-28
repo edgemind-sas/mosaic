@@ -83,22 +83,35 @@ class IndicatorOHLCV(Indicator):
 
         return dict(names, **names_var)
     
-    def compute_variation(self, indic_df):
+    def compute_variation(self, indic_df, diff_var=[]):
 
         if self.variation_length == 0:
             return indic_df
 
-        indic_pct_change_df_list = [indic_df]
+        indic_df_list = [indic_df]
+
+        pct_change_var = [var for var in indic_df.columns
+                          if not (var in diff_var)]
         for length in range(self.variation_length):
-            indic_pct_change_cur_df = \
-                indic_df.pct_change(length + 1)\
-                        .replace([np.inf, -np.inf], np.nan)
-            indic_pct_change_cur_df.columns = \
-                [f"{var}_var_{length + 1}"
-                 for var in indic_pct_change_cur_df.columns]
-            indic_pct_change_df_list.append(indic_pct_change_cur_df)
-            
-        indic_df = pd.concat(indic_pct_change_df_list,
+            if len(pct_change_var) > 0:
+                indic_pct_change_cur_df = \
+                    indic_df[pct_change_var].pct_change(length + 1)\
+                                            .replace([np.inf, -np.inf], np.nan)
+                indic_pct_change_cur_df.columns = \
+                    [f"{var}_var_{length + 1}"
+                     for var in indic_pct_change_cur_df.columns]
+                indic_df_list.append(indic_pct_change_cur_df)
+
+            if len(diff_var) > 0:
+                indic_diff_cur_df = \
+                    indic_df[diff_var].diff(length + 1)\
+                                      .replace([np.inf, -np.inf], np.nan)
+                indic_diff_cur_df.columns = \
+                    [f"{var}_var_{length + 1}"
+                     for var in indic_diff_cur_df.columns]
+                indic_df_list.append(indic_diff_cur_df)
+
+        indic_df = pd.concat(indic_df_list,
                              axis=1)
 
         return indic_df

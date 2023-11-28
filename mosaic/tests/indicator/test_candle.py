@@ -60,7 +60,7 @@ def test_candle_002(data_btc_usdc_20_df):
     indic_expect_df = pd.read_csv(indic_expect_filenames, index_col="datetime")
 
     assert set(indic.names()) == set(indic_df.columns)
-    assert indic.bw_length == 0    
+    assert indic.bw_length == 1    
     np.testing.assert_allclose(indic_df, indic_expect_df)
 
 
@@ -81,9 +81,9 @@ def test_candle_003(data_btc_usdc_20_df):
     #indic_df.to_csv(indic_expect_filenames)
     indic_expect_df = pd.read_csv(indic_expect_filenames, index_col="datetime")
 
-    #ipdb.set_trace()
+    ipdb.set_trace()
 
     # Assertions
     assert set(indic.names()) == set(indic_df.columns)
-    assert indic.bw_length == 1
+    assert indic.bw_length == 2
     np.testing.assert_allclose(indic_df, indic_expect_df)

@@ -158,12 +158,18 @@ class Portfolio(pydantic.BaseModel):
 
         
     def reset(self):
+
+        exclude_attr = [
+            "quote_amount_init",
+        ]
+        fields_to_reset = [attr for attr in self.__fields__.keys()
+                           if not (attr in exclude_attr)]
+                           
+        for attr in fields_to_reset:
+            setattr(self, attr, self.__fields__[attr].default)
         
         self.quote_amount = self.quote_amount_init
-        self.base_amount = 0.0
-        self.quote_price = None
-        self.quote_price_init = None
-        self.dt = None
+
         self.update()
         
     def update_order(self, od):
@@ -464,21 +470,26 @@ class BotTrading(ObjMOSAIC):
             self.db_trace = self.db
 
     def reset(self):
-
+        
         attr_reset = [
             "dt_ohlcv_current",
             "dt_ohlcv_closed",
             "dt_session_start",
             "dt_session_end",
             "quote_current",
-            "orders_open",
-            "orders_executed",
-            "orders_cancelled",
+            # "orders_open",
+            # "orders_executed",
+            # "orders_cancelled",
             "progress",
         ]
         for attr in attr_reset:
             setattr(self, attr, self.__fields__[attr].default)
 
+        # The above reset approach does not work with these attributes :
+        # => Use explicit reset
+        self.orders_cancelled = {}
+        self.orders_open = {}
+        self.orders_executed = {}
         self.portfolio.reset()
             
     def signal_handler(self, signum, frame):
@@ -493,7 +504,7 @@ class BotTrading(ObjMOSAIC):
             "ohlcv_trading_dfd",
         }
 
-        if kwrds["exclude"]:
+        if kwrds.get("exclude"):
             [kwrds["exclude"].add(attr) for attr in exclude_attr]
         else:
             kwrds["exclude"] = exclude_attr
@@ -561,11 +572,12 @@ class BotTrading(ObjMOSAIC):
                 indent(f"DT OHLCV closed: {self.dt_ohlcv_closed}",
                        indent_str)
             )
-        
-        repr_liststr.append(
-            indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
-                   indent_str)
-        )
+
+        if self.quote_current is not None:
+            repr_liststr.append(
+                indent(f"Current quote price: {fmt_currency(self.quote_current)} {self.quote}",
+                       indent_str)
+            )
         repr_liststr.append(
             indent(f"# Open orders: {len(self.orders_open)}", indent_str)
         )
@@ -813,6 +825,10 @@ class BotTrading(ObjMOSAIC):
         idx_sell = decision_s == "sell"
         if len(dt_buy) > 0:
             idx_sell &= (decision_s.index >= dt_buy[0])
+        else:
+            # If no buy => force no sell
+            idx_sell[idx_sell] = False
+            
         dt_sell = decision_s.index[idx_sell]
 
         orders_list = []
@@ -839,6 +855,15 @@ class BotTrading(ObjMOSAIC):
                             desc="Executing orders",
                             ):
 
+            # nb_buy_orders = \
+            #     self.nb_buy_orders_executed
+            # nb_sell_orders = \
+            #     self.nb_sell_orders_open + self.nb_sell_orders_executed
+
+            # order_diff = nb_buy_orders - nb_sell_orders
+            # if order_diff >= 3:
+            #     ipdb.set_trace()
+            
             if od.side == "buy":
 
                 od.update(

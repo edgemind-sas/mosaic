@@ -66,7 +66,7 @@ class ExchangeBase(ObjMOSAIC):
     
     def dict(self, **kwrds):
 
-        if kwrds["exclude"]:
+        if kwrds.get("exclude"):
             kwrds["exclude"].add("bkd")
             kwrds["exclude"].add("logger")
         else:

@@ -15,7 +15,7 @@ class Candle(IndicatorOHLCV):
     
     @property
     def bw_length(self):
-        return super().bw_length
+        return super().bw_length + 1
     
     @property
     def names_map(self):
@@ -60,17 +60,22 @@ class Candle(IndicatorOHLCV):
         indic_df[self.names("body")] = \
             ohlcv_df[var_close] - ohlcv_df[var_open]
 
+        var_r_list = []
         var_list = ["body", "sl", "su"]
         for var in var_list:
-            indic_df[self.names(f"{var}_r")] = \
+            var_name = self.names(f"{var}_r")
+            indic_df[var_name] = \
                 indic_df[self.names(var)]/ohlcv_df[var_open]
+            var_r_list.append(var_name)
 
         var_list = [var_high, var_low]
         for var in var_list:
-            indic_df[self.names(f"{var}_r")] = \
+            var_name = self.names(f"{var}_r")
+            indic_df[var_name] = \
                 indic_df[self.names(var)]/ohlcv_df[var_open] - 1
+            var_r_list.append(var_name)
 
-        indic_df = self.compute_variation(indic_df)
-            
+        indic_df = self.compute_variation(indic_df, diff_var=var_r_list)
+
         return indic_df
 

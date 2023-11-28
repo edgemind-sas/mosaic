@@ -50,19 +50,26 @@ def test_pm_ols_001(data_btc_usdc_20_df):
     # Expected results
     features_df_filename = \
         os.path.join(EXPECTED_PATH, "test_pm_ols_001_features_df.csv")
+    features_prep_df_filename = \
+        os.path.join(EXPECTED_PATH, "test_pm_ols_001_features_prep_df.csv")
     target_s_filename = \
         os.path.join(EXPECTED_PATH, "test_pm_ols_001_target_s.csv")
 
     # Test running
     model = mpm.PMOLS(**model_params)
     features_df = model.compute_features(data_df)
-    features_prep_df, target_s = model.prepare_data(data_df)
+    features_prep_df, target_s = model.prepare_data_fit(data_df)
     model.fit(data_df)
-    
+
     # features_df.to_csv(features_df_filename)
     features_expect_df = pd.read_csv(features_df_filename,
                                      index_col="datetime")
-    #target_s.to_csv(target_s_filename)
+
+    # features_prep_df.to_csv(features_prep_df_filename)
+    features_prep_expect_df = pd.read_csv(features_prep_df_filename,
+                                          index_col="datetime")
+
+    # target_s.to_csv(target_s_filename)
     target_expect_s = pd.read_csv(target_s_filename,
                                   index_col="datetime")\
                         .squeeze("columns")
@@ -80,8 +87,75 @@ def test_pm_ols_001(data_btc_usdc_20_df):
         check_dtype=False)
 
     pd.testing.assert_frame_equal(
-        features_expect_df.shift(1).dropna(),
         features_prep_df,
+        features_prep_expect_df,
+        check_exact=False,
+        check_dtype=False)
+    
+    pd.testing.assert_series_equal(
+        target_s,
+        target_expect_s,
+        check_exact=False,
+        check_dtype=False)
+
+    assert model.bkd.rsquared == pytest.approx(0.08689851834472195)
+
+
+def test_pm_ols_002(data_btc_usdc_20_df):
+
+    # Test data
+    data_df = data_btc_usdc_20_df.copy()
+    model_params = dict(
+        features=[mid.SRI(length=5)],
+        standard_features=True,
+    )
+
+    # Expected results
+    features_df_filename = \
+        os.path.join(EXPECTED_PATH, "test_pm_ols_002_features_df.csv")
+    features_prep_df_filename = \
+        os.path.join(EXPECTED_PATH, "test_pm_ols_002_features_prep_df.csv")
+    target_s_filename = \
+        os.path.join(EXPECTED_PATH, "test_pm_ols_002_target_s.csv")
+
+    # Test running
+    model = mpm.PMOLS(**model_params)
+    features_df = model.compute_features(data_df)
+    features_prep_df, target_s = model.prepare_data_fit(data_df)
+    model.fit(data_df)
+    
+    # features_df.to_csv(features_df_filename)
+    features_expect_df = pd.read_csv(features_df_filename,
+                                     index_col="datetime")
+
+    # features_prep_df.to_csv(features_prep_df_filename)
+    features_prep_expect_df = pd.read_csv(features_prep_df_filename,
+                                          index_col="datetime")
+
+    # target_s.to_csv(target_s_filename)
+    target_expect_s = pd.read_csv(target_s_filename,
+                                  index_col="datetime")\
+                        .squeeze("columns")
+   
+    features_center = features_expect_df.dropna().mean()
+    features_std = features_expect_df.dropna().std()
+
+    # Assertions
+    assert model.bw_length == model_params["features"][0].length
+    assert model.standard_features == model_params["standard_features"]
+
+    assert model.features_center == features_center.tolist()
+    assert model.features_std == features_std.tolist()
+
+    pd.testing.assert_frame_equal(
+        features_df,
+        features_expect_df,
+        check_exact=False,
+        check_dtype=False)
+
+    pd.testing.assert_frame_equal(
+        features_prep_df,
+        features_prep_expect_df,
         check_exact=False,
         check_dtype=False)
 

@@ -49,6 +49,7 @@ setup(name='mosaic',
           "colored==2.2.3",
           "pymongo==4.4.1",
           "influxdb==5.3.1",
+          "scikit-learn==1.3.2",
       ],
       zip_safe=False,
       )

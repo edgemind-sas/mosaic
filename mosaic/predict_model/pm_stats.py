@@ -10,11 +10,12 @@ if 'ipdb' in installed_pkg:
     import ipdb  # noqa: F401
 
 
+    
 class PMOLS(PMReturns):
 
     def fit(self, ohlcv_df, **kwrds):
 
-        features_df, target_s = self.prepare_data(ohlcv_df, **kwrds)
+        features_df, target_s = self.prepare_data_fit(ohlcv_df, **kwrds)
 
         features_df = sm.add_constant(features_df)
 
@@ -25,16 +26,23 @@ class PMOLS(PMReturns):
 
     def predict(self, ohlcv_df, **kwrds):
 
-        features_df = sm.add_constant(self.compute_features(ohlcv_df))
+        features_df, _ = self.prepare_data_fit(ohlcv_df, **kwrds)
 
-        return self.bkd.predict(features_df)
+        features_df = sm.add_constant(features_df)
+
+        target_pred_s = self.bkd.predict(features_df)
+
+        if self.sk_preproc is not None:
+            target_pred_s = self.sk_preproc.inverse_transform(target_pred_s)
+        
+        return target_pred_s
 
 
 class PMLogit(PMReturnsUpDown):
 
     def fit(self, ohlcv_df, **kwrds):
 
-        features_df, target_s = self.prepare_data(ohlcv_df, **kwrds)
+        features_df, target_s = self.prepare_data_fit(ohlcv_df, **kwrds)
 
         features_df = sm.add_constant(features_df)
 
@@ -45,6 +53,6 @@ class PMLogit(PMReturnsUpDown):
 
     def predict(self, ohlcv_df, **kwrds):
 
-        features_df = sm.add_constant(self.compute_features(ohlcv_df))
+        features_df = sm.add_constant(self.prepare_features(ohlcv_df))
 
         return self.bkd.predict(features_df)

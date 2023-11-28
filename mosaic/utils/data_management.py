@@ -420,10 +420,19 @@ def recursive_set(obj, attrs, value):
         recursive_set(bot, ["decision_model.pm_*.features[0].length"], 10)
     """
     attr = attrs[0]
-    if "*" in attr:  # Regex pattern detected
+    if "*" in attr and not attr.startswith('*'):  # Regex pattern detected
         keys = [key for key in dir(obj) if re.match(attr, key)]
         for key in keys:
             recursive_set(getattr(obj, key), attrs[1:], value)
+    elif "*" in attr and attr.startswith('*'):
+        attr = attr[1:]
+        keys = [key for key in dir(obj) if attr in key]
+        if len(attrs) > 1:
+            for key in keys:
+                recursive_set(getattr(obj, key), attrs[1:], value)
+        else:
+            for key in keys:
+                setattr(obj, key, value)
     else:
         next_obj = obj[int(attr)] if attr.isdigit() else getattr(obj, attr)
         if len(attrs) == 1:  # This is the last attribute, set the value

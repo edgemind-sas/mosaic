@@ -76,8 +76,8 @@ def test_pm_base_003():
     features_df = model.compute_features(pd.DataFrame())
     assert features_df.equals(features_th_df)
 
-    features_df = model.prepare_data(pd.DataFrame())
-    assert features_df.equals(features_th_df.shift(1).dropna())
+    features_df = model.prepare_data_fit(pd.DataFrame())
+    assert features_df.equals(features_th_df.dropna())
 
 
 def test_pm_base_004():
@@ -101,6 +101,6 @@ def test_pm_base_005():
         threshold=0.5,
         threshold_mode="normal"
     )
-    ret_th = ohlcv_df["close"].pct_change(2).shift(-1) > 0.5
+    ret_th = ohlcv_df["close"].pct_change(2).shift(-2) > 0.5
     ret = model.compute_returns(ohlcv_df)
     assert ret.equals(ret_th)

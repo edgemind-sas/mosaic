@@ -1,11 +1,14 @@
 import pydantic
 import typing
+import copy
 import pandas as pd
 #import tqdm
 from ..core import ObjMOSAIC
 from ..utils.data_management import HyperParams
 #from ..trading.core import SignalBase
 from ..indicator.indicator import IndicatorOHLCV
+import sklearn.preprocessing as skp
+
 
 import pkg_resources
 installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
@@ -24,14 +27,29 @@ class PredictModelBase(ObjMOSAIC):
     features: typing.List[IndicatorOHLCV] = pydantic.Field(
         [], description="List of features indicators")
 
-    standard_features: bool = pydantic.Field(
-        True, description="Indicates if features should be center and scaled")
+    var_features: typing.List[str] = pydantic.Field(
+        [], description="List of features variable names")
 
-    features_center: list = pydantic.Field(
-        None, description="Feature center vector")
+    sk_preproc: str = pydantic.Field(
+        None, description="Name of the sklearn preprocessing class")
 
-    features_std: list = pydantic.Field(
-        None, description="Feature standard deviation vector")
+    sk_preproc_params: dict = pydantic.Field(
+        {}, description="sklearn preprocessing parameters")
+    
+    sk_preproc_features: typing.Any = \
+        pydantic.Field(None, description="Pre processing data function for features from sklean preprocessing package")
+
+    sk_preproc_target: typing.Any = \
+        pydantic.Field(None, description="Pre processing data function for targets from sklean preprocessing package")
+
+    # standard_features: bool = pydantic.Field(
+    #     True, description="Indicates if features should be center and scaled")
+
+    # features_center: list = pydantic.Field(
+    #     None, description="Feature center vector")
+
+    # features_std: list = pydantic.Field(
+    #     None, description="Feature standard deviation vector")
 
     ohlcv_names: dict = pydantic.Field(
         {v: v for v in ["open", "high", "low", "close", "volume"]},
@@ -44,9 +62,19 @@ class PredictModelBase(ObjMOSAIC):
         return max([indic.bw_length
                     for indic in self.features]) if self.features else 0
 
+    def __init__(self, **data: typing.Any):
+        super().__init__(**data)
+
+        if self.sk_preproc is not None:
+            self.sk_preproc_features = \
+                getattr(skp, self.sk_preproc)(**self.sk_preproc_params)
+            self.sk_preproc_target = \
+                getattr(skp, self.sk_preproc)(**self.sk_preproc_params)
+
+    
     def dict(self, **kwrds):
 
-        attr_to_exclude = {"bkd", "logger"}
+        attr_to_exclude = {"bkd", "logger", "sk_preproc"}
         
         if kwrds.get("exclude"):
             [kwrds["exclude"].add(attr) for attr in attr_to_exclude]
@@ -64,50 +92,11 @@ class PredictModelBase(ObjMOSAIC):
             features_df = pd.concat(features_df_list, axis=1)
         else:
             features_df = pd.DataFrame(index=ohlcv_df.index)
-            
-        return features_df
 
-    def standardize_features(self, features_df):
-
-        if self.standard_features:
-
-            if self.features_centers is None:
-                center = features_df.mean()
-                self.features_centers = center.tolist()
-            else:
-                center = pd.Series(self.features_centers,
-                                   index=features_df.columns)
-            if self.features_std is None:
-                std = features_df.std()
-                self.features_std = std.tolist()
-            else:
-                center = pd.Series(self.features_std,
-                                   index=features_df.columns)
-
-            features_df = (features_df - center).div(std)
-            
-
-        return features_df
-
-    
-    def prepare_data(self, ohlcv_df, dropna=True, **kwrds):
-        # NOTE : Here features are shifted to properly align returns with 
-        # features observed just before the corresponding returns
-        features_df = self.compute_features(ohlcv_df).shift(1)
-        features_df = self.standardize_features(features_df)
+        self.var_features = list(features_df.columns)
         
-        if dropna:
-            features_df = features_df.dropna()
-            
         return features_df
-
     
-    def predict(self, ohlcv_df, **kwrds):
-        # To be overloaded
-        return pd.Series(0.0,
-                         index=ohlcv_df.index,
-                         name="PMBase",
-                         dtype='float64')
 
 
 class PMReturns(PredictModelBase):
@@ -116,29 +105,78 @@ class PMReturns(PredictModelBase):
         pydantic.Field(0, description="Close returns horizon to be predicted")
 
     @property
-    def target_var(self):
+    def bw_length(self):
+        return super().bw_length
+
+    @property
+    def var_target(self):
         return f"ret_{self.returns_horizon}"
 
-    def prepare_data(self, ohlcv_df, dropna=True, **kwrds):
+    def prepare_data_fit(self, ohlcv_df, dropna=True, **kwrds):
 
-        features_df = self.compute_features(ohlcv_df).shift(1)
+        features_df = self.compute_features(ohlcv_df)
+        #super().prepare_data_fit(ohlcv_df, dropna=dropna, **kwrds)
         target_s = self.compute_returns(ohlcv_df)
-        features_df = self.standardize_features(features_df)
-        
+
+        # Aligned features and target
+        data_all_df = pd.concat([features_df, target_s], axis=1).sort_index()
+
         if dropna:
-            data_all_df = pd.concat([features_df, target_s], axis=1).dropna()
-            features_df = data_all_df[features_df.columns]
-            target_s = data_all_df[target_s.name]
+            data_all_df.dropna(inplace=True)
+
             
+        # Get aligned features and target data
+        features_df = data_all_df[self.var_features]
+        target_s = data_all_df[self.var_target]
+
+        if self.sk_preproc is not None:
+            
+            features_arr = self.sk_preproc_features.fit_transform(features_df)
+            features_df = pd.DataFrame(features_arr,
+                                       index=features_df.index,
+                                       columns=features_df.columns)
+            
+            target_arr = target_s.values.reshape(-1, 1)
+            target_arr = self.sk_preproc_target.fit_transform(target_arr)
+            target_s = pd.Series(target_arr.flatten(),
+                                 name=target_s.name,
+                                 index=target_s.index)
+
         return features_df, target_s
+
+    def prepare_data_predict(self, ohlcv_df, dropna=True, **kwrds):
+
+        features_df = self.compute_features(ohlcv_df)
+
+        if dropna:
+            features_df.dropna(inplace=True)
+
+        if self.sk_preproc is not None:
+            features_arr = self.sk_preproc_features.transform(features_df)
+            features_df = pd.DataFrame(features_arr,
+                                       index=features_df.index,
+                                       columns=features_df.columns)
+
+        return features_df
+
     
+    def postproc_data_predict(self, data_pred, **kwrds):
+
+        if self.sk_preproc_target is not None:
+            data_pred = self.sk_preproc_target.inverse_transform(data_pred)
+            
+        return data_pred
+
     def compute_returns(self, ohlcv_df):
 
         close_var = self.ohlcv_names.get("close", "close")
-
-        return ohlcv_df[close_var].pct_change(self.returns_horizon+1)\
-                                  .shift(-self.returns_horizon)\
-                                  .rename(self.target_var)
+        
+        # NOTE : Here returns are shifted (-1) to properly align returns with 
+        # features to avoid anticipation biais
+        ret = ohlcv_df[close_var].pct_change(self.returns_horizon+1)\
+                                 .shift(-self.returns_horizon-1)\
+                                 .rename(self.var_target)
+        return ret
 
 
 class PMReturnsUpDown(PMReturns):
@@ -168,7 +206,7 @@ class PMReturnsUpDown(PMReturns):
 
     @property
     def target_var(self):
-        return f"{super().target_var}_{self.direction}"
+        return f"{super().var_target}_{self.direction}"
 
     def compute_returns(self, ohlcv_df):
 
